@@ -59,7 +59,41 @@ class DonationManager {
             'action' => '#'
         ), $atts ) );
 
+        $html = '';
+
         switch( $step ) {
+            case 'step-two':
+                $html = '<pre>$_POST = ' . print_r( $_POST, true ) . '</pre>';
+            break;
+            case 'step-one':
+                if( isset( $_REQUEST['oid'] ) && isset( $_REQUEST['tid'] ) && is_numeric( $_REQUEST['oid'] ) && is_numeric( $_REQUEST['tid'] ) )
+                    $_SESSION['donor'] = array( 'org_id' => $_REQUEST['oid'], 'trans_dept_id' => $_REQUEST['tid'] );
+                $oid = $_SESSION['donor']['org_id'];
+                $tid = $_SESSION['donor']['trans_dept_id'];
+                $terms = wp_get_post_terms( $oid, 'donation_option' );
+                $donation_options = array();
+                foreach( $terms as $term ) {
+                    $pod = pods( 'donation_option' );
+                    $pod->fetch( $term->term_id );
+                    $order = $pod->get_field( 'order' );
+                    $donation_options[$order] = array( 'name' => $term->name, 'desc' => $term->description, 'value' => esc_attr( $term->name ), 'pickup' => $pod->get_field( 'pickup' ), 'skip_questions' => $pod->get_field( 'skip_questions' ) );
+                }
+                ksort( $donation_options );
+
+                $checkboxes = array();
+                $template = file_get_contents( DONMAN_DIR . '/lib/html/donation-option-row.html' );
+                $search = array( '{key}', '{name}', '{desc}', '{value}', '{checked}', '{pickup}', '{skip_questions}' );
+                foreach( $donation_options as $key => $opt ) {
+                    $checked = ( trim( $_POST['donor']['options'][$key]['field_value'] ) == $opt['value'] )? ' checked="checked"' : '';
+                    $replace = array( $key, $opt['name'], $opt['desc'], $opt['value'], $checked, $opt['pickup'], $opt['skip_questions'] );
+                    $checkboxes[] = str_replace( $search, $replace, $template );
+                }
+
+                $description = ( isset( $_POST['donor']['description'] ) )? esc_textarea( $_POST['donor']['description'] ) : '';
+
+                $action = trailingslashit( get_bloginfo( 'url' ) ) . $action;
+                $html = '<form action="' . $action . '" method="post"><table class="table table-striped"><tr><td>' . implode( '</td></tr><tr><td>', $checkboxes ) . '</td></tr></table><label>Brief description of items:</label><textarea class="form-control" rows="4" name="donor[description]">' . $description . '</textarea><span class="help-block">Example: I have a couch and three boxes of household items from spring cleaning.</span><p class="text-right"><button type="submit" class="btn btn-primary">Continue to Step 2</button></p></form><pre>$donation_options = ' . print_r( $donation_options, true ) . '<br />$_SESSION[\'donor\'] = ' . print_r( $_SESSION['donor'], true ) . '</pre>';
+            break;
             case 'selectorg':
                 $pickup_code = $_REQUEST['pickup_code'];
                 $organizations = DonationManager::get_organizations( $pickup_code );
@@ -67,9 +101,10 @@ class DonationManager {
                     $organizations = DonationManager::get_default_organization();
 
                 $template = file_get_contents( DONMAN_DIR . '/lib/html/select-org-row.html' );
-                $search = array( '{name}', '{desc}' );
+                $search = array( '{name}', '{desc}', '{link}' );
                 foreach( $organizations as $org ) {
-                    $replace = array( $org['name'], $org['desc'] );
+                    $link = '/' . $action . '/?oid=' . $org['id'] . '&tid=' . $org['trans_dept_id'];
+                    $replace = array( $org['name'], $org['desc'], $link );
                     $rows[] = str_replace( $search, $replace, $template );
                 }
                 $html = implode( "\n", $rows );
@@ -84,6 +119,24 @@ class DonationManager {
         $html.= '<br /><br /><pre>Step = ' . $step . '<br />action = ' . $action . '</pre>';
 
         return $html;
+    }
+
+    /**
+     * Retrieves the default organization as defined on the Donation Settings option screen.
+     */
+    public function get_default_organization() {
+        $default_organization = get_option( 'donation_settings_default_organization' );
+        $default_trans_dept = get_option( 'donation_settings_default_trans_dept' );
+        $organization = array();
+
+        if( is_array( $default_organization ) ) {
+            $default_org_id = $default_organization[0];
+            $default_org = get_post( $default_org_id );
+            $organization[] = array( 'id' => $default_org->ID, 'name' => $default_org->post_title, 'desc' => $default_org->post_content, 'trans_dept_id' => $default_trans_dept[0] );
+            return $organization;
+        } else {
+            return false;
+        }
     }
 
     /**
@@ -120,23 +173,6 @@ class DonationManager {
         return $organizations;
     }
 
-    /**
-     * Retrieves the default organization as defined on the Donation Settings option screen.
-     */
-    public function get_default_organization() {
-        $default_organization = get_option( 'donation_settings_default_organization' );
-        $default_trans_dept = get_option( 'donation_settings_default_trans_dept' );
-        $organization = array();
-
-        if( is_array( $default_organization ) ) {
-            $default_org_id = $default_organization[0];
-            $default_org = get_post( $default_org_id );
-            $organization[] = array( 'id' => $default_org->ID, 'name' => $default_org->post_title, 'desc' => $default_org->post_content, 'trans_dept_id' => $default_trans_dept[0] );
-            return $organization;
-        } else {
-            return false;
-        }
-    }
 }
 DonationManager::get_instance();
 register_activation_hook( __FILE__, array( 'DonationManager', 'activate' ) );

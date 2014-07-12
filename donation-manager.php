@@ -81,18 +81,22 @@ class DonationManager {
                 ksort( $donation_options );
 
                 $checkboxes = array();
-                $template = file_get_contents( DONMAN_DIR . '/lib/html/donation-option-row.html' );
+                $row_template = DonationManager::get_template_part( 'donation-option-row' );
                 $search = array( '{key}', '{name}', '{desc}', '{value}', '{checked}', '{pickup}', '{skip_questions}' );
                 foreach( $donation_options as $key => $opt ) {
                     $checked = ( trim( $_POST['donor']['options'][$key]['field_value'] ) == $opt['value'] )? ' checked="checked"' : '';
                     $replace = array( $key, $opt['name'], $opt['desc'], $opt['value'], $checked, $opt['pickup'], $opt['skip_questions'] );
-                    $checkboxes[] = str_replace( $search, $replace, $template );
+                    $checkboxes[] = str_replace( $search, $replace, $row_template );
                 }
 
                 $description = ( isset( $_POST['donor']['description'] ) )? esc_textarea( $_POST['donor']['description'] ) : '';
 
                 $action = trailingslashit( get_bloginfo( 'url' ) ) . $action;
-                $html = '<form action="' . $action . '" method="post"><table class="table table-striped"><tr><td>' . implode( '</td></tr><tr><td>', $checkboxes ) . '</td></tr></table><label>Brief description of items:</label><textarea class="form-control" rows="4" name="donor[description]">' . $description . '</textarea><span class="help-block">Example: I have a couch and three boxes of household items from spring cleaning.</span><p class="text-right"><button type="submit" class="btn btn-primary">Continue to Step 2</button></p></form><pre>$donation_options = ' . print_r( $donation_options, true ) . '<br />$_SESSION[\'donor\'] = ' . print_r( $_SESSION['donor'], true ) . '</pre>';
+                $form_template = DonationManager::get_template_part( 'donation-options-form' );
+                $search = array( '{action}', '{donation-option-rows}', '{description}' );
+                $replace = array( $action, '<tr><td>' . implode( '</td></tr><tr><td>', $checkboxes ) . '</td></tr>', $description );
+                $html = str_replace( $search, $replace, $form_template );
+                $html.= '<pre>$donation_options = ' . print_r( $donation_options, true ) . '<br />$_SESSION[\'donor\'] = ' . print_r( $_SESSION['donor'], true ) . '</pre>';
             break;
             case 'selectorg':
                 $pickup_code = $_REQUEST['pickup_code'];
@@ -110,7 +114,7 @@ class DonationManager {
                 $html = implode( "\n", $rows );
             break;
             case 'enterzip':
-                $template = file_get_contents( DONMAN_DIR . '/lib/html/enter-your-zipcode.html' );
+                $template = DonationManager::get_template_part( 'enter-your-zipcode' );
                 $search = array( '{action}' );
                 $replace = array( $action );
                 $html = str_replace( $search, $replace, $template );
@@ -171,6 +175,23 @@ class DonationManager {
         }
 
         return $organizations;
+    }
+
+    /**
+     * Retrieves template from /lib/html/
+     */
+    public function get_template_part( $filename = '' ) {
+        if( empty( $filename ) )
+            return '<div class="alert alert-danger"><strong>ERROR:</strong> No filename!</div>';
+
+        $file = DONMAN_DIR . '/lib/html/' . $filename . '.html';
+
+        if( ! file_exists( $file ) )
+            return '<div class="alert alert-danger"><strong>ERROR:</strong> File not found! (<em>' . basename( $file ) . '</em>)</div>';
+
+        $template = file_get_contents( $file );
+
+        return $template;
     }
 
 }

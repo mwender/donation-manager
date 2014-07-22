@@ -55,17 +55,136 @@ class DonationManager {
      */
     public function donation_form( $atts ) {
         extract( shortcode_atts( array(
-            'step' => 'enterzip',
-            'action' => '#'
+            'action' => ''
         ), $atts ) );
+
+        if( 'select-your-organization' == $action )
+            $_SESSION['donor'] = array();
+
+        $action = ( empty( $action ) )? get_permalink() : trailingslashit( get_bloginfo( 'url' ) ) . $action;
 
         $html = '';
 
+        // Setup $step
+        if( isset( $_REQUEST['pcode'] ) && preg_match( '/^[a-zA-Z0-9_-]+\z/', $_REQUEST['pcode'] ) ) {
+            $step = 'select-your-organization';
+        } else if ( isset( $_REQUEST['oid'] ) && isset( $_REQUEST['tid'] ) && is_numeric( $_REQUEST['oid'] ) && is_numeric( $_REQUEST['tid'] ) ) {
+            $step = 'describe-donation';
+        } else if( isset( $_POST['donor']['options'] ) ) {
+            $step = 'no-pickup-message';
+            // Should we skip the screening questions?
+            $skip == false;
+            $pickup == false;
+            $_SESSION['donor']['items'] = array();
+            foreach( $_POST['donor']['options'] as $option ) {
+                if( ! empty( $option['field_value'] ) ) {
+                    if( true == $option['skipquestions'] && false == $skip ) {
+                        $html.= '<meta http-equiv="refresh" content="5; url=' . $action . '">';
+                        $skip = true;
+                    }
+                    if( true == $option['pickup'] && false == $pickup ) {
+                        $pickup = true;
+                        $step = 'screening-questions';
+                    }
+
+                    // Store this donation option in our donor array
+                    if( ! in_array( $option['field_value'], $_SESSION['donor']['items'] ) )
+                        $_SESSION['donor']['items'][] = $option['field_value'];
+                }
+            }
+            $_SESSION['donor']['description'] = $_POST['donor']['description'];
+
+            // If any of our options specify to skip the screening questions, we use the `redirect` step.
+            if( true == $skip ) {
+                $step = 'redirect';
+                $_SESSION['donor']['skipquestions'] = true;
+            }
+
+        } else if( isset( $_POST['donor']['questions'] ) || true == $_SESSION['donor']['skipquestions'] ) {
+            $step = 'contact-details';
+            if( isset( $_POST['donor']['questions'] ) ) {
+                foreach( $_POST['donor']['questions'] as $question_array ) {
+                    if( 'Yes' == $question_array['answer'] ) {
+                        $step = 'no-damaged-items-message';
+                    }
+                }
+            }
+        } else if( isset( $_POST['donor']['address'] ) ) {
+            $step = 'select-preferred-pickup-dates';
+        }
+
+        global $wp_query;
+
         switch( $step ) {
-            case 'step-two':
-                $html = '<pre>$_POST = ' . print_r( $_POST, true ) . '</pre>';
+            case 'contact-details':
+                $contact_details_form_html = DonationManager::get_template_part( 'contact-details-form' );
+                $checked_yes = '';
+                $checked_no = '';
+                if( isset( $_POST['donor']['different_pickup_address'] ) ) {
+                    if( 'Yes' == $_POST['donor']['different_pickup_address'] ) {
+                        $checked_yes = ' checked="checked"';
+                    } else {
+                        $checked_no = ' checked="checked"';
+                    }
+                }
+                $checked_phone = '';
+                $checked_email = '';
+                if( isset( $_POST['donor']['preferred_contact_method'] ) ) {
+                    if( 'Phone' == $_POST['donor']['preferred_contact_method'] ) {
+                        $checked_phone = ' checked="checked"';
+                    } else {
+                        $checked_email = ' checked="checked"';
+                    }
+                }
+                $search = array( '{action}', '{state}', '{pickup_state}', '{checked_yes}', '{checked_no}', '{checked_phone}', '{checked_email}' );
+                $replace = array( $action, DonationManager::get_state_select(), DonationManager::get_state_select( 'pickup_address' ), $checked_yes, $checked_no, $checked_phone, $checked_email );
+                $html.= str_replace( $search, $replace, $contact_details_form_html );
             break;
-            case 'step-one':
+            case 'no-damaged-items-message':
+                $no_damaged_items_message = apply_filters( 'the_content', get_option( 'donation_settings_no_damaged_items_message' ) );
+                $search = array( '{organization}' );
+                $organization = get_the_title( $_SESSION['donor']['org_id'] );
+                $replace = array( $organization );
+                $html.= str_replace( $search, $replace, $no_damaged_items_message );
+
+                $html.= DonationManager::get_stores_footer( $_SESSION['donor']['trans_dept_id'] );
+            break;
+            case 'no-pickup-message':
+                $no_pickup_message = apply_filters( 'the_content', get_option( 'donation_settings_no_pickup_message' ) );
+                $search = array( '{organization}' );
+                $organization = get_the_title( $_SESSION['donor']['org_id'] );
+                $replace = array( $organization );
+                $html.= str_replace( $search, $replace, $no_pickup_message );
+
+                $html.= DonationManager::get_stores_footer( $_SESSION['donor']['trans_dept_id'] );
+            break;
+            case 'screening-questions':
+
+                if( false == $skip && true == $pickup ) {
+                    $screening_questions = DonationManager::get_screening_questions( $_SESSION['donor']['org_id'] );
+
+                    $row_template = DonationManager::get_template_part( 'screening-questions.row' );
+                    $search = array( '{question}', '{question_esc_attr}', '{key}', '{checked_yes}', '{checked_no}' );
+                    $questions = array();
+                    foreach( $screening_questions as $question ) {
+                        $key = $question['id'];
+                        $checked_yes = ( isset( $_POST['donor']['questions'][$key]['answer'] ) &&  'Yes' == $_POST['donor']['questions'][$key]['answer'] )? ' checked="checked"' : '';
+                        $checked_no = ( isset( $_POST['donor']['questions'][$key]['answer'] ) &&  'No' == $_POST['donor']['questions'][$key]['answer'] )? ' checked="checked"' : '';
+                        $replace = array( $question['desc'], esc_attr( $question['desc'] ), $key, $checked_yes, $checked_no );
+                        $questions[] = str_replace( $search, $replace, $row_template );
+                    }
+
+                    $form_template = DonationManager::get_template_part( 'screening-questions.form' );
+                    $search = array( '{action}', '{question_rows}' );
+                    $replace = array( $action, implode( "\n", $questions) );
+                    $html.= str_replace( $search, $replace, $form_template );
+                }
+            break;
+            case 'select-preferred-pickup-dates':
+                $html.= '<pre>ADD PREFERRED PICKUP DATES FORM HERE.<br /><br />$_POST = ' . print_r( $_POST, true ) . '</pre>';
+            break;
+            case 'describe-donation':
+                $_SESSION['donor'] = '';
                 if( isset( $_REQUEST['oid'] ) && isset( $_REQUEST['tid'] ) && is_numeric( $_REQUEST['oid'] ) && is_numeric( $_REQUEST['tid'] ) )
                     $_SESSION['donor'] = array( 'org_id' => $_REQUEST['oid'], 'trans_dept_id' => $_REQUEST['tid'] );
                 $oid = $_SESSION['donor']['org_id'];
@@ -91,36 +210,38 @@ class DonationManager {
 
                 $description = ( isset( $_POST['donor']['description'] ) )? esc_textarea( $_POST['donor']['description'] ) : '';
 
-                $action = trailingslashit( get_bloginfo( 'url' ) ) . $action;
                 $form_template = DonationManager::get_template_part( 'donation-options-form' );
                 $search = array( '{action}', '{donation-option-rows}', '{description}' );
                 $replace = array( $action, '<tr><td>' . implode( '</td></tr><tr><td>', $checkboxes ) . '</td></tr>', $description );
-                $html = str_replace( $search, $replace, $form_template );
-                $html.= '<pre>$donation_options = ' . print_r( $donation_options, true ) . '<br />$_SESSION[\'donor\'] = ' . print_r( $_SESSION['donor'], true ) . '</pre>';
+                $html.= str_replace( $search, $replace, $form_template );
             break;
-            case 'selectorg':
-                $pickup_code = $_REQUEST['pickup_code'];
+            case 'select-your-organization':
+                $pickup_code = $_REQUEST['pcode'];
                 $organizations = DonationManager::get_organizations( $pickup_code );
                 if( false == $organizations )
                     $organizations = DonationManager::get_default_organization();
 
-                $template = file_get_contents( DONMAN_DIR . '/lib/html/select-org-row.html' );
+                $template = DonationManager::get_template_part( 'select-your-organization.row' );
                 $search = array( '{name}', '{desc}', '{link}' );
                 foreach( $organizations as $org ) {
-                    $link = '/' . $action . '/?oid=' . $org['id'] . '&tid=' . $org['trans_dept_id'];
+                    $link = $action . '?oid=' . $org['id'] . '&tid=' . $org['trans_dept_id'];
                     $replace = array( $org['name'], $org['desc'], $link );
                     $rows[] = str_replace( $search, $replace, $template );
                 }
-                $html = implode( "\n", $rows );
+                $html.= implode( "\n", $rows );
             break;
-            case 'enterzip':
+            case 'redirect':
+                $html.= '<p class="text-center lead">Redirecting. One moment...</p>';
+            break;
+            default:
+                $_SESSION['donor'] = '';
                 $template = DonationManager::get_template_part( 'enter-your-zipcode' );
                 $search = array( '{action}' );
                 $replace = array( $action );
-                $html = str_replace( $search, $replace, $template );
+                $html.= str_replace( $search, $replace, $template );
             break;
         }
-        $html.= '<br /><br /><pre>Step = ' . $step . '<br />action = ' . $action . '</pre>';
+        $html.= '<br /><br /><pre>$_SESSION[donor] = ' . print_r( $_SESSION['donor'], true ) . '</pre>';
 
         return $html;
     }
@@ -178,6 +299,159 @@ class DonationManager {
     }
 
     /**
+     * Retrieves default screening questions assigned on the Donation Settings page.
+     */
+    public function get_default_screening_questions() {
+        $default_question_ids = get_option( 'donation_settings_default_screening_questions' );
+        return $default_question_ids;
+    }
+
+    /**
+     * Retrieves an organization's screening questions. If none are assigned, returns the default questions.
+     */
+    public function get_screening_questions( $org_id ) {
+        $terms = wp_get_post_terms( $org_id, 'screening_question' );
+
+        $screening_questions = array();
+        $x = 1;
+        if( $terms ) {
+            foreach( $terms as $term ) {
+                $pod = pods( 'screening_question' );
+                $pod->fetch( $term->term_id );
+                $order = $pod->get_field( 'order' );
+                $key = ( ! array_key_exists( $order, $screening_questions ) )? $order : $x;
+                $screening_questions[$key] = array( 'id' => $term->term_id, 'name' => $term->name, 'desc' => $term->description );
+                $x++;
+            }
+        } else {
+            $default_question_ids = DonationManager::get_default_screening_questions();
+            if( is_array( $default_question_ids ) && 0 < count( $default_question_ids ) ) {
+                foreach( $default_question_ids as $question_id ) {
+                    $term = get_term( $question_id, 'screening_question' );
+                    $pod = pods( 'screening_question' );
+                    $pod->fetch( $question_id );
+                    $order = $pod->get_field( 'order' );
+                    $key = ( ! array_key_exists( $order, $screening_questions ) )? $order : $x;
+                    $screening_questions[$key] = array( 'id' => $question_id, 'name' => $term->name, 'desc' => $term->description );
+                    $x++;
+                }
+            }
+        }
+
+        ksort( $screening_questions );
+
+        return $screening_questions;
+    }
+
+    /**
+     * Retrieves state select input
+     */
+    public function get_state_select( $var = 'address' ) {
+        $html = '';
+
+        $states = array(
+            'Alabama'=>'AL',
+            'Alaska'=>'AK',
+            'Arizona'=>'AZ',
+            'Arkansas'=>'AR',
+            'California'=>'CA',
+            'Colorado'=>'CO',
+            'Connecticut'=>'CT',
+            'Delaware'=>'DE',
+            'Florida'=>'FL',
+            'Georgia'=>'GA',
+            'Hawaii'=>'HI',
+            'Idaho'=>'ID',
+            'Illinois'=>'IL',
+            'Indiana'=>'IN',
+            'Iowa'=>'IA',
+            'Kansas'=>'KS',
+            'Kentucky'=>'KY',
+            'Louisiana'=>'LA',
+            'Maine'=>'ME',
+            'Maryland'=>'MD',
+            'Massachusetts'=>'MA',
+            'Michigan'=>'MI',
+            'Minnesota'=>'MN',
+            'Mississippi'=>'MS',
+            'Missouri'=>'MO',
+            'Montana'=>'MT',
+            'Nebraska'=>'NE',
+            'Nevada'=>'NV',
+            'New Hampshire'=>'NH',
+            'New Jersey'=>'NJ',
+            'New Mexico'=>'NM',
+            'New York'=>'NY',
+            'North Carolina'=>'NC',
+            'North Dakota'=>'ND',
+            'Ohio'=>'OH',
+            'Oklahoma'=>'OK',
+            'Oregon'=>'OR',
+            'Pennsylvania'=>'PA',
+            'Rhode Island'=>'RI',
+            'South Carolina'=>'SC',
+            'South Dakota'=>'SD',
+            'Tennessee'=>'TN',
+            'Texas'=>'TX',
+            'Utah'=>'UT',
+            'Vermont'=>'VT',
+            'Virginia'=>'VA',
+            'Washington'=>'WA',
+            'West Virginia'=>'WV',
+            'Wisconsin'=>'WI',
+            'Wyoming'=>'WY'
+        );
+        $html.= '<option value="">Select a state...</option>';
+        foreach( $states as $state => $abbr ){
+            $selected = ( isset( $_POST['donor'][$var]['state'] ) && $abbr == $_POST['donor'][$var]['state'] )? ' selected="selected"' : '';
+            $html.= '<option value="' . $abbr . '"' . $selected . '>' . $state . '</option>';
+        }
+        return '<select class="form-control" name="donor[' . $var . '][state]">' .  $html . '</select>';
+    }
+
+    /**
+     * Retrieves HTML for showing Trans Dept Contact and all Stores for Trans Dept.
+     */
+    public function get_stores_footer( $trans_dept_id ) {
+        $html = '';
+        // Get our trans dept director
+        $trans_dept_contact = DonationManager::get_trans_dept_contact( $trans_dept_id );
+        if( empty( $trans_dept_contact['contact_email'] ) ) {
+            $html.= '<div class="alert alert-danger">ERROR: No `contact_email` defined. Please inform support of this error.</div>';
+        } else {
+            $nopickup_contact_html = DonationManager::get_template_part( 'no-pickup.transportation-contact' );
+            $search = array( '{name}', '{email}', '{organization}', '{title}', '{phone}' );
+            if( isset( $_SESSION['donor']['org_id'] ) )
+                $organization = get_the_title( $_SESSION['donor']['org_id'] );
+            $replace = array( $trans_dept_contact['contact_name'], $trans_dept_contact['contact_email'], $organization, $trans_dept_contact['contact_title'], $trans_dept_contact['phone'] );
+            $html.= str_replace( $search, $replace, $nopickup_contact_html );
+
+            // Query the Transportation Department's stores
+            $args = array(
+                'post_type' => 'store',
+                'meta_query' => array(
+                    array(
+                        'key' => 'trans_dept',
+                        'value' => $trans_dept_id,
+                    )
+                )
+            );
+            $stores = get_posts( $args );
+            if( $stores ) {
+                $nopickup_store_row_html = DonationManager::get_template_part( 'no-pickup.store-row' );
+                $search = array( '{name}', '{address}', '{city}', '{state}', '{zip_code}', '{phone}' );
+                foreach( $stores as $store ){
+                    $store_data = get_post_custom( $store->ID );
+                    $replace = array( $store->post_title, $store_data['address'][0], $store_data['city'][0], $store_data['state'][0], $store_data['zip_code'][0], $store_data['phone'][0] );
+                    $html.= str_replace( $search, $replace, $nopickup_store_row_html );
+                }
+            }
+        }
+
+        return $html;
+    }
+
+    /**
      * Retrieves template from /lib/html/
      */
     public function get_template_part( $filename = '' ) {
@@ -192,6 +466,24 @@ class DonationManager {
         $template = file_get_contents( $file );
 
         return $template;
+    }
+
+    /**
+     * Retrieves a transportation department contact
+     */
+    public function get_trans_dept_contact( $trans_dept_id = '' ) {
+        if( empty( $trans_dept_id) )
+            return false;
+
+        $pod = pods( 'trans_dept' );
+        $pod->fetch( $trans_dept_id );
+        $trans_dept_contact = array( 'contact_title' => '', 'contact_name' => '', 'contact_email' => '', 'bcc_email' => '', 'phone' => '' );
+        foreach( $trans_dept_contact as $key => $val ) {
+            $trans_dept_contact[$key] = $pod->get_field( $key );
+        }
+
+        return $trans_dept_contact;
+
     }
 
 }

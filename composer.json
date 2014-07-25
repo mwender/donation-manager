@@ -1,0 +1,14 @@
+{
+    "name": "mwender/donation-manager",
+    "description": "WordPress plugin for displaying a donation form and processing donation submissions.",
+    "license": "GPLv2",
+    "authors": [
+        {
+            "name": "Michael Wender",
+            "email": "michael@michaelwender.com"
+        }
+    ],
+    "require": {
+        "rlanvin/php-form": "dev-master"
+    }
+}

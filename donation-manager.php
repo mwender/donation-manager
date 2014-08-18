@@ -248,7 +248,81 @@ class DonationManager {
          * 05. VALIDATE CONTACT DETAILS
          */
         if( isset( $_POST['donor']['address'] ) ) {
-            $step = 'select-preferred-pickup-dates';
+            $form = new Form([
+                'Contact Name' => [ 'required', 'trim', 'max_length' => 80 ],
+                'Address' => [ 'required', 'trim', 'max_length' => 255 ],
+                'City' => [ 'required', 'trim', 'max_length' => 80 ],
+                'State' => [ 'required', 'trim', 'max_length' => 80 ],
+                'ZIP' => [ 'required', 'trim', 'max_length' => 14 ],
+                'Contact Email' => [ 'required', 'email', 'trim', 'max_length' => 255 ],
+                'Contact Phone' => [ 'required', 'trim', 'max_length' => 30 ]
+            ]);
+
+            $form->setValues( array(
+                'Contact Name' => $_POST['donor']['address']['name'],
+                'Address' => $_POST['donor']['address']['address'],
+                'City' => $_POST['donor']['address']['city'],
+                'State' => $_POST['donor']['address']['state'],
+                'ZIP' => $_POST['donor']['address']['zip'],
+                'Contact Email' => $_POST['donor']['email'],
+                'Contact Phone' => $_POST['donor']['phone'],
+            ));
+
+            if( 'Yes' ==  $_POST['donor']['different_pickup_address'] ){
+                $form->addRules([
+                'Pickup Address' => [ 'required', 'trim', 'max_length' => 255 ],
+                'Pickup City' => [ 'required', 'trim', 'max_length' => 80 ],
+                'Pickup State' => [ 'required', 'trim', 'max_length' => 80 ],
+                'Pickup ZIP' => [ 'required', 'trim', 'max_length' => 14 ],
+                ]);
+                $form->addValues( array(
+                    'Pickup Address' => $_POST['donor']['pickup_address']['address'],
+                    'Pickup City' => $_POST['donor']['pickup_address']['city'],
+                    'Pickup State' => $_POST['donor']['pickup_address']['state'],
+                    'Pickup ZIP' => $_POST['donor']['pickup_address']['zip'],
+                ));
+            }
+
+            if( $form->validate( $_POST ) ){
+                // Store contact details in $_SESSION[donor]
+                $this->add_html( '<pre>$_POST:<br />' . print_r( $_POST, true ) . '</pre>' );
+                $_SESSION['donor']['address'] = $_POST['donor']['address'];
+                $_SESSION['donor']['different_pickup_address'] = $_POST['donor']['different_pickup_address'];
+                if( 'Yes' == $_SESSION['donor']['different_pickup_address'] ){
+                    $_SESSION['donor']['pickup_address'] = $_POST['donor']['pickup_address'];
+                }
+                $_SESSION['donor']['email'] = $_POST['donor']['email'];
+                $_SESSION['donor']['phone'] = $_POST['donor']['phone'];
+                $_SESSION['donor']['preferred_contact_method'] = $_POST['donor']['preferred_contact_method'];
+
+                // Redirect to next step
+                $_SESSION['donor']['form'] = 'select-preferred-pickup-dates';
+                session_write_close();
+                header( 'Location: ' . $_REQUEST['nextpage'] );
+                die();
+            } else {
+                $errors = $form->getErrors();
+                /*
+                $this->add_html( '<pre>$_POST:<br />' . print_r( $_POST, true ) . '</pre>' );
+                $this->add_html( '<pre>FORM RULES:<br />' . print_r( $form->getRules(), true ) . '</pre>' );
+                $this->add_html( '<pre>FORM VALUES:<br />' . print_r( $form->getValues(), true ) . '</pre>' );
+                $this->add_html( '<pre>FORM ERRORS:<br />' . print_r( $errors, true ) . '</pre>' );
+                */
+                $error_msg = array();
+                foreach( $errors as $field => $array ){
+                    if( true == $array['required'] )
+                        $error_msg[] = '<strong><em>' . $field . '</em></strong> is a required field.';
+                    if( isset( $array['max_length'] ) )
+                        $error_msg[] = '<strong><em>' . $field . '</em></strong> can not exceed <em>' . $array['max_length'] . '</em> characters.';
+                    if( true == $array['email'] )
+                        $error_msg[] = '<strong><em>' . $field . '</em></strong> must be a valid email address.';
+                }
+                if( 0 < count( $error_msg ) ){
+                    $error_msg_html = '<div class="alert alert-danger"><p>Please correct the following errors:</p><ul><li>' .implode( '</li><li>', $error_msg ) . '</li></ul></div>';
+                    $this->add_html( $error_msg_html );
+                }
+
+            }
         }
     }
 
@@ -315,6 +389,8 @@ class DonationManager {
                     } else {
                         $checked_no = ' checked="checked"';
                     }
+                } else {
+                    $checked_no = ' checked="checked"';
                 }
                 $checked_phone = '';
                 $checked_email = '';
@@ -324,10 +400,29 @@ class DonationManager {
                     } else {
                         $checked_email = ' checked="checked"';
                     }
+                } else {
+                    $checked_email = ' checked="checked"';
                 }
-                $search = array( '{nextpage}', '{state}', '{pickup_state}', '{checked_yes}', '{checked_no}', '{checked_phone}', '{checked_email}' );
-                $replace = array( $nextpage, DonationManager::get_state_select(), DonationManager::get_state_select( 'pickup_address' ), $checked_yes, $checked_no, $checked_phone, $checked_email );
-                $html.= str_replace( $search, $replace, $contact_details_form_html );
+
+                $html = $this->get_template_part( 'form4.contact-details-form', array(
+                    'nextpage' => $nextpage,
+                    'state' => DonationManager::get_state_select(),
+                    'pickup_state' => DonationManager::get_state_select( 'pickup_address' ),
+                    'checked_yes' => $checked_yes,
+                    'checked_no' => $checked_no,
+                    'checked_phone' => $checked_phone,
+                    'checked_email' => $checked_email,
+                    'donor_name' => $_POST['donor']['address']['name'],
+                    'donor_address' => $_POST['donor']['address']['address'],
+                    'donor_city' => $_POST['donor']['address']['city'],
+                    'donor_zip' => $_POST['donor']['address']['zip'],
+                    'donor_pickup_address' => $_POST['donor']['pickup_address']['address'],
+                    'donor_pickup_city' => $_POST['donor']['pickup_address']['city'],
+                    'donor_pickup_zip' => $_POST['donor']['pickup_address']['zip'],
+                    'donor_email' => $_POST['donor']['email'],
+                    'donor_phone' => $_POST['donor']['phone'],
+                ) );
+
                 $this->add_html( $html );
             break;
 
@@ -353,7 +448,7 @@ class DonationManager {
             break;
 
             case 'select-preferred-pickup-dates':
-                $html.= '<pre>ADD PREFERRED PICKUP DATES FORM HERE.<br /><br />$_POST = ' . print_r( $_POST, true ) . '</pre>';
+                $this->add_html( '<pre>ADD PREFERRED PICKUP DATES FORM HERE.</pre>' );
             break;
 
             case 'screening-questions':
@@ -413,6 +508,10 @@ class DonationManager {
                 $this->add_html( $html );
             break;
 
+            case 'select-preferred-pickup-dates':
+                $this->add_html( '<div class="alert alert-warning">TODO: Build the "Select Pickup Preferred Dates" form.</div>' );
+            break;
+
             case 'select-your-organization':
                 $pickup_code = $_REQUEST['pcode'];
                 $organizations = $this->get_organizations( $pickup_code );
@@ -428,13 +527,6 @@ class DonationManager {
                 }
                 $this->add_html( implode( "\n", $rows ) );
             break;
-
-            /*
-            case 'redirect':
-                $html.= '<p class="text-center lead">Redirecting. One moment...</p><script>window.location.href="'.$nextpage.'"</script>';
-
-            break;
-            */
 
             default:
                 $html = $this->get_template_part( 'form0.enter-your-zipcode', array( 'nextpage' => $nextpage ) );

@@ -1,0 +1,30 @@
+{
+  "name": "Donation Manager WordPress Plugin",
+  "version": "1.0.0",
+  "authors": [
+    "Michael Wender <michael@michaelwender.com>"
+  ],
+  "description": "Displays forms and handles donation submissions.",
+  "main": "donation-manager.php",
+  "keywords": [
+    "PODS",
+    "WordPress",
+    "donation",
+    "custom",
+    "post_types"
+  ],
+  "license": "GPLv2",
+  "homepage": "http://www.pickupmydonation.com",
+  "private": true,
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "lib/components/vendor/",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "gl-datepicker": "*"
+  }
+}

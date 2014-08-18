@@ -542,6 +542,17 @@ class DonationManager {
     }
 
     /**
+     * Enqueues scripts and styles used by the frontend forms.
+     */
+    public function enqueue_scripts(){
+        if( 'select-preferred-pickup-dates' == $_SESSION['donor']['form'] ){
+            wp_enqueue_style( 'gl-datepicker', plugins_url( 'lib/components/vendor/gl-datepicker/styles/glDatePicker.default.css', __FILE__ ) );
+            wp_enqueue_script( 'gl-datepicker', plugins_url( 'lib/components/vendor/gl-datepicker/glDatePicker.min.js', __FILE__ ), array( 'jquery' ), '2.0' );
+        }
+
+    }
+
+    /**
      * Retrieves the default organization as defined on the Donation Settings option screen.
      */
     public function get_default_organization() {
@@ -797,4 +808,5 @@ $DonationManager = DonationManager::get_instance();
 register_activation_hook( __FILE__, array( $DonationManager, 'activate' ) );
 add_shortcode( 'donationform', array( $DonationManager, 'shortcode_callback' ) );
 add_action( 'init', array( $DonationManager, 'init_callback' ) );
+add_action( 'wp_enqueue_scripts', array( $DonationManager, 'enqueue_scripts' ) );
 ?>

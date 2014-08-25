@@ -52,7 +52,7 @@ class DonationManager {
     }
 
     /**
-     * Compiles HTML to be output by shortcode_callback().
+     * Compiles HTML to be output by callback_shortcode().
      *
      * @since 1.0.0
      *
@@ -71,13 +71,13 @@ class DonationManager {
      *
      * The validation process typically sets $_SESSION['donor']['form'].
      * That variable controls which form/message is displayed by
-     * shortcode_callback().
+     * callback_shortcode().
      *
      * @since 1.0.0
      *
      * @return void
      */
-    public function init_callback(){
+    public function callback_init(){
 
         /**
          *  01. INITIAL ZIP/PICKUP CODE VALIDATION
@@ -338,7 +338,7 @@ class DonationManager {
      * }
      * @return str Donation form HTML.
      */
-    public function shortcode_callback( $atts ) {
+    public function callback_shortcode( $atts ) {
 
         global $wp_query;
         $html = '';
@@ -370,7 +370,7 @@ class DonationManager {
          *  could add some settings to the Donation Settings page we
          *  create with the PODS plugin. These settings would define
          *  which form displays on which page. Otherwise, we setup
-         *  $_SESSION['donor']['form'] inside init_callback().
+         *  $_SESSION['donor']['form'] inside callback_init().
          */
         if( is_front_page() )
             $_SESSION['donor'] = array();
@@ -447,31 +447,27 @@ class DonationManager {
                 $this->add_html( $html );
             break;
 
-            case 'select-preferred-pickup-dates':
-                $this->add_html( '<pre>ADD PREFERRED PICKUP DATES FORM HERE.</pre>' );
-            break;
-
             case 'screening-questions':
 
                 //if( false == $skip && true == $pickup ) {
-                    $screening_questions = DonationManager::get_screening_questions( $_SESSION['donor']['org_id'] );
+                $screening_questions = DonationManager::get_screening_questions( $_SESSION['donor']['org_id'] );
 
-                    $row_template = DonationManager::get_template_part( 'form3.screening-questions.row' );
-                    $search = array( '{question}', '{question_esc_attr}', '{key}', '{checked_yes}', '{checked_no}' );
-                    $questions = array();
-                    foreach( $screening_questions as $question ) {
-                        $key = $question['id'];
-                        $checked_yes = ( isset( $_POST['donor']['answers'][$key] ) &&  'Yes' == $_POST['donor']['answers'][$key] )? ' checked="checked"' : '';
-                        $checked_no = ( isset( $_POST['donor']['answers'][$key] ) &&  'No' == $_POST['donor']['answers'][$key] )? ' checked="checked"' : '';
-                        $replace = array( $question['desc'], esc_attr( $question['desc'] ), $key, $checked_yes, $checked_no );
-                        $questions[] = str_replace( $search, $replace, $row_template );
-                    }
+                $row_template = DonationManager::get_template_part( 'form3.screening-questions.row' );
+                $search = array( '{question}', '{question_esc_attr}', '{key}', '{checked_yes}', '{checked_no}' );
+                $questions = array();
+                foreach( $screening_questions as $question ) {
+                    $key = $question['id'];
+                    $checked_yes = ( isset( $_POST['donor']['answers'][$key] ) &&  'Yes' == $_POST['donor']['answers'][$key] )? ' checked="checked"' : '';
+                    $checked_no = ( isset( $_POST['donor']['answers'][$key] ) &&  'No' == $_POST['donor']['answers'][$key] )? ' checked="checked"' : '';
+                    $replace = array( $question['desc'], esc_attr( $question['desc'] ), $key, $checked_yes, $checked_no );
+                    $questions[] = str_replace( $search, $replace, $row_template );
+                }
 
-                    $form_template = DonationManager::get_template_part( 'form3.screening-questions.form' );
-                    $search = array( '{nextpage}', '{question_rows}' );
-                    $replace = array( $nextpage, implode( "\n", $questions) );
-                    $html.= str_replace( $search, $replace, $form_template );
-                    $this->add_html( $html );
+                $form_template = DonationManager::get_template_part( 'form3.screening-questions.form' );
+                $search = array( '{nextpage}', '{question_rows}' );
+                $replace = array( $nextpage, implode( "\n", $questions) );
+                $html.= str_replace( $search, $replace, $form_template );
+                $this->add_html( $html );
                 //}
             break;
 
@@ -509,7 +505,37 @@ class DonationManager {
             break;
 
             case 'select-preferred-pickup-dates':
-                $this->add_html( '<div class="alert alert-warning">TODO: Build the "Select Pickup Preferred Dates" form.</div>' );
+                $pickuptimes = $this->get_pickuptimes( $_SESSION['donor']['org_id'] );
+
+                $pickuptime_template = $this->get_template_part( 'form5.pickuptimes' );
+                $search = array( '{x}', '{key}', '{time}', '{checked}' );
+                $times = array();
+                for( $x = 1; $x < 4; $x++ ){
+                    foreach( $pickuptimes as $id => $time ){
+                        $checked = ( isset( $_POST['picktuptime' . $x ] ) &&  $time['name'] == $_POST['picktuptime' . $x ] )? ' checked="checked"' : '';
+                        $replace = array( $x, $x . '-' . $id, $time['name'], $checked );
+                        $times[$x][] = str_replace( $search, $replace, $pickuptime_template );
+                    }
+                }
+
+                $pickuplocations = $this->get_pickuplocations( $_SESSION['donor']['org_id'] );
+
+                $pickuplocations_template = $this->get_template_part( 'form5.pickup-location' );
+                $search = array( '{key}', '{location}', 'location_attr_esc' );
+                foreach( $pickuplocations as $key => $location ){
+                    $checked = ( isset( $_POST['pickup-location'] ) && $location['name'] == $_POST['pickup-location'] )? ' checked="checked"' : '';
+                    $replace = array( $key, $location['name'], esc_attr( $location['name'] ) );
+                    $locations[] = str_replace( $search, $replace, $pickuplocations_template );
+                }
+
+                $html = $this->get_template_part( 'form5.select-preferred-pickup-dates', array(
+                        'nextpage' => $nextpage,
+                        'pickuptimes1' => implode( "\n", $times[1] ),
+                        'pickuptimes2' => implode( "\n", $times[2] ),
+                        'pickuptimes3' => implode( "\n", $times[3] ),
+                        'pickuplocations' => implode( "\n", $locations ),
+                    ));
+                $this->add_html( $html );
             break;
 
             case 'select-your-organization':
@@ -546,8 +572,51 @@ class DonationManager {
      */
     public function enqueue_scripts(){
         if( 'select-preferred-pickup-dates' == $_SESSION['donor']['form'] ){
-            wp_enqueue_style( 'gl-datepicker', plugins_url( 'lib/components/vendor/gl-datepicker/styles/glDatePicker.default.css', __FILE__ ) );
+            wp_enqueue_style( 'gl-datepicker', plugins_url( 'lib/css/glDatePicker.pmd.css', __FILE__ ) );
             wp_enqueue_script( 'gl-datepicker', plugins_url( 'lib/components/vendor/gl-datepicker/glDatePicker.min.js', __FILE__ ), array( 'jquery' ), '2.0' );
+            wp_enqueue_script( 'gl-datepicker-init', plugins_url( 'lib/js/gl-datepicker.js', __FILE__ ), array( 'gl-datepicker' ) );
+
+            /**
+             * Date Picker Initialization
+             */
+
+            // Default pickup days are Mon-Sat:
+            $pickup_dow = array( 1, 2, 3, 4, 5, 6 );
+
+            // Default scheduling interval is 24hrs which is 2 days for the purposes of our date picker
+            $scheduling_interval = 2;
+
+            if( isset( $_SESSION['donor']['org_id'] ) && is_numeric( $_SESSION['donor']['org_id'] ) ) {
+                //*
+                $pickup_dow_array = get_post_meta( $_SESSION['donor']['org_id'], '_pods_pickup_days', true );
+                if( is_array( $pickup_dow_array ) && 0 < count( $pickup_dow_array ) ){
+                    $pickup_dow = array();
+                    foreach( $pickup_dow_array as $day ){
+                        $pickup_dow[] = intval( $day );
+                    }
+                }
+                /**/
+                $scheduling_interval = get_post_meta( $_SESSION['donor']['org_id'], 'minimum_scheduling_interval', true );
+            }
+            echo '<!-- $pickup_dow = ' . print_r( $pickup_dow, true ) . ' -->'."\n";
+            echo '<!-- $scheduling_interval = ' . $scheduling_interval . ' -->'."\n\n";
+
+            $date = new DateTime();
+            $date->add( new DateInterval( 'P' . $scheduling_interval . 'D' ) );
+            $minPickUp = explode(',', $date->format( 'Y,n,j' ) );
+            $date->add( new DateInterval( 'P90D' ) );
+            $maxPickUp = explode( ',', $date->format( 'Y,n,j' ) );
+
+            $data = array(
+                'minPickUp0' => $minPickUp[0],
+                'minPickUp1' => $minPickUp[1] - 1,
+                'minPickUp2' => $minPickUp[2],
+                'maxPickUp0' => $maxPickUp[0],
+                'maxPickUp1' => $maxPickUp[1] - 1,
+                'maxPickUp2' => $maxPickUp[2],
+                'pickup_dow' => $pickup_dow,
+            );
+            wp_localize_script( 'gl-datepicker-init', 'vars', $data );
         }
 
     }
@@ -568,6 +637,17 @@ class DonationManager {
         } else {
             return false;
         }
+    }
+
+    /**
+     * Retrieves an array of IDs from the specified Donation Settings page setting.
+     */
+    function get_default_setting_array( $setting = '' ){
+        if( empty( $setting ) )
+            return false;
+
+        $ids = get_option( 'donation_settings_default_' . $setting );
+        return $ids;
     }
 
     /**
@@ -605,11 +685,77 @@ class DonationManager {
     }
 
     /**
-     * Retrieves default screening questions assigned on the Donation Settings page.
+     * Retrieves an org's pickup locations.
      */
-    public function get_default_screening_questions() {
-        $default_question_ids = get_option( 'donation_settings_default_screening_questions' );
-        return $default_question_ids;
+    public function get_pickuplocations( $org_id ){
+        $terms = wp_get_post_terms( $org_id, 'pickup_location' );
+
+        $pickuplocations = array();
+        $x = 1;
+        if( $terms ){
+            foreach( $terms as $term ) {
+                $pod = pods( 'pickup_location' );
+                $pod->fetch( $term->term_id );
+                $order = $pod->get_field( 'order' );
+                $key = ( ! array_key_exists( $order, $pickuplocations ) )? $order : $x;
+                $pickuplocations[$key] = array( 'id' => $term->term_id, 'name' => $term->name );
+                $x++;
+            }
+        } else {
+            $default_pickuplocation_ids = $this->get_default_setting_array( 'pickup_locations' );
+            if( is_array( $default_pickuplocation_ids ) && 0 < count( $default_pickuplocation_ids ) ) {
+                foreach( $default_pickuplocation_ids as $pickuplocation_id ) {
+                    $term = get_term( $pickuplocation_id, 'pickup_location' );
+                    $pod = pods( 'pickup_location' );
+                    $pod->fetch( $pickuplocation_id );
+                    $order = $pod->get_field( 'order' );
+                    $key = ( ! array_key_exists( $order, $pickuplocations ) )? $order : $x;
+                    $pickuplocations[$key] = array( 'id' => $pickuplocation_id, 'name' => $term->name );
+                    $x++;
+                }
+            }
+        }
+
+        ksort( $pickuplocations );
+
+        return $pickuplocations;
+    }
+
+    /**
+     * Retrieves an organization's picktup times.
+     */
+    public function get_pickuptimes( $org_id ){
+        $terms = wp_get_post_terms( $org_id, 'pickup_time' );
+
+        $pickuptimes = array();
+        $x = 1;
+        if( $terms ){
+            foreach( $terms as $term ) {
+                $pod = pods( 'pickup_time' );
+                $pod->fetch( $term->term_id );
+                $order = $pod->get_field( 'order' );
+                $key = ( ! array_key_exists( $order, $pickuptimes ) )? $order : $x;
+                $pickuptimes[$key] = array( 'id' => $term->term_id, 'name' => $term->name );
+                $x++;
+            }
+        } else {
+            $default_pickuptime_ids = $this->get_default_setting_array( 'pickup_times' );
+            if( is_array( $default_pickuptime_ids ) && 0 < count( $default_pickuptime_ids ) ) {
+                foreach( $default_pickuptime_ids as $pickuptime_id ) {
+                    $term = get_term( $pickuptime_id, 'pickup_time' );
+                    $pod = pods( 'pickup_time' );
+                    $pod->fetch( $pickuptime_id );
+                    $order = $pod->get_field( 'order' );
+                    $key = ( ! array_key_exists( $order, $pickuptimes ) )? $order : $x;
+                    $pickuptimes[$key] = array( 'id' => $pickuptime_id, 'name' => $term->name );
+                    $x++;
+                }
+            }
+        }
+
+        ksort( $pickuptimes );
+
+        return $pickuptimes;
     }
 
     /**
@@ -630,7 +776,7 @@ class DonationManager {
                 $x++;
             }
         } else {
-            $default_question_ids = DonationManager::get_default_screening_questions();
+            $default_question_ids = $this->get_default_setting_array( 'screening_questions' );
             if( is_array( $default_question_ids ) && 0 < count( $default_question_ids ) ) {
                 foreach( $default_question_ids as $question_id ) {
                     $term = get_term( $question_id, 'screening_question' );
@@ -721,11 +867,11 @@ class DonationManager {
     public function get_stores_footer( $trans_dept_id ) {
         $html = '';
         // Get our trans dept director
-        $trans_dept_contact = DonationManager::get_trans_dept_contact( $trans_dept_id );
+        $trans_dept_contact = $this->get_trans_dept_contact( $trans_dept_id );
         if( empty( $trans_dept_contact['contact_email'] ) ) {
             $html.= '<div class="alert alert-danger">ERROR: No `contact_email` defined. Please inform support of this error.</div>';
         } else {
-            $nopickup_contact_html = DonationManager::get_template_part( 'no-pickup.transportation-contact' );
+            $nopickup_contact_html = $this->get_template_part( 'no-pickup.transportation-contact' );
             $search = array( '{name}', '{email}', '{organization}', '{title}', '{phone}' );
             if( isset( $_SESSION['donor']['org_id'] ) )
                 $organization = get_the_title( $_SESSION['donor']['org_id'] );
@@ -744,7 +890,7 @@ class DonationManager {
             );
             $stores = get_posts( $args );
             if( $stores ) {
-                $nopickup_store_row_html = DonationManager::get_template_part( 'no-pickup.store-row' );
+                $nopickup_store_row_html = $this->get_template_part( 'no-pickup.store-row' );
                 $search = array( '{name}', '{address}', '{city}', '{state}', '{zip_code}', '{phone}' );
                 foreach( $stores as $store ){
                     $store_data = get_post_custom( $store->ID );
@@ -806,7 +952,7 @@ class DonationManager {
 
 $DonationManager = DonationManager::get_instance();
 register_activation_hook( __FILE__, array( $DonationManager, 'activate' ) );
-add_shortcode( 'donationform', array( $DonationManager, 'shortcode_callback' ) );
-add_action( 'init', array( $DonationManager, 'init_callback' ) );
+add_shortcode( 'donationform', array( $DonationManager, 'callback_shortcode' ) );
+add_action( 'init', array( $DonationManager, 'callback_init' ) );
 add_action( 'wp_enqueue_scripts', array( $DonationManager, 'enqueue_scripts' ) );
 ?>

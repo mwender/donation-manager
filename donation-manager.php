@@ -285,7 +285,6 @@ class DonationManager {
 
             if( $form->validate( $_POST ) ){
                 // Store contact details in $_SESSION[donor]
-                $this->add_html( '<pre>$_POST:<br />' . print_r( $_POST, true ) . '</pre>' );
                 $_SESSION['donor']['address'] = $_POST['donor']['address'];
                 $_SESSION['donor']['different_pickup_address'] = $_POST['donor']['different_pickup_address'];
                 if( 'Yes' == $_SESSION['donor']['different_pickup_address'] ){
@@ -321,7 +320,65 @@ class DonationManager {
                     $error_msg_html = '<div class="alert alert-danger"><p>Please correct the following errors:</p><ul><li>' .implode( '</li><li>', $error_msg ) . '</li></ul></div>';
                     $this->add_html( $error_msg_html );
                 }
+            }
+        }
 
+        /**
+         * 06. VALIDATE PICKUP DATES
+         */
+        if( isset( $_POST['donor']['pickupdate1'] ) ){
+            $dates_must_be_unique = function( $value, $form ){
+                $dates = array( $_POST['donor']['pickupdate1'], $_POST['donor']['pickupdate2'], $_POST['donor']['pickupdate3'] );
+                $date_values = array_count_values( $dates );
+                // if this date is found only once in the array, return 1. If > 1, return false.
+                if( 1 == $date_values[$value] ){
+                    return true;
+                } else {
+                    return false;
+                }
+            };
+
+            $regexp_date = '/(([0-9]{2})\/([0-9]{2})\/([0-9]{4}))/';
+            $form = new Form([
+                'Preferred Pickup Date 1' => [ 'required', 'trim', 'max_length' => 10, 'regexp' => $regexp_date, 'unique' => $dates_must_be_unique ],
+                'Date 1 Time' => [ 'required', 'trim' ],
+                'Preferred Pickup Date 2' => [ 'required', 'trim', 'max_length' => 10, 'regexp' => $regexp_date, 'unique' => $dates_must_be_unique ],
+                'Date 2 Time' => [ 'required', 'trim' ],
+                'Preferred Pickup Date 3' => [ 'required', 'trim', 'max_length' => 10, 'regexp' => $regexp_date, 'unique' => $dates_must_be_unique ],
+                'Date 3 Time' => [ 'required', 'trim' ],
+                'Pickup Location' => [ 'required', 'trim' ],
+            ]);
+
+            $form->setValues( array(
+                'Preferred Pickup Date 1' => $_POST['donor']['pickupdate1'],
+                'Date 1 Time' => $_POST['donor']['pickuptime1'],
+                'Preferred Pickup Date 2' => $_POST['donor']['pickupdate2'],
+                'Date 2 Time' => $_POST['donor']['pickuptime2'],
+                'Preferred Pickup Date 3' => $_POST['donor']['pickupdate3'],
+                'Date 3 Time' => $_POST['donor']['pickuptime3'],
+                'Pickup Location' => $_POST['donor']['pickuplocation'],
+            ));
+
+            if( $form->validate( $_POST ) ){
+                // TODO: Store pickup date details in $_SESSION[donor].
+            } else {
+                $errors = $form->getErrors();
+                $error_msg = array();
+                foreach( $errors as $field => $array ){
+                    if( true == $array['required'] )
+                        $error_msg[] = '<strong><em>' . $field . '</em></strong> is a required field.';
+                    if( isset( $array['max_length'] ) )
+                        $error_msg[] = '<strong><em>' . $field . '</em></strong> can not exceed <em>' . $array['max_length'] . '</em> characters.';
+                    if( true == $array['regexp'] )
+                        $error_msg[] = '<strong><em>' . $field . '</em></strong> must be a date in the format MM/DD/YYYY.';
+                    if( true == $array['unique'] )
+                        $error_msg[] = '<strong><em>' . $field . '</em></strong> matches another date. Please select three <em>unique</em> dates.';
+                }
+                if( 0 < count( $error_msg ) ){
+                    $error_msg_html = '<div class="alert alert-danger"><p>Please correct the following errors:</p><ul><li>' .implode( '</li><li>', $error_msg ) . '</li></ul></div>';
+                    $this->add_html( $error_msg_html );
+                }
+                $this->add_html( '<pre>$_POST:<br />' . print_r( $_POST, true ) . '</pre>' );
             }
         }
     }
@@ -512,7 +569,7 @@ class DonationManager {
                 $times = array();
                 for( $x = 1; $x < 4; $x++ ){
                     foreach( $pickuptimes as $id => $time ){
-                        $checked = ( isset( $_POST['picktuptime' . $x ] ) &&  $time['name'] == $_POST['picktuptime' . $x ] )? ' checked="checked"' : '';
+                        $checked = ( isset( $_POST['donor']['pickuptime' . $x ] ) &&  $time['name'] == $_POST['donor']['pickuptime' . $x ] )? ' checked="checked"' : '';
                         $replace = array( $x, $x . '-' . $id, $time['name'], $checked );
                         $times[$x][] = str_replace( $search, $replace, $pickuptime_template );
                     }
@@ -521,15 +578,22 @@ class DonationManager {
                 $pickuplocations = $this->get_pickuplocations( $_SESSION['donor']['org_id'] );
 
                 $pickuplocations_template = $this->get_template_part( 'form5.pickup-location' );
-                $search = array( '{key}', '{location}', 'location_attr_esc' );
+                $search = array( '{key}', '{location}', '{location_attr_esc}', '{checked}' );
                 foreach( $pickuplocations as $key => $location ){
-                    $checked = ( isset( $_POST['pickup-location'] ) && $location['name'] == $_POST['pickup-location'] )? ' checked="checked"' : '';
-                    $replace = array( $key, $location['name'], esc_attr( $location['name'] ) );
+                    $checked = ( isset( $_POST['donor']['pickuplocation'] ) && $location['name'] == $_POST['donor']['pickuplocation'] )? ' checked="checked"' : '';
+                    $replace = array( $key, $location['name'], esc_attr( $location['name'] ), $checked );
                     $locations[] = str_replace( $search, $replace, $pickuplocations_template );
                 }
 
+                $pickupdate1 = ( isset( $_POST['donor']['pickupdate1'] ) && preg_match( '/(([0-9]{2})\/([0-9]{2})\/([0-9]{4}))/', $_POST['donor']['pickupdate1'] ) )? $_POST['donor']['pickupdate1'] : '';
+                $pickupdate2 = ( isset( $_POST['donor']['pickupdate2'] ) && preg_match( '/(([0-9]{2})\/([0-9]{2})\/([0-9]{4}))/', $_POST['donor']['pickupdate2'] ) )? $_POST['donor']['pickupdate2'] : '';
+                $pickupdate3 = ( isset( $_POST['donor']['pickupdate3'] ) && preg_match( '/(([0-9]{2})\/([0-9]{2})\/([0-9]{4}))/', $_POST['donor']['pickupdate3'] ) )? $_POST['donor']['pickupdate3'] : '';
+
                 $html = $this->get_template_part( 'form5.select-preferred-pickup-dates', array(
                         'nextpage' => $nextpage,
+                        'pickupdatevalue1' => $pickupdate1,
+                        'pickupdatevalue2' => $pickupdate2,
+                        'pickupdatevalue3' => $pickupdate3,
                         'pickuptimes1' => implode( "\n", $times[1] ),
                         'pickuptimes2' => implode( "\n", $times[2] ),
                         'pickuptimes3' => implode( "\n", $times[3] ),

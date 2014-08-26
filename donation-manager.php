@@ -353,7 +353,20 @@ class DonationManager {
             ));
 
             if( $form->validate( $_POST ) ){
-                // TODO: Store pickup date details in $_SESSION[donor].
+                for( $x = 1; $x < 4; $x++ ){
+                    $_SESSION['donor']['pickupdate' . $x ] = $_POST['donor']['pickupdate' . $x ];
+                    $_SESSION['donor']['pickuptime' . $x ] = $_POST['donor']['pickuptime' . $x ];
+                }
+                $_SESSION['donor']['pickuplocation' ] = $_POST['donor']['pickuplocation' ];
+
+                // TODO: Send an email to the trans dept contact with a CC to the donor.
+                // TODO: Save this donation to the DB as a `donation` custom post_type.
+
+                // Redirect to next step
+                $_SESSION['donor']['form'] = 'thank-you';
+                session_write_close();
+                header( 'Location: ' . $_REQUEST['nextpage'] );
+                die();
             } else {
                 $errors = $form->getErrors();
                 $error_msg = array();
@@ -371,7 +384,6 @@ class DonationManager {
                     $error_msg_html = '<div class="alert alert-danger"><p>Please correct the following errors:</p><ul><li>' .implode( '</li><li>', $error_msg ) . '</li></ul></div>';
                     $this->add_html( $error_msg_html );
                 }
-                $this->add_html( '<pre>$_POST:<br />' . print_r( $_POST, true ) . '</pre>' );
             }
         }
     }
@@ -498,8 +510,6 @@ class DonationManager {
             break;
 
             case 'screening-questions':
-
-                //if( false == $skip && true == $pickup ) {
                 $screening_questions = DonationManager::get_screening_questions( $_SESSION['donor']['org_id'] );
 
                 $row_template = DonationManager::get_template_part( 'form3.screening-questions.row' );
@@ -518,7 +528,6 @@ class DonationManager {
                 $replace = array( $nextpage, implode( "\n", $questions) );
                 $html.= str_replace( $search, $replace, $form_template );
                 $this->add_html( $html );
-                //}
             break;
 
             case 'describe-your-donation':
@@ -609,6 +618,11 @@ class DonationManager {
                     $rows[] = str_replace( $search, $replace, $template );
                 }
                 $this->add_html( implode( "\n", $rows ) );
+            break;
+
+            case 'thank-you':
+                $this->add_html( 'Thank you for donating!' );
+                $this->add_html( '<pre>$_SESSION[donor] = ' . print_r( $_SESSION['donor'], true ) . '</pre>' );
             break;
 
             default:

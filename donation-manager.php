@@ -664,52 +664,57 @@ class DonationManager {
      * Enqueues scripts and styles used by the frontend forms.
      */
     public function enqueue_scripts(){
-        if( 'select-preferred-pickup-dates' == $_SESSION['donor']['form'] ){
-            wp_enqueue_style( 'gl-datepicker', plugins_url( 'lib/css/glDatePicker.pmd.css', __FILE__ ) );
-            wp_enqueue_script( 'gl-datepicker', plugins_url( 'lib/components/vendor/gl-datepicker/glDatePicker.min.js', __FILE__ ), array( 'jquery' ), '2.0' );
-            wp_enqueue_script( 'gl-datepicker-init', plugins_url( 'lib/js/gl-datepicker.js', __FILE__ ), array( 'gl-datepicker' ) );
 
-            /**
-             * Date Picker Initialization
-             */
+        switch( $_SESSION['donor']['form'] ) {
+            case 'contact-details':
+                wp_enqueue_script( 'contactdetails', plugins_url( 'lib/js/contactdetails.js', __FILE__ ), array( 'jquery' ) );
+            break;
 
-            // Default pickup days are Mon-Sat:
-            $pickup_dow = array( 1, 2, 3, 4, 5, 6 );
+            case 'select-preferred-pickup-dates':
+                wp_enqueue_style( 'gl-datepicker', plugins_url( 'lib/css/glDatePicker.pmd.css', __FILE__ ) );
+                wp_enqueue_script( 'gl-datepicker', plugins_url( 'lib/components/vendor/gl-datepicker/glDatePicker.min.js', __FILE__ ), array( 'jquery' ), '2.0' );
+                wp_enqueue_script( 'gl-datepicker-init', plugins_url( 'lib/js/gl-datepicker.js', __FILE__ ), array( 'gl-datepicker' ) );
 
-            // Default scheduling interval is 24hrs which is 2 days for the purposes of our date picker
-            $scheduling_interval = 2;
+                /**
+                 * Date Picker Initialization
+                 */
 
-            if( isset( $_SESSION['donor']['org_id'] ) && is_numeric( $_SESSION['donor']['org_id'] ) ) {
-                //*
-                $pickup_dow_array = get_post_meta( $_SESSION['donor']['org_id'], '_pods_pickup_days', true );
-                if( is_array( $pickup_dow_array ) && 0 < count( $pickup_dow_array ) ){
-                    $pickup_dow = array();
-                    foreach( $pickup_dow_array as $day ){
-                        $pickup_dow[] = intval( $day );
+                // Default pickup days are Mon-Sat:
+                $pickup_dow = array( 1, 2, 3, 4, 5, 6 );
+
+                // Default scheduling interval is 24hrs which is 2 days for the purposes of our date picker
+                $scheduling_interval = 2;
+
+                if( isset( $_SESSION['donor']['org_id'] ) && is_numeric( $_SESSION['donor']['org_id'] ) ) {
+                    //*
+                    $pickup_dow_array = get_post_meta( $_SESSION['donor']['org_id'], '_pods_pickup_days', true );
+                    if( is_array( $pickup_dow_array ) && 0 < count( $pickup_dow_array ) ){
+                        $pickup_dow = array();
+                        foreach( $pickup_dow_array as $day ){
+                            $pickup_dow[] = intval( $day );
+                        }
                     }
+                    /**/
+                    $scheduling_interval = get_post_meta( $_SESSION['donor']['org_id'], 'minimum_scheduling_interval', true );
                 }
-                /**/
-                $scheduling_interval = get_post_meta( $_SESSION['donor']['org_id'], 'minimum_scheduling_interval', true );
-            }
-            echo '<!-- $pickup_dow = ' . print_r( $pickup_dow, true ) . ' -->'."\n";
-            echo '<!-- $scheduling_interval = ' . $scheduling_interval . ' -->'."\n\n";
 
-            $date = new DateTime();
-            $date->add( new DateInterval( 'P' . $scheduling_interval . 'D' ) );
-            $minPickUp = explode(',', $date->format( 'Y,n,j' ) );
-            $date->add( new DateInterval( 'P90D' ) );
-            $maxPickUp = explode( ',', $date->format( 'Y,n,j' ) );
+                $date = new DateTime();
+                $date->add( new DateInterval( 'P' . $scheduling_interval . 'D' ) );
+                $minPickUp = explode(',', $date->format( 'Y,n,j' ) );
+                $date->add( new DateInterval( 'P90D' ) );
+                $maxPickUp = explode( ',', $date->format( 'Y,n,j' ) );
 
-            $data = array(
-                'minPickUp0' => $minPickUp[0],
-                'minPickUp1' => $minPickUp[1] - 1,
-                'minPickUp2' => $minPickUp[2],
-                'maxPickUp0' => $maxPickUp[0],
-                'maxPickUp1' => $maxPickUp[1] - 1,
-                'maxPickUp2' => $maxPickUp[2],
-                'pickup_dow' => $pickup_dow,
-            );
-            wp_localize_script( 'gl-datepicker-init', 'vars', $data );
+                $data = array(
+                    'minPickUp0' => $minPickUp[0],
+                    'minPickUp1' => $minPickUp[1] - 1,
+                    'minPickUp2' => $minPickUp[2],
+                    'maxPickUp0' => $maxPickUp[0],
+                    'maxPickUp1' => $maxPickUp[1] - 1,
+                    'maxPickUp2' => $maxPickUp[2],
+                    'pickup_dow' => $pickup_dow,
+                );
+                wp_localize_script( 'gl-datepicker-init', 'vars', $data );
+            break;
         }
 
     }

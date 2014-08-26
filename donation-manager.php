@@ -164,10 +164,12 @@ class DonationManager {
                 }
                 $_SESSION['donor']['description'] = $_POST['donor']['description'];
 
-                // If any of our options specify to skip the screening questions, we'll redirect via a header( 'Location: ' );
-                // PROBLEM: We don't know where to redirect to if we skip the questions. We may need to add settings
-                // to the Donation Settings page. OR, we could go ahead and redirect to the Screening Questions page. THEN
-                // we could direct from there based on $_SESSION['donor']['skipquestions'].
+                /**
+                 * When we skip questions, we actually request the "skip questions" page.
+                 * Then, via a hook to `template_redirect`, we pull the `nextpage` variable
+                 * from the shortcode on that page, and we do another redirect using the
+                 * value of that variable.
+                 */
                 if( true == $skip ) {
                     $_SESSION['donor']['skipquestions'] = true;
                 }
@@ -298,12 +300,6 @@ class DonationManager {
                 die();
             } else {
                 $errors = $form->getErrors();
-                /*
-                $this->add_html( '<pre>$_POST:<br />' . print_r( $_POST, true ) . '</pre>' );
-                $this->add_html( '<pre>FORM RULES:<br />' . print_r( $form->getRules(), true ) . '</pre>' );
-                $this->add_html( '<pre>FORM VALUES:<br />' . print_r( $form->getValues(), true ) . '</pre>' );
-                $this->add_html( '<pre>FORM ERRORS:<br />' . print_r( $errors, true ) . '</pre>' );
-                */
                 $error_msg = array();
                 foreach( $errors as $field => $array ){
                     if( true == $array['required'] )

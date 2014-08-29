@@ -356,9 +356,10 @@ class DonationManager {
                 }
                 $_SESSION['donor']['pickuplocation' ] = $_POST['donor']['pickuplocation' ];
 
-                // TODO: Send an email to the trans dept contact with a CC to the donor.
                 // TODO: Save this donation to the DB as a `donation` custom post_type.
+                $this->send_email( 'trans_dept_notification' );
                 $this->send_email( 'donor_confirmation' );
+
 
                 // Redirect to next step
                 $_SESSION['donor']['form'] = 'thank-you';
@@ -1059,48 +1060,51 @@ class DonationManager {
     }
 
     public function send_email( $type = '' ){
+        $donor = $_SESSION['donor'];
+        $organization_name = get_the_title( $donor['org_id'] );
+
+        // Get Transportation Contact details
+        $tc = $this->get_trans_dept_contact( $donor['trans_dept_id'] );
+
+        // Setup preferred contact info
+        $contact_info = ( 'Email' == $donor['preferred_contact_method'] )? '<a href="mailto:' . $donor['email'] . '">' . $donor['email'] . '</a>' : $donor['phone'];
+
+        // Setup the $key we use to generate the pickup address
+        $pickup_add_key = ( 'Yes' == $donor['different_pickup_address'] )? 'pickup_address' : 'address';
+
+        // Format Screening Questions
+        if( isset( $donor['screening_questions'] ) && is_array( $donor['screening_questions'] ) ){
+            $screening_questions = array();
+            foreach( $donor['screening_questions'] as $screening_question ){
+                $screening_questions[] = $screening_question['question'] . ' <em>' . $screening_question['answer'] . '</em>';
+            }
+            $screening_questions = '<ul><li>' . implode( '</li><li>', $screening_questions ) . '</li></ul>';
+        } else {
+            $screening_questions = '<em>Not applicable.</em>';
+        }
+
+        // Build the donation receipt
+        $donationreceipt = $this->get_template_part( 'email.donation-receipt', array(
+            'donor_info' => $donor['address']['name'] . '<br>' . $donor['address']['address'] . '<br>' . $donor['address']['city'] . ', ' . $donor['address']['state'] . ' ' . $donor['address']['zip'] . '<br>' . $donor['phone'] . '<br>' . $donor['email'],
+            'pickupaddress' => $donor[$pickup_add_key]['address'] . '<br>' . $donor[$pickup_add_key]['city'] . ', ' . $donor[$pickup_add_key]['state'] . ' ' . $donor[$pickup_add_key]['zip'],
+            'preferred_contact_method' => $donor['preferred_contact_method'] . ' - ' . $contact_info,
+            'pickupdate1' => $donor['pickupdate1'],
+            'pickuptime1' => $donor['pickuptime1'],
+            'pickupdate2' => $donor['pickupdate2'],
+            'pickuptime2' => $donor['pickuptime2'],
+            'pickupdate3' => $donor['pickupdate3'],
+            'pickuptime3' => $donor['pickuptime3'],
+            'items' => implode( ', ', $donor['items'] ),
+            'description' => $donor['description'],
+            'screening_questions' => $screening_questions,
+            'pickuplocation' =>  $donor['pickuplocation'],
+        ));
+
         switch( $type ){
 
             case 'donor_confirmation':
-                $donor = $_SESSION['donor'];
-                $organization_name = get_the_title( $donor['org_id'] );
 
-                // Get Transportation Contact details
-                $tc = $this->get_trans_dept_contact( $donor['trans_dept_id'] );
                 $trans_contact = $tc['contact_name'] . ' (<a href="mailto:' . $tc['contact_email'] . '">' . $tc['contact_email'] . '</a>)<br>' . $organization_name . ', ' . $tc['contact_title'] . '<br>' . $tc['phone'];
-
-                // Setup the $key we use to generate the pickup address
-                $pickup_add_key = ( 'Yes' == $donor['different_pickup_address'] )? 'pickup_address' : 'address';
-
-                // Setup preferred contact info
-                $contact_info = ( 'Email' == $donor['preferred_contact_method'] )? '<a href="mailto:' . $donor['email'] . '">' . $donor['email'] . '</a>' : $donor['phone'];
-
-                // Format Screening Questions
-                if( isset( $donor['screening_questions'] ) && is_array( $donor['screening_questions'] ) ){
-                    $screening_questions = array();
-                    foreach( $donor['screening_questions'] as $screening_question ){
-                        $screening_questions[] = $screening_question['question'] . ' <em>' . $screening_question['answer'] . '</em>';
-                    }
-                    $screening_questions = '<ul><li>' . implode( '</li><li>', $screening_questions ) . '</li></ul>';
-                } else {
-                    $screening_questions = '<em>Not applicable.</em>';
-                }
-
-                $donationreceipt = $this->get_template_part( 'email.donation-receipt', array(
-                    'donor_info' => $donor['address']['name'] . '<br>' . $donor['address']['address'] . '<br>' . $donor['address']['city'] . ', ' . $donor['address']['state'] . ' ' . $donor['address']['zip'] . '<br>' . $donor['phone'] . '<br>' . $donor['email'],
-                    'pickupaddress' => $donor[$pickup_add_key]['address'] . '<br>' . $donor[$pickup_add_key]['city'] . ', ' . $donor[$pickup_add_key]['state'] . ' ' . $donor[$pickup_add_key]['zip'],
-                    'preferred_contact_method' => $donor['preferred_contact_method'] . ' - ' . $contact_info,
-                    'pickupdate1' => $donor['pickupdate1'],
-                    'pickuptime1' => $donor['pickuptime1'],
-                    'pickupdate2' => $donor['pickupdate2'],
-                    'pickuptime2' => $donor['pickuptime2'],
-                    'pickupdate3' => $donor['pickupdate3'],
-                    'pickuptime3' => $donor['pickuptime3'],
-                    'items' => implode( ', ', $donor['items'] ),
-                    'description' => $donor['description'],
-                    'screening_questions' => $screening_questions,
-                    'pickuplocation' =>  $donor['pickuplocation'],
-                ));
 
                 $html = $this->get_template_part( 'email.donor-confirmation', array(
                     'organization_name' => $organization_name,
@@ -1111,11 +1115,20 @@ class DonationManager {
                 $subject = 'Thank You for Donating to ' . $organization_name;
             break;
 
+            case 'trans_dept_notification':
+                $html = $this->get_template_part( 'email.trans-dept-notification', array(
+                    'donor_name' => $donor['address']['name'],
+                    'contact_info' => str_replace( '<a href', '<a style="color: #ffffff" href', $contact_info ),
+                    'donationreceipt' => $donationreceipt,
+                ));
+
+                $recipients = array( $tc['contact_email'], $tc['bcc_email'] );
+                $subject = 'Scheduling Request from ' . $donor['address']['name'];
+            break;
+
         }
 
-        $trans_dept_contact = $this->get_trans_dept_contact( $_SESSION['donor']['trans_dept_id'] );
-
-        $headers[] = 'Reply-To: ' . $trans_dept_contact['contact_name'] . '<' . $trans_dept_contact['contact_email'] . '>';
+        $headers[] = 'Reply-To: ' . $tc['contact_name'] . '<' . $tc['contact_email'] . '>';
 
         add_filter( 'wp_mail_from', function( $email ){
             return 'noreply@pickupmydonation.com';
@@ -1124,7 +1137,7 @@ class DonationManager {
             return 'PickUpMyDonation';
         });
         add_filter( 'wp_mail_content_type', array( $this, 'return_content_type' ) );
-        wp_mail( $recipients, $subject, $html );
+        wp_mail( $recipients, $subject, $html, $headers );
         remove_filter( 'wp_mail_content_type', array( $this, 'return_content_type' ) );
     }
 

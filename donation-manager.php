@@ -1086,8 +1086,7 @@ class DonationManager {
                     $screening_questions = '<em>Not applicable.</em>';
                 }
 
-                $html = $this->get_template_part( 'email.donor-confirmation', array(
-                    'organization_name' => $organization_name,
+                $donationreceipt = $this->get_template_part( 'email.donation-receipt', array(
                     'donor_info' => $donor['address']['name'] . '<br>' . $donor['address']['address'] . '<br>' . $donor['address']['city'] . ', ' . $donor['address']['state'] . ' ' . $donor['address']['zip'] . '<br>' . $donor['phone'] . '<br>' . $donor['email'],
                     'pickupaddress' => $donor[$pickup_add_key]['address'] . '<br>' . $donor[$pickup_add_key]['city'] . ', ' . $donor[$pickup_add_key]['state'] . ' ' . $donor[$pickup_add_key]['zip'],
                     'preferred_contact_method' => $donor['preferred_contact_method'] . ' - ' . $contact_info,
@@ -1101,6 +1100,11 @@ class DonationManager {
                     'description' => $donor['description'],
                     'screening_questions' => $screening_questions,
                     'pickuplocation' =>  $donor['pickuplocation'],
+                ));
+
+                $html = $this->get_template_part( 'email.donor-confirmation', array(
+                    'organization_name' => $organization_name,
+                    'donationreceipt' => $donationreceipt,
                     'trans_contact' => $trans_contact,
                 ));
                 $recipients = array( $donor['email'] );

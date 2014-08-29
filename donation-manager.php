@@ -1118,7 +1118,7 @@ class DonationManager {
             case 'trans_dept_notification':
                 $html = $this->get_template_part( 'email.trans-dept-notification', array(
                     'donor_name' => $donor['address']['name'],
-                    'contact_info' => str_replace( '<a href', '<a style="color: #ffffff" href', $contact_info ),
+                    'contact_info' => str_replace( '<a href', '<a style="color: #6f6f6f; text-decoration: none;" href', $contact_info ),
                     'donationreceipt' => $donationreceipt,
                 ));
 

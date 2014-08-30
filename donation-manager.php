@@ -28,6 +28,7 @@ require 'vendor/autoload.php';
 class DonationManager {
     const VER = '1.0.0';
     public $html = '';
+    public $donationreceipt = '';
 
     private static $instance = null;
 
@@ -357,6 +358,8 @@ class DonationManager {
                 $_SESSION['donor']['pickuplocation' ] = $_POST['donor']['pickuplocation' ];
 
                 // TODO: Save this donation to the DB as a `donation` custom post_type.
+                $donationreceipt = $this->get_donation_receipt( $_SESSION['donor'] );
+                $this->set_property( 'donationreceipt', $donationreceipt );
                 $this->send_email( 'trans_dept_notification' );
                 $this->send_email( 'donor_confirmation' );
 
@@ -758,6 +761,58 @@ class DonationManager {
     }
 
     /**
+     * Compiles the donation into an HTML receipt
+     *
+     * @see Function/method/class relied on
+     * @link URL short description.
+     * @global type $varname short description.
+     *
+     * @since 1.0.0
+     *
+     * @param array $donation Donation array.
+     * @return string Donation receipt HTML.
+     */
+    function get_donation_receipt( $donation = array() ){
+        if( empty( $donation ) || ! is_array( $donation ) )
+            return '<p>No data sent to <code>get_donation_receipt</code>!</p>';
+
+        // Setup preferred contact info
+        $contact_info = ( 'Email' == $donation['preferred_contact_method'] )? '<a href="mailto:' . $donation['email'] . '">' . $donation['email'] . '</a>' : $donation['phone'];
+
+        // Setup the $key we use to generate the pickup address
+        $pickup_add_key = ( 'Yes' == $donation['different_pickup_address'] )? 'pickup_address' : 'address';
+
+        // Format Screening Questions
+        if( isset( $donation['screening_questions'] ) && is_array( $donation['screening_questions'] ) ){
+            $screening_questions = array();
+            foreach( $donation['screening_questions'] as $screening_question ){
+                $screening_questions[] = $screening_question['question'] . ' <em>' . $screening_question['answer'] . '</em>';
+            }
+            $screening_questions = '<ul><li>' . implode( '</li><li>', $screening_questions ) . '</li></ul>';
+        } else {
+            $screening_questions = '<em>Not applicable.</em>';
+        }
+
+        $donationreceipt = $this->get_template_part( 'email.donation-receipt', array(
+            'donor_info' => $donation['address']['name'] . '<br>' . $donation['address']['address'] . '<br>' . $donation['address']['city'] . ', ' . $donation['address']['state'] . ' ' . $donation['address']['zip'] . '<br>' . $donation['phone'] . '<br>' . $donation['email'],
+            'pickupaddress' => $donation[$pickup_add_key]['address'] . '<br>' . $donation[$pickup_add_key]['city'] . ', ' . $donation[$pickup_add_key]['state'] . ' ' . $donation[$pickup_add_key]['zip'],
+            'preferred_contact_method' => $donation['preferred_contact_method'] . ' - ' . $contact_info,
+            'pickupdate1' => $donation['pickupdate1'],
+            'pickuptime1' => $donation['pickuptime1'],
+            'pickupdate2' => $donation['pickupdate2'],
+            'pickuptime2' => $donation['pickuptime2'],
+            'pickupdate3' => $donation['pickupdate3'],
+            'pickuptime3' => $donation['pickuptime3'],
+            'items' => implode( ', ', $donation['items'] ),
+            'description' => $donation['description'],
+            'screening_questions' => $screening_questions,
+            'pickuplocation' =>  $donation['pickuplocation'],
+        ));
+
+        return $donationreceipt;
+    }
+
+    /**
      * Retrieves all organizations for a given pickup code.
      */
     public function get_organizations( $pickup_code ) {
@@ -863,6 +918,21 @@ class DonationManager {
         ksort( $pickuptimes );
 
         return $pickuptimes;
+    }
+
+    /**
+     * Returns the value of the specified property.
+     *
+     * @since 1.0.0
+     *
+     * @param string $property The property we're retrieving.
+     * @return mixed The value of the property.
+     */
+    public function get_property( $property = '' ){
+        if( empty( $property) )
+            return null;
+
+        return $this->$property;
     }
 
     /**
@@ -1069,36 +1139,8 @@ class DonationManager {
         // Setup preferred contact info
         $contact_info = ( 'Email' == $donor['preferred_contact_method'] )? '<a href="mailto:' . $donor['email'] . '">' . $donor['email'] . '</a>' : $donor['phone'];
 
-        // Setup the $key we use to generate the pickup address
-        $pickup_add_key = ( 'Yes' == $donor['different_pickup_address'] )? 'pickup_address' : 'address';
-
-        // Format Screening Questions
-        if( isset( $donor['screening_questions'] ) && is_array( $donor['screening_questions'] ) ){
-            $screening_questions = array();
-            foreach( $donor['screening_questions'] as $screening_question ){
-                $screening_questions[] = $screening_question['question'] . ' <em>' . $screening_question['answer'] . '</em>';
-            }
-            $screening_questions = '<ul><li>' . implode( '</li><li>', $screening_questions ) . '</li></ul>';
-        } else {
-            $screening_questions = '<em>Not applicable.</em>';
-        }
-
-        // Build the donation receipt
-        $donationreceipt = $this->get_template_part( 'email.donation-receipt', array(
-            'donor_info' => $donor['address']['name'] . '<br>' . $donor['address']['address'] . '<br>' . $donor['address']['city'] . ', ' . $donor['address']['state'] . ' ' . $donor['address']['zip'] . '<br>' . $donor['phone'] . '<br>' . $donor['email'],
-            'pickupaddress' => $donor[$pickup_add_key]['address'] . '<br>' . $donor[$pickup_add_key]['city'] . ', ' . $donor[$pickup_add_key]['state'] . ' ' . $donor[$pickup_add_key]['zip'],
-            'preferred_contact_method' => $donor['preferred_contact_method'] . ' - ' . $contact_info,
-            'pickupdate1' => $donor['pickupdate1'],
-            'pickuptime1' => $donor['pickuptime1'],
-            'pickupdate2' => $donor['pickupdate2'],
-            'pickuptime2' => $donor['pickuptime2'],
-            'pickupdate3' => $donor['pickupdate3'],
-            'pickuptime3' => $donor['pickuptime3'],
-            'items' => implode( ', ', $donor['items'] ),
-            'description' => $donor['description'],
-            'screening_questions' => $screening_questions,
-            'pickuplocation' =>  $donor['pickuplocation'],
-        ));
+        // Retrieve the donation receipt
+        $donationreceipt = $this->get_property( 'donationreceipt' );
 
         switch( $type ){
 
@@ -1139,6 +1181,19 @@ class DonationManager {
         add_filter( 'wp_mail_content_type', array( $this, 'return_content_type' ) );
         wp_mail( $recipients, $subject, $html, $headers );
         remove_filter( 'wp_mail_content_type', array( $this, 'return_content_type' ) );
+    }
+
+    /**
+     * Sets properties for this class.
+     *
+     * @since 1.0.0
+     *
+     * @param string $property Class property.
+     * @param mixed $value Property value.
+     * @return void
+     */
+    public function set_property( $property = 'foo', $value = 'bar' ){
+        $this->$property = $value;
     }
 
 }

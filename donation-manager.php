@@ -808,6 +808,7 @@ class DonationManager {
             'description' => $donation['description'],
             'screening_questions' => $screening_questions,
             'pickuplocation' =>  $donation['pickuplocation'],
+            'pickup_code' => $donation['pickup_code'],
         ));
 
         return $donationreceipt;

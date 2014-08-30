@@ -90,6 +90,7 @@ class DonationManager {
             $form->setValues( array( 'pickupcode' => $_REQUEST['pickupcode'] ) );
 
             if( $form->validate( $_REQUEST ) ) {
+                $_SESSION['donor']['pickup_code'] = $_REQUEST['pickupcode'];
                 $_SESSION['donor']['form'] = 'select-your-organization';
                 session_write_close();
                 header( 'Location: ' . $_REQUEST['nextpage'] . '?pcode=' . $_REQUEST['pickupcode'] );

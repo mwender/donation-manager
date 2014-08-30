@@ -158,8 +158,9 @@ class DonationManager {
                         }
 
                         // Store this donation option in our donor array
+                        $term_id = $option['term_id'];
                         if( ! in_array( $option['field_value'], $_SESSION['donor']['items'] ) )
-                            $_SESSION['donor']['items'][] = $option['field_value'];
+                            $_SESSION['donor']['items'][$term_id] = $option['field_value'];
                     }
                 }
                 $_SESSION['donor']['description'] = $_POST['donor']['description'];
@@ -358,9 +359,8 @@ class DonationManager {
                 }
                 $_SESSION['donor']['pickuplocation' ] = $_POST['donor']['pickuplocation' ];
 
-                // TODO: Save this donation to the DB as a `donation` custom post_type.
-                $donationreceipt = $this->get_donation_receipt( $_SESSION['donor'] );
-                $this->set_property( 'donationreceipt', $donationreceipt );
+                // Save the donation to the database and send the confirmation and notification emails.
+                //$this->save_donation( $_SESSION['donor'] );
                 $this->send_email( 'trans_dept_notification' );
                 $this->send_email( 'donor_confirmation' );
 
@@ -543,16 +543,16 @@ class DonationManager {
                     $pod = pods( 'donation_option' );
                     $pod->fetch( $term->term_id );
                     $order = $pod->get_field( 'order' );
-                    $donation_options[$order] = array( 'name' => $term->name, 'desc' => $term->description, 'value' => esc_attr( $term->name ), 'pickup' => $pod->get_field( 'pickup' ), 'skip_questions' => $pod->get_field( 'skip_questions' ) );
+                    $donation_options[$order] = array( 'name' => $term->name, 'desc' => $term->description, 'value' => esc_attr( $term->name ), 'pickup' => $pod->get_field( 'pickup' ), 'skip_questions' => $pod->get_field( 'skip_questions' ), 'term_id' => $term->term_id );
                 }
                 ksort( $donation_options );
 
                 $checkboxes = array();
                 $row_template = $this->get_template_part( 'form2.donation-option-row' );
-                $search = array( '{key}', '{name}', '{desc}', '{value}', '{checked}', '{pickup}', '{skip_questions}' );
+                $search = array( '{key}', '{name}', '{desc}', '{value}', '{checked}', '{pickup}', '{skip_questions}', '{term_id}' );
                 foreach( $donation_options as $key => $opt ) {
                     $checked = ( trim( $_POST['donor']['options'][$key]['field_value'] ) == $opt['value'] )? ' checked="checked"' : '';
-                    $replace = array( $key, $opt['name'], $opt['desc'], $opt['value'], $checked, $opt['pickup'], $opt['skip_questions'] );
+                    $replace = array( $key, $opt['name'], $opt['desc'], $opt['value'], $checked, $opt['pickup'], $opt['skip_questions'], $opt['term_id'] );
                     $checkboxes[] = str_replace( $search, $replace, $row_template );
                 }
 
@@ -795,6 +795,7 @@ class DonationManager {
         }
 
         $donationreceipt = $this->get_template_part( 'email.donation-receipt', array(
+            'id' => $donation['ID'],
             'donor_info' => $donation['address']['name'] . '<br>' . $donation['address']['address'] . '<br>' . $donation['address']['city'] . ', ' . $donation['address']['state'] . ' ' . $donation['address']['zip'] . '<br>' . $donation['phone'] . '<br>' . $donation['email'],
             'pickupaddress' => $donation[$pickup_add_key]['address'] . '<br>' . $donation[$pickup_add_key]['city'] . ', ' . $donation[$pickup_add_key]['state'] . ' ' . $donation[$pickup_add_key]['zip'],
             'preferred_contact_method' => $donation['preferred_contact_method'] . ' - ' . $contact_info,
@@ -1129,6 +1130,116 @@ class DonationManager {
 
     public function return_content_type(){
         return 'text/html';
+    }
+
+    /**
+     * Saves a donation to the database
+     *
+     * @since 1.0.0
+     *
+     * @param array $donation Donation array.
+     * @return int Donation post id.
+     */
+    public function save_donation( $donation = array() ){
+        if( empty( $donation ) || 0 == count( $donation ) )
+            return false;
+
+        $post = array(
+            'post_type' => 'donation',
+        );
+        $ID = wp_insert_post( $post );
+
+        $donation['ID'] = $ID;
+        $donationreceipt = $this->get_donation_receipt( $donation );
+        $this->set_property( 'donationreceipt', $donationreceipt );
+
+        $post = array(
+            'ID' => $ID,
+            'post_content' => $donationreceipt,
+            'post_title' => implode( ', ', $donation['items'] ) . ' - ' . $donation['address']['name'],
+            'post_status' => 'publish',
+        );
+        wp_update_post( $post );
+
+        $post_meta = array(
+            'organization' => 'org_id',
+            'trans_dept' => 'trans_dept_id',
+            'donor_name' => '',
+            'donor_email' => 'email',
+            'donor_phone' => 'phone',
+            'donor_address' => '',
+            'donor_city' => '',
+            'donor_state' => '',
+            'donor_zip' => '',
+            'pickup_address' => '',
+            'pickup_city' => '',
+            'pickup_state' => '',
+            'pickup_zip' => '',
+            'pickup_description' => 'description',
+            'pickupdate1' => 'pickupdate1',
+            'pickuptime1' => 'pickuptime1',
+            'pickupdate2' => 'pickupdate2',
+            'pickuptime2' => 'pickuptime2',
+            'pickupdate3' => 'pickupdate3',
+            'pickuptime3' => 'pickuptime3',
+        );
+        foreach( $post_meta as $meta_key => $donation_key ){
+            switch( $meta_key ){
+                case 'donor_name':
+                case 'donor_address':
+                case 'donor_city':
+                case 'donor_state':
+                case 'donor_zip':
+                    $key = str_replace( 'donor_', '', $meta_key );
+                    $meta_value = $donation['address'][$key];
+                break;
+
+                case 'organization':
+                case 'trans_dept':
+                    $meta_value = $donation[$donation_key];
+                    $meta_value_array[] = $meta_value;
+                    add_post_meta( $ID, '_pods_' .$meta_key, $meta_value_array );
+                break;
+
+                case 'pickup_address':
+                case 'pickup_city':
+                case 'pickup_state':
+                case 'pickup_zip':
+                    $key = str_replace( 'pickup_', '', $meta_key );
+                    $meta_value = $donation['pickup_address'][$key];
+                break;
+                default:
+                    $meta_value = $donation[$donation_key];
+                break;
+            }
+            if( !empty( $meta_value ) )
+                add_post_meta( $ID, $meta_key, $meta_value );
+        }
+
+        // Tag pickup_items/donation_options
+        $item_ids = array_keys( $donation['items'] );
+        $item_ids = array_map( 'intval', $item_ids );
+        $item_ids = array_unique( $item_ids );
+        $return = wp_set_object_terms( $ID, $item_ids, 'donation_option' );
+        die( '<pre>$return = '.print_r($return,true).'</pre>' );
+
+        // Tag the pickup_location
+        $pickup_location_slug = sanitize_title( $donation['pickuplocation'] );
+        wp_set_object_terms( $ID, $pickup_location_slug, 'pickup_location' );
+
+        // Tag the pickup_code
+        $pickup_code_slug = sanitize_title( $donation['pickup_code'] );
+        wp_set_object_terms( $ID, $pickup_code_slug, 'pickup_code' );
+
+        // Tag the screening_question(s)
+        if( is_array( $donation['screening_questions'] ) ){
+            $screening_question_ids = array_keys( $donation['screening_questions'] );
+            $screening_question_ids = array_map( 'intval', $screening_question_ids );
+            $screening_question_ids = array_unique( $screening_question_ids );
+            wp_set_object_terms( $ID, $screening_question_ids, 'screening_question' );
+        }
+
+        return $ID;
     }
 
     public function send_email( $type = '' ){

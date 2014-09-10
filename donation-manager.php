@@ -41,7 +41,7 @@ class DonationManager {
     }
 
     private function __construct() {
-        session_start();
+        if( ! defined( 'WP_CLI' ) ) session_start();
     }
 
     static function activate() {
@@ -360,7 +360,8 @@ class DonationManager {
                 $_SESSION['donor']['pickuplocation' ] = $_POST['donor']['pickuplocation' ];
 
                 // Save the donation to the database and send the confirmation and notification emails.
-                //$this->save_donation( $_SESSION['donor'] );
+                $ID = $this->save_donation( $_SESSION['donor'] );
+                $this->tag_donation( $ID, $_SESSION['donor'] );
                 $this->send_email( 'trans_dept_notification' );
                 $this->send_email( 'donor_confirmation' );
 
@@ -1128,6 +1129,28 @@ class DonationManager {
 
     }
 
+    public function register_posts_and_taxonomies(){
+        register_post_type( 'dm_organization', array(
+            'label' => 'Organizations',
+            'description' => 'Receipients of donations.',
+            'public' => true,
+            'show_ui' => true,
+            'show_in_nav_menus' => false,
+            'menu_position' => 6,
+            'menu_icon' => 'dashicons-groups',
+            'supports' => array( 'title', 'editor', 'thumbnail' ),
+        ));
+        register_post_type( 'dm_trans_dept', array());
+        register_post_type( 'dm_store', array());
+        register_post_type( 'dm_donation', array());
+
+        register_taxonomy( 'dm_donation_items', array( 'dm_organization', 'dm_donation' ), array() );
+        register_taxonomy( 'dm_pickup_location', array( 'dm_organization', 'dm_donation' ), array() );
+        register_taxonomy( 'dm_pickup_time', array( 'dm_organization' ), array() );
+        register_taxonomy( 'dm_screening_question', array( 'dm_organization', 'dm_donation' ), array() );
+        register_taxonomy( 'dm_pickup_code', array( 'dm_trans_dept' ), array() );
+    }
+
     public function return_content_type(){
         return 'text/html';
     }
@@ -1216,29 +1239,6 @@ class DonationManager {
                 add_post_meta( $ID, $meta_key, $meta_value );
         }
 
-        // Tag pickup_items/donation_options
-        $item_ids = array_keys( $donation['items'] );
-        $item_ids = array_map( 'intval', $item_ids );
-        $item_ids = array_unique( $item_ids );
-        $return = wp_set_object_terms( $ID, $item_ids, 'donation_option' );
-        die( '<pre>$return = '.print_r($return,true).'</pre>' );
-
-        // Tag the pickup_location
-        $pickup_location_slug = sanitize_title( $donation['pickuplocation'] );
-        wp_set_object_terms( $ID, $pickup_location_slug, 'pickup_location' );
-
-        // Tag the pickup_code
-        $pickup_code_slug = sanitize_title( $donation['pickup_code'] );
-        wp_set_object_terms( $ID, $pickup_code_slug, 'pickup_code' );
-
-        // Tag the screening_question(s)
-        if( is_array( $donation['screening_questions'] ) ){
-            $screening_question_ids = array_keys( $donation['screening_questions'] );
-            $screening_question_ids = array_map( 'intval', $screening_question_ids );
-            $screening_question_ids = array_unique( $screening_question_ids );
-            wp_set_object_terms( $ID, $screening_question_ids, 'screening_question' );
-        }
-
         return $ID;
     }
 
@@ -1309,12 +1309,105 @@ class DonationManager {
         $this->$property = $value;
     }
 
+    public function tag_donation( $ID = null, $donation ){
+        if( empty( $ID ) || ! is_numeric( $ID ) )
+            return;
+
+        // Tag pickup_items/donation_options
+        $item_ids = array_keys( $donation['items'] );
+        $item_ids = array_map( 'intval', $item_ids );
+        $item_ids = array_unique( $item_ids );
+        wp_set_object_terms( $ID, $item_ids, 'donation_option' );
+
+        // Tag the pickup_location
+        $pickup_location_slug = sanitize_title( $donation['pickuplocation'] );
+        wp_set_object_terms( $ID, $pickup_location_slug, 'pickup_location' );
+
+        // Tag the pickup_code
+        $pickup_code_slug = sanitize_title( $donation['pickup_code'] );
+        wp_set_object_terms( $ID, $pickup_code_slug, 'pickup_code' );
+
+        // Tag the screening_question(s)
+        if( is_array( $donation['screening_questions'] ) ){
+            $screening_question_ids = array_keys( $donation['screening_questions'] );
+            $screening_question_ids = array_map( 'intval', $screening_question_ids );
+            $screening_question_ids = array_unique( $screening_question_ids );
+            wp_set_object_terms( $ID, $screening_question_ids, 'screening_question' );
+        }
+
+    }
+
+    public function test_shortcode( $atts ){
+        $donation = array(
+            'pickup_code' => '37931',
+            'form' => 'thank-you',
+            'org_id' => 15,
+            'trans_dept_id' => 71,
+            'items' => array(
+                    30 => 'Large Furniture',
+                ),
+
+            'description' => current_time( 'm/d/Y H:i:s' ) . ' - sofa',
+            'screening_questions' => array
+                (
+                    39 => array
+                        (
+                            'question' => 'Is your donation in any way broken or damaged?',
+                            'answer' => 'No',
+                        ),
+
+                    40 => array
+                        (
+                            'question' => 'Has your donation been in a smoking environment?',
+                            'answer' => 'No'
+                        ),
+
+                    41 => array
+                        (
+                            'question' => 'Has your donation been in a pet friendly environment (i.e. been used frequently by pets, have pet stains or pet odor)?',
+                            'answer' => 'No',
+                        ),
+
+                ),
+
+            'address' => array
+                (
+                    'name' => 'Michael Wender',
+                    'address' => '123 Any St',
+                    'city' => 'Cincinnati',
+                    'state' => 'OH',
+                    'zip' => '12345',
+                ),
+
+            'different_pickup_address' => 'No',
+            'email' => 'michael@michaelwender.com',
+            'phone' => '8656300604',
+            'preferred_contact_method' => 'Email',
+            'pickupdate1' => '09/11/2014',
+            'pickuptime1' => '3:00PM - 6:00PM',
+            'pickupdate2' => '09/12/2014',
+            'pickuptime2' => '3:00PM - 6:00PM',
+            'pickupdate3' => '09/15/2014',
+            'pickuptime3' => '3:00PM - 6:00PM',
+            'pickuplocation' => 'Inside Ground Floor',
+        );
+
+        $ID = $this->save_donation( $donation );
+        $this->tag_donation( $ID, $donation );
+
+        $html = '<pre>$donation = '.print_r($donation,true).'</pre>';
+
+        return $html;
+    }
+
 }
 
 $DonationManager = DonationManager::get_instance();
 register_activation_hook( __FILE__, array( $DonationManager, 'activate' ) );
 add_shortcode( 'donationform', array( $DonationManager, 'callback_shortcode' ) );
-add_action( 'init', array( $DonationManager, 'callback_init' ) );
+//add_shortcode( 'testdonation', array( $DonationManager, 'test_shortcode' ) );
+add_action( 'init', array( $DonationManager, 'callback_init' ), 99 );
+//add_action( 'init', array( $DonationManager, 'register_posts_and_taxonomies' ) );
 add_action( 'template_redirect', array( $DonationManager, 'callback_template_redirect' ) );
 add_action( 'wp_enqueue_scripts', array( $DonationManager, 'enqueue_scripts' ) );
 ?>

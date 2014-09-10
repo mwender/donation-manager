@@ -664,7 +664,6 @@ class DonationManager {
             if( has_shortcode( $post->post_content, 'donationform' ) ) {
                 $_SESSION['donor']['form'] = 'contact-details';
                 preg_match( '/nextpage="(.*)"/U', $post->post_content, $matches );
-                $this->add_html( '<pre>$matches = ' . print_r( $matches, true ) . '</pre>' );
                 if( $matches[1] ){
                     session_write_close();
                     header( 'Location: ' . $matches[1] );

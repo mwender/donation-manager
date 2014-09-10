@@ -625,8 +625,12 @@ class DonationManager {
             break;
 
             case 'thank-you':
-                $this->add_html( 'Thank you for donating!' );
-                $this->add_html( '<pre>$_SESSION[donor] = ' . print_r( $_SESSION['donor'], true ) . '</pre>' );
+                $this->add_html( '<p>Thank you for donating! We will contact you to finalize your pickup date. Below is a copy of your donation receipt which you will also receive via email.</p><div class="alert alert-warning">IMPORTANT: If your donations are left unattended during pick up, copies of this ticket MUST be attached to all items or containers of items in order for them to be picked up.</div><div class="alert alert-info"><em>PLEASE NOTE: The dates and times you selected during the donation process are not confirmed. Those dates will be used by our Transportation Director when he/she contacts you to schedule your actual pickup date.</em></div>' );
+
+                // Retrieve the donation receipt
+                $donationreceipt = $this->get_donation_receipt( $_SESSION['donor'] );
+
+                $this->add_html( '<div style="width: 600px; margin: 0 auto;">' . $donationreceipt . '</div>' );
             break;
 
             default:
@@ -1172,6 +1176,7 @@ class DonationManager {
         $ID = wp_insert_post( $post );
 
         $donation['ID'] = $ID;
+        $_SESSION['donor']['ID'] = $ID;
         $donationreceipt = $this->get_donation_receipt( $donation );
         $this->set_property( 'donationreceipt', $donationreceipt );
 

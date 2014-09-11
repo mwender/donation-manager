@@ -538,11 +538,15 @@ class DonationManager {
                 $oid = $_SESSION['donor']['org_id'];
                 $tid = $_SESSION['donor']['trans_dept_id'];
 
-                $terms = wp_get_post_terms( $oid, 'donation_option' );
+                $terms = $this->get_organization_meta_array( $oid, 'donation_option' );
+                $this->add_html( '<pre>$terms = '.print_r($terms,true).'</pre>' );
+
                 $donation_options = array();
                 foreach( $terms as $term ) {
+                    $ID = $term['id'];
+                    $term = get_term( $ID, 'donation_option' );
                     $pod = pods( 'donation_option' );
-                    $pod->fetch( $term->term_id );
+                    $pod->fetch( $ID );
                     $order = $pod->get_field( 'order' );
                     $donation_options[$order] = array( 'name' => $term->name, 'desc' => $term->description, 'value' => esc_attr( $term->name ), 'pickup' => $pod->get_field( 'pickup' ), 'skip_questions' => $pod->get_field( 'skip_questions' ), 'term_id' => $term->term_id );
                 }
@@ -854,6 +858,56 @@ class DonationManager {
     }
 
     /**
+     * Retrieves an array of meta_field data for an organization.
+     *
+     * TODO: Replace get_pickuplocations() and get_pickuptimes()
+     * with this function.
+     *
+     * @see Function/method/class relied on
+     * @link URL short description.
+     * @global type $varname short description.
+     *
+     * @since 1.0.1
+     *
+     * @param int $org_id Organization ID.
+     * @param string $meta_field Name of the meta field we're retrieving.
+     * @return array An array of arrays with each sub-array having a term ID and name.
+     */
+    public function get_organization_meta_array( $org_id, $meta_field ){
+        $terms = wp_get_post_terms( $org_id, $meta_field );
+
+        $meta_array = array();
+        $x = 1;
+        if( $terms ){
+            foreach( $terms as $term ){
+                $pod = pods( $meta_field );
+                $pod->fetch( $term->term_id );
+                $order = $pod->get_field( 'order' );
+                $key = ( ! array_key_exists( $order, $meta_array ) )? $order : $x;
+                $meta_array[$key] = array( 'id' => $term->term_id, 'name' => $term->name );
+                $x++;
+            }
+        } else {
+            $default_meta_ids = $this->get_default_setting_array( $meta_field . 's' );
+            if( is_array( $default_meta_ids ) && 0 < count( $default_meta_ids ) ) {
+                foreach( $default_meta_ids as $meta_id ) {
+                    $term = get_term( $meta_id, $meta_field );
+                    $pod = pods( $meta_field );
+                    $pod->fetch( $meta_id );
+                    $order = $pod->get_field( 'order' );
+                    $key = ( ! array_key_exists( $order, $meta_array ) )? $order : $x;
+                    $meta_array[$key] = array( 'id' => $meta_id, 'name' => $term->name );
+                    $x++;
+                }
+            }
+        }
+
+        ksort( $meta_array );
+
+        return $meta_array;
+    }
+
+    /**
      * Retrieves an org's pickup locations.
      */
     public function get_pickuplocations( $org_id ){
@@ -871,9 +925,9 @@ class DonationManager {
                 $x++;
             }
         } else {
-            $default_pickuplocation_ids = $this->get_default_setting_array( 'pickup_locations' );
-            if( is_array( $default_pickuplocation_ids ) && 0 < count( $default_pickuplocation_ids ) ) {
-                foreach( $default_pickuplocation_ids as $pickuplocation_id ) {
+            $default_meta_ids = $this->get_default_setting_array( 'pickup_locations' );
+            if( is_array( $default_meta_ids ) && 0 < count( $default_meta_ids ) ) {
+                foreach( $default_meta_ids as $pickuplocation_id ) {
                     $term = get_term( $pickuplocation_id, 'pickup_location' );
                     $pod = pods( 'pickup_location' );
                     $pod->fetch( $pickuplocation_id );
@@ -1387,7 +1441,6 @@ class DonationManager {
 $DonationManager = DonationManager::get_instance();
 register_activation_hook( __FILE__, array( $DonationManager, 'activate' ) );
 add_shortcode( 'donationform', array( $DonationManager, 'callback_shortcode' ) );
-//add_shortcode( 'testdonation', array( $DonationManager, 'test_shortcode' ) );
 add_action( 'init', array( $DonationManager, 'callback_init' ), 99 );
 add_action( 'template_redirect', array( $DonationManager, 'callback_template_redirect' ) );
 add_action( 'wp_enqueue_scripts', array( $DonationManager, 'enqueue_scripts' ) );

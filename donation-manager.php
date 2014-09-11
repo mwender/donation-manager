@@ -1132,28 +1132,6 @@ class DonationManager {
 
     }
 
-    public function register_posts_and_taxonomies(){
-        register_post_type( 'dm_organization', array(
-            'label' => 'Organizations',
-            'description' => 'Receipients of donations.',
-            'public' => true,
-            'show_ui' => true,
-            'show_in_nav_menus' => false,
-            'menu_position' => 6,
-            'menu_icon' => 'dashicons-groups',
-            'supports' => array( 'title', 'editor', 'thumbnail' ),
-        ));
-        register_post_type( 'dm_trans_dept', array());
-        register_post_type( 'dm_store', array());
-        register_post_type( 'dm_donation', array());
-
-        register_taxonomy( 'dm_donation_items', array( 'dm_organization', 'dm_donation' ), array() );
-        register_taxonomy( 'dm_pickup_location', array( 'dm_organization', 'dm_donation' ), array() );
-        register_taxonomy( 'dm_pickup_time', array( 'dm_organization' ), array() );
-        register_taxonomy( 'dm_screening_question', array( 'dm_organization', 'dm_donation' ), array() );
-        register_taxonomy( 'dm_pickup_code', array( 'dm_trans_dept' ), array() );
-    }
-
     public function return_content_type(){
         return 'text/html';
     }
@@ -1411,7 +1389,6 @@ register_activation_hook( __FILE__, array( $DonationManager, 'activate' ) );
 add_shortcode( 'donationform', array( $DonationManager, 'callback_shortcode' ) );
 //add_shortcode( 'testdonation', array( $DonationManager, 'test_shortcode' ) );
 add_action( 'init', array( $DonationManager, 'callback_init' ), 99 );
-//add_action( 'init', array( $DonationManager, 'register_posts_and_taxonomies' ) );
 add_action( 'template_redirect', array( $DonationManager, 'callback_template_redirect' ) );
 add_action( 'wp_enqueue_scripts', array( $DonationManager, 'enqueue_scripts' ) );
 ?>

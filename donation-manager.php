@@ -539,7 +539,7 @@ class DonationManager {
                 $tid = $_SESSION['donor']['trans_dept_id'];
 
                 $terms = $this->get_organization_meta_array( $oid, 'donation_option' );
-                $this->add_html( '<pre>$terms = '.print_r($terms,true).'</pre>' );
+                //$this->add_html( '<pre>$terms = '.print_r($terms,true).'</pre>' );
 
                 $donation_options = array();
                 foreach( $terms as $term ) {
@@ -1444,4 +1444,5 @@ add_shortcode( 'donationform', array( $DonationManager, 'callback_shortcode' ) )
 add_action( 'init', array( $DonationManager, 'callback_init' ), 99 );
 add_action( 'template_redirect', array( $DonationManager, 'callback_template_redirect' ) );
 add_action( 'wp_enqueue_scripts', array( $DonationManager, 'enqueue_scripts' ) );
+require 'dmimporter.php';
 ?>

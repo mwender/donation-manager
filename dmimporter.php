@@ -16,6 +16,7 @@ class DMImporter extends DonationManager {
     }
 
     public function callback_dmimport( $atts ){
+
         extract( shortcode_atts( array(
             'foo' => 'bar'
         ), $atts, 'donationmanager' ) );
@@ -28,28 +29,68 @@ class DMImporter extends DonationManager {
         $x = 1;
         foreach( $orgs as $org ){
             $org->slug = apply_filters( 'sanitize_title',$org->Name );
-            $org->pmd2ID = $this->pmd2_exists( $org->id, 'organization' );
+            $org->pmd2ID = $this->pmd2_cpt_exists( $org->id, 'organization' );
             $org->exists = ( false == $org->pmd2ID )? 'No' : 'Yes';
-            $rows[] = '<tr id="pmd1id_' . $org->id . '"><td>' . $x . '<input name="org_id[]" class="orgs" type="hidden" value="' . $org->id . '" /></td><td>'.$org->id.'</td><td class="pmd2id">' . $org->pmd2ID . '</td><td>'.$org->Name.'<br />' . $org->slug . '</em></td><td><button class="btn btn-default btn-xs btn-import-org" pmd1id="' . $org->id . '">Import</button></td></tr>';
+            $rows[] = '<tr id="pmd1id_' . $org->id . '"><td>' . $x . '<input name="org_id[]" class="orgs" type="hidden" value="' . $org->id . '" /></td><td>'.$org->id.'</td><td class="pmd2id">' . $org->pmd2ID . '</td><td>' . $org->Name . '</td><td><button class="btn btn-default btn-xs btn-import-org" pmd1id="' . $org->id . '">Import</button></td></tr>';
             $x++;
         }
 
         $org_rows = '<table class="table table-striped">' . implode( "\n", $rows ) . '</tbody></table>';
 
-        // Transportation Deptments
+        // Transportation Departments
         $transdepts = $this->get_pmd1_table( 'tbltransportdepartment' );
         $rows = array();
         $rows[] = '<thead><tr><th>#</th><th>1.0 ID</th><th>2.0 ID</th><th>Name</th><th>Actions</th></tr></thead><tbody>';
         $x = 1;
         foreach( $transdepts as $td ){
         	$td->slug = apply_filters( 'sanitize_title', $td->Name );
-        	$td->pmd2ID = $this->pmd2_exists( $td->id, 'trans_dept' );
+        	$td->pmd2ID = $this->pmd2_cpt_exists( $td->id, 'trans_dept' );
             $td->exists = ( false == $td->pmd2ID )? 'No' : 'Yes';
-        	$rows[] = '<tr id="pmd1_tid_' . $td->id . '"><td>' . $x . '<input name="td_id[]" class="tds" type="hidden" value="' . $td->id . '" /></td><td>'.$td->id.'</td><td class="pmd2_tid">' . $td->pmd2ID . '</td><td>'.$td->Name.'<br />' . $td->slug . '</em></td><td><button class="btn btn-default btn-xs btn-import-transdept" pmd1_tid="' . $td->id . '">Import</button></td></tr>';
+        	$rows[] = '<tr id="pmd1_tid_' . $td->id . '"><td>' . $x . '<input name="td_id[]" class="tds" type="hidden" value="' . $td->id . '" /></td><td>'.$td->id.'</td><td class="pmd2_tid">' . $td->pmd2ID . '</td><td>' . $td->Name . '</td><td></td></tr>';
         	$x++;
         }
 
         $td_rows = '<table class="table table-striped">' . implode( "\n", $rows ) . '</tbody></table>';
+
+        // Stores
+        $stores = $this->get_pmd1_table( 'tbldropofflocation' );
+        $rows = array();
+        $rows[] = '<thead><tr><th>#</th><th>1.0 ID</th><th>2.0 ID</th><th>Name</th><th>Actions</th></tr></thead><tbody>';
+        $x = 1;
+        foreach( $stores as $store ){
+        	$store->slug = apply_filters( 'sanitize_title', $store->StoreName );
+        	$store->pmd2ID = $this->pmd2_cpt_exists( $store->id, 'store' );
+            $store->exists = ( false == $store->pmd2ID )? 'No' : 'Yes';
+        	$rows[] = '<tr id="pmd1_storeid_' . $store->id . '"><td>' . $x . '<input name="store_id[]" class="stores" type="hidden" value="' . $store->id . '" /></td><td>'.$store->id.'</td><td class="pmd2_storeid">' . $store->pmd2ID . '</td><td>' . $store->StoreName . '</td><td></td></tr>';
+        	$x++;
+        }
+
+        $store_rows = '<table class="table table-striped">' . implode( "\n", $rows ) . '</tbody></table>';
+
+        // Zip/Pickup Codes
+        $pickup_codes = $this->get_pmd1_table( 'tblmapzip' );
+        $rows = array();
+        //$rows[] = '<thead><tr><th>#</th><th>1.0 ID</th><th>2.0 ID</th><th>Name</th><th>Actions</th></tr></thead><tbody>';
+        $x = 1;
+        foreach( $pickup_codes as $pickup_code ){
+        	$pickup_code_exists = term_exists( $pickup_code->Zip, 'pickup_code' );
+        	if( is_array( $pickup_code_exists ) ){
+        		$pickup_code->pmd2ID = $pickup_code_exists['term_id'];
+        	} else {
+        		$pickup_code->pmd2ID = false;
+        	}
+
+            $pickup_code->exists = ( false == $pickup_code->pmd2ID )? 'No' : 'Yes';
+        	//$rows[] = '<tr id="pmd1_pickupcodeid_' . $pickup_code->id . '"><td>' . $x . '<input name="pickupcode_id[]" class="pickupcodes" type="hidden" value="' . $pickup_code->id . '" /></td><td>'.$pickup_code->id.'</td><td class="pmd2_pickupcodeid">' . $pickup_code->pmd2ID . '</td><td>' . $pickup_code->Zip . '</td><td></td></tr>';
+        	$rows[] = '<div class="pickup_code" id="pmd1_pickupcodeid_' . $pickup_code->id . '">
+				<input name="pickupcode_id[]" class="pickupcodes" type="hidden" value="' . $pickup_code->id . '" />
+				' . $pickup_code->Zip . '
+        	</div>';
+        	$x++;
+        }
+
+        //$pickupcode_rows = '<table class="table table-striped">' . implode( "\n", $rows ) . '</tbody></table>';
+        $pickupcode_rows = implode( '', $rows );
 
         $html = '<!-- Nav tabs -->
 <ul class="nav nav-tabs" role="tablist">
@@ -70,17 +111,26 @@ class DMImporter extends DonationManager {
 	<br /><button type="button" class="btn btn-default" id="btn-import-transdepts">Import Transportation Departments</button>
 	' . $td_rows . '
   </div>
-  <div class="tab-pane" id="stores">...</div>
-  <div class="tab-pane" id="zipcodes">...</div>
+  <div class="tab-pane" id="stores">
+	<br /><button type="button" class="btn btn-default" id="btn-import-stores">Import Stores</button>
+	' . $store_rows . '
+  </div>
+  <div class="tab-pane" id="zipcodes">
+	<br /><button type="button" class="btn btn-default" id="btn-import-pickupcodes">Import Pickup Codes</button><br />
+	' . $pickupcode_rows . '
+  </div>
   <div class="tab-pane" id="donations">...</div>
 </div>';
 
         return '<form>' . $html . '</form>';
     }
 
-    public function get_pmd1_table( $table = null, $id = null ){
+    public function get_pmd1_table( $table = null, $id = null, $limit = null ){
         if( is_null( $table ) )
             return;
+
+        if( ! is_null( $limit ) && is_numeric( $limit ) )
+            $limit_sql = ' LIMIT ' . $limit;
 
         global $wpdb;
 
@@ -88,6 +138,8 @@ class DMImporter extends DonationManager {
 
         if( is_null( $id ) ){
             $sql = 'SELECT * FROM ' . $table . ' ORDER BY ID ASC';
+            if( ! empty( $limit_sql ) )
+                $sql.= $limit_sql;
             $result = $wpdb->get_results( $sql );
         } else {
             $sql = 'SELECT * FROM ' . $table . ' WHERE id=' . $id;
@@ -115,6 +167,7 @@ class DMImporter extends DonationManager {
     public function import_enqueue_scripts(){
         wp_enqueue_script( 'import-ajax', plugins_url( '/lib/js/import-ajax.js', __FILE__ ), array( 'jquery', 'jquery-color' ) );
         wp_localize_script( 'import-ajax', 'ajax_object', array( 'ajax_url' => admin_url( 'admin-ajax.php' ) ) );
+        wp_enqueue_style( 'import-style', plugins_url( '/lib/css/import.css', __FILE__ ) );
     }
 
     public function import_org_callback(){
@@ -128,7 +181,7 @@ class DMImporter extends DonationManager {
 
         $org = $this->get_pmd1_table( 'tblorg', $ID );
         $org->slug = apply_filters( 'sanitize_title',$org->Name );
-        $org->pmd2ID = $this->pmd2_exists( $org->id, 'organization' );
+        $org->pmd2ID = $this->pmd2_cpt_exists( $org->id, 'organization' );
         $org->exists = ( false == $org->pmd2ID )? 'No' : 'Yes';
 
         $pmd2id = $this->import_org( $org );
@@ -185,6 +238,136 @@ class DMImporter extends DonationManager {
         return $ID;
     }
 
+    public function import_pickupcode_callback(){
+    	$ID = intval( $_POST['pickupcodeID'] );
+
+    	$response = new stdClass();
+
+    	if( is_null( $ID ) || ! is_numeric( $ID ) ){
+    		$response->message = '[DM] Invalid ID supplied to import_pickupcode_callback()!';
+    		wp_send_json( $response );
+    	}
+
+    	$pickupcode = $this->get_pmd1_table( 'tblmapzip', $ID );
+
+    	$response->pmd1ID = $ID;
+
+		$pickupcode_exists = term_exists( $pickupcode->Zip, 'pickup_code' );
+    	if( is_array( $pickupcode_exists ) ){
+    		$pickupcode->pmd2ID = $pickupcode_exists['term_id'];
+    	} else {
+    		// pickup_code doesn't exists, so we try to create it.
+            $term = wp_insert_term( $pickupcode->Zip, 'pickup_code' );
+    		if( is_wp_error( $term ) ){
+                // Unable to create pickup_code, return error to browser
+    			$response->message = '[DM] Could not create term `' . $pickupcode->Zip . '`! Error msg: ' . implode( ', ', $term->error_data );
+    			wp_send_json( $response );
+    		} else {
+    			$pickupcode->pmd2ID = $term['term_id'];
+    		}
+    	}
+
+        $pickupcode->exists = ( false == $pickupcode->pmd2ID )? 'No' : 'Yes';
+
+        // Associate pickupcode with transportation department
+        $pickupcode->pmd2_transdept_id = $this->pmd2_cpt_exists( $pickupcode->TransportID, 'trans_dept' );
+        if( false != $pickupcode->pmd2_transdept_id ){
+        	if( ! has_term( $pickupcode->pmd2ID, 'pickup_code', $pickupcode->pmd2_transdept_id ) ){
+                $return = wp_set_object_terms( $pickupcode->pmd2_transdept_id, $pickupcode->pmd2ID, 'pickup_code', true );
+                if( is_wp_error( $return ) ){
+                    $response->message = '[DM] ERROR: Trans Dept ' . $pickupcode->pmd2_transdept_id . ' NOT tagged with `' . $pickupcode->Zip . '`. Error msg: ' . implode(', ', $return->error_data ) ;
+                } else {
+                    $response->message = '[DM] SUCCESS: Trans Dept ' . $pickupcode->pmd2_transdept_id . ' tagged with `' . $pickupcode->Zip . '`.';
+                    /*
+                    if( is_array( $return ) ){
+                        $response->message.= ' RETURN: Array of affected terms: ' . implode( ', ', $return );
+                    } else {
+                        $response->message.= ' RETURN: First offending term: ' . $return;
+                    }
+                    /**/
+                }
+            } else {
+                $response->message = '[DM] TERM EXISTS: Trans Dept ' . $pickupcode->pmd2_transdept_id . ' already tagged with `' . $pickupcode->Zip . '`.';
+            }
+        } else {
+        	$response->message = '[DM] ERROR: No Trans Dept found with a legacy_id of ' . $pickupcode->TransportID . '. Unable to associate `' . $pickupcode->Zip . '`.';
+        }
+
+        wp_send_json( $response );
+    }
+
+    public function import_store_callback(){
+    	$ID = intval( $_POST['storeID'] );
+
+    	$response = new stdClass();
+
+    	if( is_null( $ID ) || ! is_numeric( $ID ) ){
+    		$response->message = '[DM] Invalid ID supplied to import_store_callback()!';
+    		wp_send_json( $response );
+    	}
+
+        $store = $this->get_pmd1_table( 'tbldropofflocation', $ID );
+        $store->pmd2ID = $this->pmd2_cpt_exists( $store->id, 'store' );
+        $store->exists = ( false == $store->pmd2ID )? 'No' : 'Yes';
+
+        // Get parent transportation department ID
+        $store->pmd2_transdept_id = $this->pmd2_cpt_exists( $store->transportdepartmentID, 'trans_dept' );
+
+        $pmd2ID = $this->import_store( $store );
+        if( false == $pmd2ID ){
+        	$response->message = '[DM] ERROR: `' . $store->StoreName . '` has NOT been imported.';
+        } else {
+	        $response->message = '[DM] SUCCESS: `' . $store->StoreName . '` has been imported.';
+	        $response->transdept = $store;
+	        $response->pmd1ID = $ID;
+	        $response->pmd2ID = $pmd2ID;
+        }
+
+        wp_send_json( $response );
+    }
+
+    public function import_store( $store ){
+
+    	$address.= "\n" . $store->City . ', ' . $store->State . ' ' . $store->Zip;
+    	if( ! empty( $store->WebAddress ) )
+    		$address.= "\n" . $store->WebAddress;
+
+        $post = array(
+            'post_title' => $store->StoreName,
+            'post_status' => 'publish',
+            'post_type' => 'store',
+        );
+        if( 'Yes' == $store->exists )
+            $post['ID'] = $store->pmd2ID;
+        $ID = wp_insert_post( $post, true );
+
+        if( is_numeric( $ID ) ){
+	        // Associate with Parent Organization
+	        update_post_meta( $ID, 'trans_dept', $store->pmd2_transdept_id );
+	        update_post_meta( $ID, '_pods_trans_dept', array( $store->pmd2_transdept_id ) );
+
+	    	$address = $store->StoreAddress1;
+	    	if( ! empty( $store->StoreAddress2 ) )
+	    		$address.= ', ' . $store->StoreAddress2;
+			update_post_meta( $ID, 'address', $address );
+			update_post_meta( $ID, 'city', $store->StoreCity );
+			update_post_meta( $ID, 'state', $store->StoreState );
+			update_post_meta( $ID, 'zip_code', $store->StoreZip );
+			update_post_meta( $ID, 'phone', $store->StorePhone );
+
+	        // Store Legacy DB ID
+	        if( ! empty( $store->id ) )
+	            update_post_meta( $ID, 'legacy_id', $store->id );
+        } else if( is_wp_error( $ID ) ) {
+        	$response = new stdClass();
+        	$response->message = implode( "\n", $ID->error_data );
+        	$response->transdept = $store;
+        	wp_send_json( $response );
+        }
+
+        return $ID;
+    }
+
     public function import_transdept_callback(){
     	$ID = intval( $_POST['transdeptID'] );
 
@@ -196,11 +379,11 @@ class DMImporter extends DonationManager {
         }
 
         $transdept = $this->get_pmd1_table( 'tbltransportdepartment', $ID );
-        $transdept->pmd2ID = $this->pmd2_exists( $transdept->id, 'trans_dept' );
+        $transdept->pmd2ID = $this->pmd2_cpt_exists( $transdept->id, 'trans_dept' );
         $transdept->exists = ( false == $transdept->pmd2ID )? 'No' : 'Yes';
 
         // Get parent org_id
-        $transdept->pmd2_org_id = $this->pmd2_exists( $transdept->OrgID, 'organization' );
+        $transdept->pmd2_org_id = $this->pmd2_cpt_exists( $transdept->OrgID, 'organization' );
 
         $pmd2ID = $this->import_transdept( $transdept );
         if( false == $pmd2ID ){
@@ -264,7 +447,7 @@ class DMImporter extends DonationManager {
         return $ID;
     }
 
-    public function pmd2_exists( $id = null, $post_type = 'post' ){
+    public function pmd2_cpt_exists( $id = null, $post_type = 'post' ){
         if( is_null( $id ) )
             return false;
         if( empty( $post_type ) )
@@ -293,5 +476,7 @@ $DMImporter = DMImporter::get_instance();
 add_shortcode( 'dmimport', array( $DMImporter, 'callback_dmimport' ) );
 add_action( 'wp_ajax_import_org', array( $DMImporter, 'import_org_callback' ) );
 add_action( 'wp_ajax_import_transdept', array( $DMImporter, 'import_transdept_callback' ) );
+add_action( 'wp_ajax_import_store', array( $DMImporter, 'import_store_callback' ) );
+add_action( 'wp_ajax_import_pickupcode', array( $DMImporter, 'import_pickupcode_callback' ), 99 );
 add_action( 'wp_enqueue_scripts', array( $DMImporter, 'import_enqueue_scripts' ) );
 ?>

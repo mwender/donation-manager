@@ -107,7 +107,7 @@ class DMImporter extends DonationManager {
 <div class="tab-content">
   <div class="tab-pane active" id="organizations">
 	<br /><button type="button" class="btn btn-default" id="btn-import-orgs">Import Organizations</button>
-    <br /><pre>$donation_options = ' . print_r( $this->get_donation_options_map(), true ) . '</pre>
+    <br />
 	' . $org_rows . '
   </div>
   <div class="tab-pane" id="transdepts">

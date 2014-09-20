@@ -70,7 +70,6 @@ class DMImporter extends DonationManager {
         // Zip/Pickup Codes
         $pickup_codes = $this->get_pmd1_table( 'tblmapzip' );
         $rows = array();
-        //$rows[] = '<thead><tr><th>#</th><th>1.0 ID</th><th>2.0 ID</th><th>Name</th><th>Actions</th></tr></thead><tbody>';
         $x = 1;
         foreach( $pickup_codes as $pickup_code ){
         	$pickup_code_exists = term_exists( $pickup_code->Zip, 'pickup_code' );
@@ -81,7 +80,6 @@ class DMImporter extends DonationManager {
         	}
 
             $pickup_code->exists = ( false == $pickup_code->pmd2ID )? 'No' : 'Yes';
-        	//$rows[] = '<tr id="pmd1_pickupcodeid_' . $pickup_code->id . '"><td>' . $x . '<input name="pickupcode_id[]" class="pickupcodes" type="hidden" value="' . $pickup_code->id . '" /></td><td>'.$pickup_code->id.'</td><td class="pmd2_pickupcodeid">' . $pickup_code->pmd2ID . '</td><td>' . $pickup_code->Zip . '</td><td></td></tr>';
         	$rows[] = '<div class="pickup_code" id="pmd1_pickupcodeid_' . $pickup_code->id . '">
 				<input name="pickupcode_id[]" class="pickupcodes" type="hidden" value="' . $pickup_code->id . '" />
 				' . $pickup_code->Zip . '
@@ -89,7 +87,6 @@ class DMImporter extends DonationManager {
         	$x++;
         }
 
-        //$pickupcode_rows = '<table class="table table-striped">' . implode( "\n", $rows ) . '</tbody></table>';
         $pickupcode_rows = implode( '', $rows );
 
         $html = '<!-- Nav tabs -->

@@ -107,6 +107,7 @@ class DMImporter extends DonationManager {
 <div class="tab-content">
   <div class="tab-pane active" id="organizations">
 	<br /><button type="button" class="btn btn-default" id="btn-import-orgs">Import Organizations</button>
+    <br /><pre>$donation_options = ' . print_r( $this->get_donation_options_map(), true ) . '</pre>
 	' . $org_rows . '
   </div>
   <div class="tab-pane" id="transdepts">
@@ -168,16 +169,25 @@ class DMImporter extends DonationManager {
 
     public function get_donation_options_map(){
         $donation_options = array(
-            'Large Furniture' => 30,
-            'Medium Furniture' => 31,
-            'Large Appliances' => 32,
-            'Medium General/Miscellaneous' => 36,
-            'Small Misc.' => 37,
-            'Automobiles' => 38,
-            'Recreational/Outdoor Items' => 49,
-            'Recyclable Materials' => 50,
-            'Construction Materials' => 51,
+            'Large Furniture' => 0,
+            'Medium Furniture' => 0,
+            'Large Appliances' => 0,
+            'Medium General/Miscellaneous' => 0,
+            'Small Misc.' => 0,
+            'Automobiles' => 0,
+            'Recreational/Outdoor Items' => 0,
+            'Recyclable Materials' => 0,
+            'Construction Materials' => 0,
         );
+
+        foreach( $donation_options as $key => $id ){
+            $name = ( 'Small Misc.' == $key )? 'Small Miscellaneous' : $key;
+            $term = get_term_by( 'name', $name, 'donation_option' );
+            $id = $term->term_id;
+            settype( $id, 'int' );
+            $donation_options[$key] = $id;
+        }
+
         return $donation_options;
     }
 

@@ -89,6 +89,11 @@ class DMImporter extends DonationManager {
 
         $pickupcode_rows = implode( '', $rows );
 
+        // Donations
+        $total_donations = $this->get_pmd1_table_count( 'tbldonation' );
+
+        $donations_html = '<p><strong>' . $total_donations . '</strong> donations found.</p>';
+
         $html = '<!-- Nav tabs -->
 <ul class="nav nav-tabs" role="tablist">
   <li class="active"><a href="#organizations" role="tab" data-toggle="tab">Organizations</a></li>
@@ -116,10 +121,25 @@ class DMImporter extends DonationManager {
 	<br /><button type="button" class="btn btn-default" id="btn-import-pickupcodes">Import Pickup Codes</button><br />
 	' . $pickupcode_rows . '
   </div>
-  <div class="tab-pane" id="donations">...</div>
+  <div class="tab-pane" id="donations">
+    <br /><button type="button" class="btn btn-default" id="btn-import-donations">Import Donations</button><br /><br />
+    ' . $donations_html . '
+  </div>
 </div>';
 
         return '<form>' . $html . '</form>';
+    }
+
+    public function get_pmd1_table_count( $table = null ){
+        if( is_null( $table ) )
+            return false;
+
+        global $wpdb;
+
+        $sql = 'SELECT COUNT(*) FROM ' . $table;
+        $count = $wpdb->get_var( $sql );
+
+        return $count;
     }
 
     public function get_pmd1_table( $table = null, $id = null, $limit = null ){

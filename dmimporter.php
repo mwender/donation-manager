@@ -159,6 +159,158 @@ class DMImporter extends DonationManager {
         return '<form>' . $html . '</form>';
     }
 
+    public function callback_import_donation(){
+        global $wpdb;
+        $response = new stdClass();
+
+        $ID = intval( $_POST['id'] );
+
+        // Get the next donation ID
+        $next_id = $wpdb->get_var( 'SELECT id FROM tbldonation WHERE id = (SELECT min(id) FROM tbldonation WHERE id > ' . $ID . ')' );
+        $response->next_id = ( $next_id )? $next_id : false;
+
+        wp_send_json( $response );
+    }
+
+    public function callback_import_pickupcode(){
+        $ID = intval( $_POST['pickupcodeID'] );
+
+        $response = new stdClass();
+
+        if( is_null( $ID ) || ! is_numeric( $ID ) ){
+            $response->message = '[DM] Invalid ID supplied to callback_import_pickupcode()!';
+            wp_send_json( $response );
+        }
+
+        $pickupcode = $this->get_pmd1_table( 'tblmapzip', $ID );
+
+        $response->pmd1ID = $ID;
+
+        $pickupcode_exists = term_exists( $pickupcode->Zip, 'pickup_code' );
+        if( is_array( $pickupcode_exists ) ){
+            $pickupcode->pmd2ID = $pickupcode_exists['term_id'];
+        } else {
+            // pickup_code doesn't exists, so we try to create it.
+            $term = wp_insert_term( $pickupcode->Zip, 'pickup_code' );
+            if( is_wp_error( $term ) ){
+                // Unable to create pickup_code, return error to browser
+                $response->message = '[DM] Could not create term `' . $pickupcode->Zip . '`! Error msg: ' . implode( ', ', $term->error_data );
+                wp_send_json( $response );
+            } else {
+                $pickupcode->pmd2ID = $term['term_id'];
+            }
+        }
+
+        $pickupcode->exists = ( false == $pickupcode->pmd2ID )? 'No' : 'Yes';
+
+        // Associate pickupcode with transportation department
+        $pickupcode->pmd2_transdept_id = $this->pmd2_cpt_exists( $pickupcode->TransportID, 'trans_dept' );
+        if( false != $pickupcode->pmd2_transdept_id ){
+            if( ! has_term( $pickupcode->pmd2ID, 'pickup_code', $pickupcode->pmd2_transdept_id ) ){
+                $return = wp_set_object_terms( $pickupcode->pmd2_transdept_id, $pickupcode->pmd2ID, 'pickup_code', true );
+                if( is_wp_error( $return ) ){
+                    $response->message = '[DM] ERROR: Trans Dept ' . $pickupcode->pmd2_transdept_id . ' NOT tagged with `' . $pickupcode->Zip . '`. Error msg: ' . implode(', ', $return->error_data ) ;
+                } else {
+                    $response->message = '[DM] SUCCESS: Trans Dept ' . $pickupcode->pmd2_transdept_id . ' tagged with `' . $pickupcode->Zip . '`.';
+                    /*
+                    if( is_array( $return ) ){
+                        $response->message.= ' RETURN: Array of affected terms: ' . implode( ', ', $return );
+                    } else {
+                        $response->message.= ' RETURN: First offending term: ' . $return;
+                    }
+                    /**/
+                }
+            } else {
+                $response->message = '[DM] TERM EXISTS: Trans Dept ' . $pickupcode->pmd2_transdept_id . ' already tagged with `' . $pickupcode->Zip . '`.';
+            }
+        } else {
+            $response->message = '[DM] ERROR: No Trans Dept found with a legacy_id of ' . $pickupcode->TransportID . '. Unable to associate `' . $pickupcode->Zip . '`.';
+        }
+
+        wp_send_json( $response );
+    }
+
+    public function callback_import_store(){
+        $ID = intval( $_POST['storeID'] );
+
+        $response = new stdClass();
+
+        if( is_null( $ID ) || ! is_numeric( $ID ) ){
+            $response->message = '[DM] Invalid ID supplied to callback_import_store()!';
+            wp_send_json( $response );
+        }
+
+        $store = $this->get_pmd1_table( 'tbldropofflocation', $ID );
+        $store->pmd2ID = $this->pmd2_cpt_exists( $store->id, 'store' );
+        $store->exists = ( false == $store->pmd2ID )? 'No' : 'Yes';
+
+        // Get parent transportation department ID
+        $store->pmd2_transdept_id = $this->pmd2_cpt_exists( $store->transportdepartmentID, 'trans_dept' );
+
+        $pmd2ID = $this->import_store( $store );
+        if( false == $pmd2ID ){
+            $response->message = '[DM] ERROR: `' . $store->StoreName . '` has NOT been imported.';
+        } else {
+            $response->message = '[DM] SUCCESS: `' . $store->StoreName . '` has been imported.';
+            $response->transdept = $store;
+            $response->pmd1ID = $ID;
+            $response->pmd2ID = $pmd2ID;
+        }
+
+        wp_send_json( $response );
+    }
+
+    public function callback_import_transdept(){
+        $ID = intval( $_POST['transdeptID'] );
+
+        $response = new stdClass();
+
+        if( null == $ID || ! is_numeric( $ID ) ){
+            $response->message = '[DM] Invalid ID supplied to callback_import_transdept()!';
+            wp_send_json( $response );
+        }
+
+        $transdept = $this->get_pmd1_table( 'tbltransportdepartment', $ID );
+        $transdept->pmd2ID = $this->pmd2_cpt_exists( $transdept->id, 'trans_dept' );
+        $transdept->exists = ( false == $transdept->pmd2ID )? 'No' : 'Yes';
+
+        // Get parent org_id
+        $transdept->pmd2_org_id = $this->pmd2_cpt_exists( $transdept->OrgID, 'organization' );
+
+        $pmd2ID = $this->import_transdept( $transdept );
+        if( false == $pmd2ID ){
+            $response->message = '[DM] ERROR: `' . $transdept->Name . '` has NOT been imported.';
+        } else {
+            $response->message = '[DM] SUCCESS: `' . $transdept->Name . '` has been imported.';
+            $response->transdept = $transdept;
+            $response->pmd1ID = $ID;
+            $response->pmd2ID = $pmd2ID;
+        }
+
+        wp_send_json( $response );
+    }
+
+    public function callback_import_org(){
+        $ID = intval( $_POST['orgid'] );
+        $response = new stdClass();
+
+        if( null == $ID || ! is_numeric( $ID ) ){
+            $response->message = '[DM] Invalid ID supplied to import_org_callback()!';
+            wp_send_json( $response );
+        }
+
+        $org = $this->get_pmd1_table( 'tblorg', $ID );
+        $org->slug = apply_filters( 'sanitize_title',$org->Name );
+        $org->pmd2ID = $this->pmd2_cpt_exists( $org->id, 'organization' );
+        $org->exists = ( false == $org->pmd2ID )? 'No' : 'Yes';
+
+        $pmd2id = $this->import_org( $org );
+        $response->message = '[DM] SUCCESS: `' . $org->Name . '` has been imported.';
+        $response->pmd1id = $ID;
+        $response->pmd2id = $pmd2id;
+        wp_send_json( $response );
+    }
+
     public function get_pmd1_table_count( $table = null ){
         if( is_null( $table ) )
             return false;
@@ -219,44 +371,10 @@ class DMImporter extends DonationManager {
         return $donation_options;
     }
 
-    public function import_donation_callback(){
-        global $wpdb;
-        $response = new stdClass();
-
-        $ID = intval( $_POST['id'] );
-
-        // Get the next donation ID
-        $next_id = $wpdb->get_var( 'SELECT id FROM tbldonation WHERE id = (SELECT min(id) FROM tbldonation WHERE id > ' . $ID . ')' );
-        $response->next_id = ( $next_id )? $next_id : false;
-
-        wp_send_json( $response );
-    }
-
     public function import_enqueue_scripts(){
         wp_enqueue_script( 'import-ajax', plugins_url( '/lib/js/import-ajax.js', __FILE__ ), array( 'jquery', 'jquery-color' ) );
         wp_localize_script( 'import-ajax', 'ajax_object', array( 'ajax_url' => admin_url( 'admin-ajax.php' ) ) );
         wp_enqueue_style( 'import-style', plugins_url( '/lib/css/import.css', __FILE__ ) );
-    }
-
-    public function import_org_callback(){
-        $ID = intval( $_POST['orgid'] );
-        $response = new stdClass();
-
-        if( null == $ID || ! is_numeric( $ID ) ){
-        	$response->message = '[DM] Invalid ID supplied to import_org_callback()!';
-        	wp_send_json( $response );
-        }
-
-        $org = $this->get_pmd1_table( 'tblorg', $ID );
-        $org->slug = apply_filters( 'sanitize_title',$org->Name );
-        $org->pmd2ID = $this->pmd2_cpt_exists( $org->id, 'organization' );
-        $org->exists = ( false == $org->pmd2ID )? 'No' : 'Yes';
-
-        $pmd2id = $this->import_org( $org );
-        $response->message = '[DM] SUCCESS: `' . $org->Name . '` has been imported.';
-        $response->pmd1id = $ID;
-        $response->pmd2id = $pmd2id;
-        wp_send_json( $response );
     }
 
     public function import_org( $org ){
@@ -306,94 +424,6 @@ class DMImporter extends DonationManager {
         return $ID;
     }
 
-    public function import_pickupcode_callback(){
-    	$ID = intval( $_POST['pickupcodeID'] );
-
-    	$response = new stdClass();
-
-    	if( is_null( $ID ) || ! is_numeric( $ID ) ){
-    		$response->message = '[DM] Invalid ID supplied to import_pickupcode_callback()!';
-    		wp_send_json( $response );
-    	}
-
-    	$pickupcode = $this->get_pmd1_table( 'tblmapzip', $ID );
-
-    	$response->pmd1ID = $ID;
-
-		$pickupcode_exists = term_exists( $pickupcode->Zip, 'pickup_code' );
-    	if( is_array( $pickupcode_exists ) ){
-    		$pickupcode->pmd2ID = $pickupcode_exists['term_id'];
-    	} else {
-    		// pickup_code doesn't exists, so we try to create it.
-            $term = wp_insert_term( $pickupcode->Zip, 'pickup_code' );
-    		if( is_wp_error( $term ) ){
-                // Unable to create pickup_code, return error to browser
-    			$response->message = '[DM] Could not create term `' . $pickupcode->Zip . '`! Error msg: ' . implode( ', ', $term->error_data );
-    			wp_send_json( $response );
-    		} else {
-    			$pickupcode->pmd2ID = $term['term_id'];
-    		}
-    	}
-
-        $pickupcode->exists = ( false == $pickupcode->pmd2ID )? 'No' : 'Yes';
-
-        // Associate pickupcode with transportation department
-        $pickupcode->pmd2_transdept_id = $this->pmd2_cpt_exists( $pickupcode->TransportID, 'trans_dept' );
-        if( false != $pickupcode->pmd2_transdept_id ){
-        	if( ! has_term( $pickupcode->pmd2ID, 'pickup_code', $pickupcode->pmd2_transdept_id ) ){
-                $return = wp_set_object_terms( $pickupcode->pmd2_transdept_id, $pickupcode->pmd2ID, 'pickup_code', true );
-                if( is_wp_error( $return ) ){
-                    $response->message = '[DM] ERROR: Trans Dept ' . $pickupcode->pmd2_transdept_id . ' NOT tagged with `' . $pickupcode->Zip . '`. Error msg: ' . implode(', ', $return->error_data ) ;
-                } else {
-                    $response->message = '[DM] SUCCESS: Trans Dept ' . $pickupcode->pmd2_transdept_id . ' tagged with `' . $pickupcode->Zip . '`.';
-                    /*
-                    if( is_array( $return ) ){
-                        $response->message.= ' RETURN: Array of affected terms: ' . implode( ', ', $return );
-                    } else {
-                        $response->message.= ' RETURN: First offending term: ' . $return;
-                    }
-                    /**/
-                }
-            } else {
-                $response->message = '[DM] TERM EXISTS: Trans Dept ' . $pickupcode->pmd2_transdept_id . ' already tagged with `' . $pickupcode->Zip . '`.';
-            }
-        } else {
-        	$response->message = '[DM] ERROR: No Trans Dept found with a legacy_id of ' . $pickupcode->TransportID . '. Unable to associate `' . $pickupcode->Zip . '`.';
-        }
-
-        wp_send_json( $response );
-    }
-
-    public function import_store_callback(){
-    	$ID = intval( $_POST['storeID'] );
-
-    	$response = new stdClass();
-
-    	if( is_null( $ID ) || ! is_numeric( $ID ) ){
-    		$response->message = '[DM] Invalid ID supplied to import_store_callback()!';
-    		wp_send_json( $response );
-    	}
-
-        $store = $this->get_pmd1_table( 'tbldropofflocation', $ID );
-        $store->pmd2ID = $this->pmd2_cpt_exists( $store->id, 'store' );
-        $store->exists = ( false == $store->pmd2ID )? 'No' : 'Yes';
-
-        // Get parent transportation department ID
-        $store->pmd2_transdept_id = $this->pmd2_cpt_exists( $store->transportdepartmentID, 'trans_dept' );
-
-        $pmd2ID = $this->import_store( $store );
-        if( false == $pmd2ID ){
-        	$response->message = '[DM] ERROR: `' . $store->StoreName . '` has NOT been imported.';
-        } else {
-	        $response->message = '[DM] SUCCESS: `' . $store->StoreName . '` has been imported.';
-	        $response->transdept = $store;
-	        $response->pmd1ID = $ID;
-	        $response->pmd2ID = $pmd2ID;
-        }
-
-        wp_send_json( $response );
-    }
-
     public function import_store( $store ){
 
     	$address.= "\n" . $store->City . ', ' . $store->State . ' ' . $store->Zip;
@@ -434,36 +464,6 @@ class DMImporter extends DonationManager {
         }
 
         return $ID;
-    }
-
-    public function import_transdept_callback(){
-    	$ID = intval( $_POST['transdeptID'] );
-
-        $response = new stdClass();
-
-        if( null == $ID || ! is_numeric( $ID ) ){
-        	$response->message = '[DM] Invalid ID supplied to import_transdept_callback()!';
-        	wp_send_json( $response );
-        }
-
-        $transdept = $this->get_pmd1_table( 'tbltransportdepartment', $ID );
-        $transdept->pmd2ID = $this->pmd2_cpt_exists( $transdept->id, 'trans_dept' );
-        $transdept->exists = ( false == $transdept->pmd2ID )? 'No' : 'Yes';
-
-        // Get parent org_id
-        $transdept->pmd2_org_id = $this->pmd2_cpt_exists( $transdept->OrgID, 'organization' );
-
-        $pmd2ID = $this->import_transdept( $transdept );
-        if( false == $pmd2ID ){
-        	$response->message = '[DM] ERROR: `' . $transdept->Name . '` has NOT been imported.';
-        } else {
-	        $response->message = '[DM] SUCCESS: `' . $transdept->Name . '` has been imported.';
-	        $response->transdept = $transdept;
-	        $response->pmd1ID = $ID;
-	        $response->pmd2ID = $pmd2ID;
-        }
-
-        wp_send_json( $response );
     }
 
     public function import_transdept( $transdept ){
@@ -542,10 +542,10 @@ class DMImporter extends DonationManager {
 /* Import Callbacks */
 $DMImporter = DMImporter::get_instance();
 add_shortcode( 'dmimport', array( $DMImporter, 'callback_dmimport' ) );
-add_action( 'wp_ajax_import_org', array( $DMImporter, 'import_org_callback' ) );
-add_action( 'wp_ajax_import_transdept', array( $DMImporter, 'import_transdept_callback' ) );
-add_action( 'wp_ajax_import_store', array( $DMImporter, 'import_store_callback' ) );
-add_action( 'wp_ajax_import_pickupcode', array( $DMImporter, 'import_pickupcode_callback' ), 99 );
-add_action( 'wp_ajax_import_donation', array( $DMImporter, 'import_donation_callback' ) );
+add_action( 'wp_ajax_import_org', array( $DMImporter, 'callback_import_org' ) );
+add_action( 'wp_ajax_import_transdept', array( $DMImporter, 'callback_import_transdept' ) );
+add_action( 'wp_ajax_import_store', array( $DMImporter, 'callback_import_store' ) );
+add_action( 'wp_ajax_import_pickupcode', array( $DMImporter, 'callback_import_pickupcode' ), 99 );
+add_action( 'wp_ajax_import_donation', array( $DMImporter, 'callback_import_donation' ) );
 add_action( 'wp_enqueue_scripts', array( $DMImporter, 'import_enqueue_scripts' ) );
 ?>

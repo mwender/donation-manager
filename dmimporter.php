@@ -91,8 +91,35 @@ class DMImporter extends DonationManager {
 
         // Donations
         $total_donations = $this->get_pmd1_table_count( 'tbldonation' );
+        $start_donation = $this->get_pmd1_table( 'tbldonation', null, 1 );
 
-        $donations_html = '<p><strong>' . $total_donations . '</strong> donations found.</p>';
+        $donations_html = '<p><strong>' . $total_donations . '</strong> donations found.</p>
+        <h4>Progress:</h4>
+<div class="progress">
+  <div class="progress-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width: 0%;">
+    0%
+  </div>
+</div>
+<!--<pre>$start_donation = '.print_r($start_donation[0],true).'</pre>-->
+<input type="hidden" name="start_id" id="start_id" value="' . $start_donation[0]->id . '" />
+<input type="hidden" name="total_donations" id="total_donations" value="' . $total_donations . '" />';
+
+        $donations = $this->get_pmd1_table( 'tbldonation', null, 20 );
+        $rows = array();
+        $rows[] = '<thead><tr><th>#</th><th>1.0 ID</th><th>2.0 ID</th><th>Donor</th><th>Actions</th></tr></thead><tbody>';
+        $x = 1;
+        foreach( $donations as $donation ){
+            $donor = $this->get_pmd1_table( 'tbldonor', $donation->DonorID );
+
+            $donation_name = 'PMD1.0 Donation - ' . $donor->DonorName;
+            $donation->slug = apply_filters( 'sanitize_title', $donation_name );
+            $donation->pmd2ID = $this->pmd2_cpt_exists( $donation->id, 'donation' );
+            $donation->exists = ( false == $donation->pmd2ID )? 'No' : 'Yes';
+            $rows[] = '<tr id="pmd1_donationid_' . $donation->id . '"><td>' . $x . '<input name="donation_id[]" class="donations" type="hidden" value="' . $donation->id . '" /></td><td>'.$donation->id.'</td><td class="pmd2_donationid">' . $donation->pmd2ID . '</td><td>' . $donation_name . '</td><td></td></tr>';
+            $x++;
+        }
+
+        $donation_rows = '<table class="table table-striped">' . implode( "\n", $rows ) . '</tbody></table>';
 
         $html = '<!-- Nav tabs -->
 <ul class="nav nav-tabs" role="tablist">
@@ -125,6 +152,7 @@ class DMImporter extends DonationManager {
   <div class="tab-pane" id="donations">
     <br /><button type="button" class="btn btn-default" id="btn-import-donations">Import Donations</button><br /><br />
     ' . $donations_html . '
+    ' . $donation_rows . '
   </div>
 </div>';
 
@@ -189,6 +217,19 @@ class DMImporter extends DonationManager {
         }
 
         return $donation_options;
+    }
+
+    public function import_donation_callback(){
+        global $wpdb;
+        $response = new stdClass();
+
+        $ID = intval( $_POST['id'] );
+
+        // Get the next donation ID
+        $next_id = $wpdb->get_var( 'SELECT id FROM tbldonation WHERE id = (SELECT min(id) FROM tbldonation WHERE id > ' . $ID . ')' );
+        $response->next_id = ( $next_id )? $next_id : false;
+
+        wp_send_json( $response );
     }
 
     public function import_enqueue_scripts(){
@@ -505,5 +546,6 @@ add_action( 'wp_ajax_import_org', array( $DMImporter, 'import_org_callback' ) );
 add_action( 'wp_ajax_import_transdept', array( $DMImporter, 'import_transdept_callback' ) );
 add_action( 'wp_ajax_import_store', array( $DMImporter, 'import_store_callback' ) );
 add_action( 'wp_ajax_import_pickupcode', array( $DMImporter, 'import_pickupcode_callback' ), 99 );
+add_action( 'wp_ajax_import_donation', array( $DMImporter, 'import_donation_callback' ) );
 add_action( 'wp_enqueue_scripts', array( $DMImporter, 'import_enqueue_scripts' ) );
 ?>

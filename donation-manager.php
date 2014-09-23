@@ -1245,6 +1245,7 @@ class DonationManager {
             'pickuptime2' => 'pickuptime2',
             'pickupdate3' => 'pickupdate3',
             'pickuptime3' => 'pickuptime3',
+            'legacy_id' => 'legacy_id'
         );
         foreach( $post_meta as $meta_key => $donation_key ){
             switch( $meta_key ){
@@ -1275,7 +1276,7 @@ class DonationManager {
                     $meta_value = $donation[$donation_key];
                 break;
             }
-            if( !empty( $meta_value ) )
+            if( ! empty( $meta_value ) )
                 add_post_meta( $ID, $meta_key, $meta_value );
         }
 

@@ -425,8 +425,8 @@ class DMImporter extends DonationManager {
 
         if( ! empty( $d_row->DonorEmail ) && is_email( $d_row->DonorEmail ) )
             $donation['email'] = $d_row->DonorEmail;
-        if( preg_match( '/^(\+\d{1,2}\s)?\(?\d{3}\)?[\s.-]\d{3}[\s.-]\d{4}$/', $d_row->DonorPhone ) )
-            $donation['phone'] = $d_row->DonorPhone;
+
+        $donation['phone'] = $d_row->DonorPhone;
         $donation['preferred_contact_method'] = $d_row->ContactMethod;
         $donation['pickupdate1'] = date( 'm/d/Y', strtotime( $d_row->PickupDate ) );
         $donation['pickuptime1'] = $d_row->PickupTime;

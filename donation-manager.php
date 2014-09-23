@@ -1218,6 +1218,10 @@ class DonationManager {
             'post_title' => implode( ', ', $donation['items'] ) . ' - ' . $donation['address']['name'],
             'post_status' => 'publish',
         );
+
+        if( isset( $donation['post_date'] ) && ! empty( $donation['post_date'] ) )
+            $post['post_date'] = $donation['post_date'];
+
         wp_update_post( $post );
 
         $post_meta = array(

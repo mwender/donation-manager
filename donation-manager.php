@@ -1205,6 +1205,12 @@ class DonationManager {
         $post = array(
             'post_type' => 'donation',
         );
+
+        if( isset( $donation['post_date'] ) && ! empty( $donation['post_date'] ) )
+            $post['post_date'] = date( 'Y-m-d H:i:s', strtotime( $donation['post_date'] ) );
+        if( isset( $donation['post_date_gmt'] ) && ! empty( $donation['post_date_gmt'] ) )
+            $post['post_date_gmt'] = date( 'Y-m-d H:i:s', strtotime( $donation['post_date_gmt'] ) );
+
         $ID = wp_insert_post( $post );
 
         $donation['ID'] = $ID;
@@ -1218,9 +1224,6 @@ class DonationManager {
             'post_title' => implode( ', ', $donation['items'] ) . ' - ' . $donation['address']['name'],
             'post_status' => 'publish',
         );
-
-        if( isset( $donation['post_date'] ) && ! empty( $donation['post_date'] ) )
-            $post['post_date'] = $donation['post_date'];
 
         wp_update_post( $post );
 

@@ -1354,18 +1354,24 @@ class DonationManager {
             return;
 
         // Tag pickup_items/donation_options
-        $item_ids = array_keys( $donation['items'] );
-        $item_ids = array_map( 'intval', $item_ids );
-        $item_ids = array_unique( $item_ids );
-        wp_set_object_terms( $ID, $item_ids, 'donation_option' );
+        if( isset( $donation['items'] ) && ! in_array( 'PMD 1.0 Donation', $donation['items'] ) ){
+            $item_ids = array_keys( $donation['items'] );
+            $item_ids = array_map( 'intval', $item_ids );
+            $item_ids = array_unique( $item_ids );
+            wp_set_object_terms( $ID, $item_ids, 'donation_option' );
+        }
 
         // Tag the pickup_location
-        $pickup_location_slug = sanitize_title( $donation['pickuplocation'] );
-        wp_set_object_terms( $ID, $pickup_location_slug, 'pickup_location' );
+        if( isset( $donation['pickuplocation'] ) ){
+            $pickup_location_slug = sanitize_title( $donation['pickuplocation'] );
+            wp_set_object_terms( $ID, $pickup_location_slug, 'pickup_location' );
+        }
 
         // Tag the pickup_code
-        $pickup_code_slug = sanitize_title( $donation['pickup_code'] );
-        wp_set_object_terms( $ID, $pickup_code_slug, 'pickup_code' );
+        if( isset( $donation['pickup_code'] ) ){
+            $pickup_code_slug = sanitize_title( $donation['pickup_code'] );
+            wp_set_object_terms( $ID, $pickup_code_slug, 'pickup_code' );
+        }
 
         // Tag the screening_question(s)
         if( is_array( $donation['screening_questions'] ) ){

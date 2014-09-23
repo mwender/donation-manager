@@ -93,17 +93,17 @@ class DMImporter extends DonationManager {
         $total_donations = $this->get_pmd1_table_count( 'tbldonation' );
         $start_donation = $this->get_pmd1_table( 'tbldonation', null, 1 );
 
-        $donations_html = '<p><strong>' . $total_donations . '</strong> donations found.</p>
+        $donations_html = '<p style="text-align: center;"><strong>' . $total_donations . '</strong> donations found.<br /><span id="import-status" style="font-style: italic;"></span></p>
         <h4>Progress:</h4>
 <div class="progress">
-  <div class="progress-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width: 0%;">
+  <div class="progress-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width: 0%; min-width: 30px;">
     0%
   </div>
 </div>
 <!--<pre>$start_donation = '.print_r($start_donation[0],true).'</pre>-->
 <input type="hidden" name="start_id" id="start_id" value="' . $start_donation[0]->id . '" />
 <input type="hidden" name="total_donations" id="total_donations" value="' . $total_donations . '" />';
-
+        /*
         $donations = $this->get_pmd1_table( 'tbldonation', null, 20 );
         $rows = array();
         $rows[] = '<thead><tr><th>#</th><th>1.0 ID</th><th>2.0 ID</th><th>Donor</th><th>Actions</th></tr></thead><tbody>';
@@ -120,6 +120,7 @@ class DMImporter extends DonationManager {
         }
 
         $donation_rows = '<table class="table table-striped">' . implode( "\n", $rows ) . '</tbody></table>';
+        /**/
 
         $html = '<!-- Nav tabs -->
 <ul class="nav nav-tabs" role="tablist">
@@ -152,7 +153,6 @@ class DMImporter extends DonationManager {
   <div class="tab-pane" id="donations">
     <br /><button type="button" class="btn btn-default" id="btn-import-donations">Import Donations</button><br /><br />
     ' . $donations_html . '
-    ' . $donation_rows . '
   </div>
 </div>';
 
@@ -163,7 +163,17 @@ class DMImporter extends DonationManager {
         global $wpdb;
         $response = new stdClass();
 
-        $ID = intval( $_POST['id'] );
+        $ID = intval( $_POST['id'] ); // donation legacy_id
+        $response->legacy_id = $ID;
+
+        if( ! is_numeric( $ID ) ){
+            $response->message = '[DM] Invalid legacy_id (' . $ID . ').';
+            $response->next_id = false;
+            wp_send_json( $response );
+        }
+
+        $new_donation_id = $this->import_donation( $ID );
+        $response->message = ( false == $new_donation_id )? '[DM] Donation w/ legacy_id ' + $ID + ' not imported.' : '[DM] Donation imported. New ID = ' . $new_donation_id;
 
         // Get the next donation ID
         $next_id = $wpdb->get_var( 'SELECT id FROM tbldonation WHERE id = (SELECT min(id) FROM tbldonation WHERE id > ' . $ID . ')' );
@@ -311,6 +321,12 @@ class DMImporter extends DonationManager {
         wp_send_json( $response );
     }
 
+    public function enqueue_donation_import_scripts(){
+        wp_enqueue_script( 'import-ajax', plugins_url( '/lib/js/import-ajax.js', __FILE__ ), array( 'jquery', 'jquery-color' ) );
+        wp_localize_script( 'import-ajax', 'ajax_object', array( 'ajax_url' => admin_url( 'admin-ajax.php' ) ) );
+        wp_enqueue_style( 'import-style', plugins_url( '/lib/css/import.css', __FILE__ ) );
+    }
+
     public function get_pmd1_table_count( $table = null ){
         if( is_null( $table ) )
             return false;
@@ -371,10 +387,64 @@ class DMImporter extends DonationManager {
         return $donation_options;
     }
 
-    public function import_enqueue_scripts(){
-        wp_enqueue_script( 'import-ajax', plugins_url( '/lib/js/import-ajax.js', __FILE__ ), array( 'jquery', 'jquery-color' ) );
-        wp_localize_script( 'import-ajax', 'ajax_object', array( 'ajax_url' => admin_url( 'admin-ajax.php' ) ) );
-        wp_enqueue_style( 'import-style', plugins_url( '/lib/css/import.css', __FILE__ ) );
+    public function import_donation( $id ){
+        if( empty( $id ) || ! is_numeric( $id ) )
+            return false;
+
+        $exists = $this->pmd2_cpt_exists( $id, 'donation' );
+
+        if( false != $exists )
+            return false;
+
+        global $wpdb;
+
+        $donation_cols = '';
+        $d_row = $wpdb->get_row( 'SELECT *,a.id AS donation_id FROM tbldonation AS a,tbldonor AS b WHERE a.id=' . $id . ' AND a.DonorID=b.id' );
+
+        $donation = array();
+        $donation['legacy_id'] = $d_row->donation_id;
+        $donation['pickup_code'] = $d_row->DonationZip;
+        $donation['org_id'] = $this->pmd2_cpt_exists( $d_row->OrgID, 'organization' );
+        $donation['trans_dept_id'] = $this->pmd2_cpt_exists( $d_row->TransportdepartmentID, 'trans_dept' );
+        $donation['description'] = $d_row->DonationDescription;
+
+        // Setup a default items array for PMD1.0 donations
+        $donation['items'] = array( 'PMD 1.0 Donation' );
+
+        // Build the address
+        $address = $d_row->DonationAddress1;
+        if( ! empty( $d_row->DonationAddress2 ) )
+            $address.= ', ' . $d_row->DonationAddress2;
+        $donation['address'] = array(
+            'name' => $d_row->DonorName,
+            'address' => $address,
+            'city' => $d_row->DonationCity,
+            'state' => $d_row->DonationState,
+            'zip' => $d_rows->DonationZip,
+        );
+
+        if( ! empty( $d_row->DonorEmail ) && is_email( $d_row->DonorEmail ) )
+            $donation['email'] = $d_row->DonorEmail;
+        if( preg_match( '/^(\+\d{1,2}\s)?\(?\d{3}\)?[\s.-]\d{3}[\s.-]\d{4}$/', $d_row->DonorPhone ) )
+            $donation['phone'] = $d_row->DonorPhone;
+        $donation['preferred_contact_method'] = $d_row->ContactMethod;
+        $donation['pickupdate1'] = date( 'm/d/Y', strtotime( $d_row->PickupDate ) );
+        $donation['pickuptime1'] = $d_row->PickupTime;
+
+        $pickuplocations_map = array(
+            'insideupper' => 'Inside Upper Floor',
+            'insideground' => 'Inside Ground Floor',
+            'outsidegarage' => 'Outside/Garage'
+        );
+        $donation['pickuplocation'] = $pickuplocations_map[$d_row->LocationOfItems];
+
+        $donation['post_date'] = date( 'Y-m-d H:i:s', strtotime( $d_row->DateTimeModified ) );
+        $donation['post_date_gmt'] = date( 'Y-m-d H:i:s', strtotime( $d_row->DateTimeModified ) );
+
+        $ID = $this->save_donation( $donation );
+        $this->tag_donation( $ID, $donation );
+
+        return $ID;
     }
 
     public function import_org( $org ){
@@ -547,5 +617,5 @@ add_action( 'wp_ajax_import_transdept', array( $DMImporter, 'callback_import_tra
 add_action( 'wp_ajax_import_store', array( $DMImporter, 'callback_import_store' ) );
 add_action( 'wp_ajax_import_pickupcode', array( $DMImporter, 'callback_import_pickupcode' ), 99 );
 add_action( 'wp_ajax_import_donation', array( $DMImporter, 'callback_import_donation' ) );
-add_action( 'wp_enqueue_scripts', array( $DMImporter, 'import_enqueue_scripts' ) );
+add_action( 'wp_enqueue_scripts', array( $DMImporter, 'enqueue_donation_import_scripts' ) );
 ?>

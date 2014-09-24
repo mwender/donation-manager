@@ -15,6 +15,24 @@ class DMImporter extends DonationManager {
     private function __construct() {
     }
 
+    public function callback_delete_donations(){
+        $response = new stdClass();
+
+        $numberposts = 100;
+        $response->numberposts = $numberposts;
+
+        $donations = get_posts( array( 'post_type' => 'donation', 'orderby' => 'ID', 'numberposts' => $numberposts ) );
+        foreach( $donations as $donation ){
+            wp_delete_post( $donation->ID, true );
+        }
+
+        $donation_count = wp_count_posts( 'donation' );
+        $response->donation_count = $donation_count->publish;
+        $response->message = '[DM] ' . $donation_count->publish . ' donation(s) remaining.';
+
+        wp_send_json( $response );
+    }
+
     public function callback_dmimport( $atts ){
 
         extract( shortcode_atts( array(
@@ -92,6 +110,7 @@ class DMImporter extends DonationManager {
         // Donations
         $total_donations = $this->get_pmd1_table_count( 'tbldonation' );
         $start_donation = $this->get_pmd1_table( 'tbldonation', null, 1 );
+        $donation_count = wp_count_posts( 'donation' );
 
         $donations_html = '<p style="text-align: center;"><strong>' . $total_donations . '</strong> donations found.<br /><span id="import-status" style="font-style: italic;"></span></p>
         <h4>Progress:</h4>
@@ -103,24 +122,6 @@ class DMImporter extends DonationManager {
 <!--<pre>$start_donation = '.print_r($start_donation[0],true).'</pre>-->
 <input type="hidden" name="start_id" id="start_id" value="' . $start_donation[0]->id . '" />
 <input type="hidden" name="total_donations" id="total_donations" value="' . $total_donations . '" />';
-        /*
-        $donations = $this->get_pmd1_table( 'tbldonation', null, 20 );
-        $rows = array();
-        $rows[] = '<thead><tr><th>#</th><th>1.0 ID</th><th>2.0 ID</th><th>Donor</th><th>Actions</th></tr></thead><tbody>';
-        $x = 1;
-        foreach( $donations as $donation ){
-            $donor = $this->get_pmd1_table( 'tbldonor', $donation->DonorID );
-
-            $donation_name = 'PMD1.0 Donation - ' . $donor->DonorName;
-            $donation->slug = apply_filters( 'sanitize_title', $donation_name );
-            $donation->pmd2ID = $this->pmd2_cpt_exists( $donation->id, 'donation' );
-            $donation->exists = ( false == $donation->pmd2ID )? 'No' : 'Yes';
-            $rows[] = '<tr id="pmd1_donationid_' . $donation->id . '"><td>' . $x . '<input name="donation_id[]" class="donations" type="hidden" value="' . $donation->id . '" /></td><td>'.$donation->id.'</td><td class="pmd2_donationid">' . $donation->pmd2ID . '</td><td>' . $donation_name . '</td><td></td></tr>';
-            $x++;
-        }
-
-        $donation_rows = '<table class="table table-striped">' . implode( "\n", $rows ) . '</tbody></table>';
-        /**/
 
         $html = '<!-- Nav tabs -->
 <ul class="nav nav-tabs" role="tablist">
@@ -129,6 +130,7 @@ class DMImporter extends DonationManager {
   <li><a href="#stores" role="tab" data-toggle="tab">Stores</a></li>
   <li><a href="#zipcodes" role="tab" data-toggle="tab">Zip Codes</a></li>
   <li><a href="#donations" role="tab" data-toggle="tab">Donations</a></li>
+  <li><a href="#delete" role="tab" data-toggle="tab">Delete</a></li>
 </ul>
 
 <!-- Tab panes -->
@@ -153,6 +155,10 @@ class DMImporter extends DonationManager {
   <div class="tab-pane" id="donations">
     <br /><button type="button" class="btn btn-default" id="btn-import-donations">Import Donations</button><br /><br />
     ' . $donations_html . '
+  </div>
+  <div class="tab-pane" id="delete">
+    <br /><button type="button" class="btn btn-default" id="btn-delete-donations">Delete Donations</button><br /><br />
+    <div id="delete-donations-status" style="text-align: center;"><strong>' . $donation_count->publish . '</strong> donations.</div><br /><br />
   </div>
 </div>';
 
@@ -612,6 +618,7 @@ class DMImporter extends DonationManager {
 /* Import Callbacks */
 $DMImporter = DMImporter::get_instance();
 add_shortcode( 'dmimport', array( $DMImporter, 'callback_dmimport' ) );
+add_action( 'wp_ajax_delete_donations', array( $DMImporter, 'callback_delete_donations' ) );
 add_action( 'wp_ajax_import_org', array( $DMImporter, 'callback_import_org' ) );
 add_action( 'wp_ajax_import_transdept', array( $DMImporter, 'callback_import_transdept' ) );
 add_action( 'wp_ajax_import_store', array( $DMImporter, 'callback_import_store' ) );

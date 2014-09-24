@@ -18,7 +18,7 @@ class DMImporter extends DonationManager {
     public function callback_delete_donations(){
         $response = new stdClass();
 
-        $numberposts = 100;
+        $numberposts = 50;
         $response->numberposts = $numberposts;
 
         $donations = get_posts( array( 'post_type' => 'donation', 'orderby' => 'ID', 'numberposts' => $numberposts ) );

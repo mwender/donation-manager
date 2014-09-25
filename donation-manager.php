@@ -442,6 +442,11 @@ class DonationManager {
             $_SESSION['donor'] = array();
 
         $form = ( isset( $_SESSION['donor']['form'] ) )? $_SESSION['donor']['form'] : '';
+        if( isset( $_REQUEST['pcode'] ) ){
+            $form = 'select-your-organization';
+        } else if( isset( $_REQUEST['oid'] ) && isset( $_REQUEST['tid'] ) ){
+            $form = 'describe-your-donation';
+        }
 
         switch( $form ) {
 

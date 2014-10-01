@@ -393,6 +393,18 @@ class DonationManager {
     }
 
     /**
+     * Adds meta boxes to WordPress admin.
+     *
+     * @since 1.0.1
+     *
+     * @return void
+     */
+    public function callback_metaboxes(){
+        add_meta_box( 'pmd_meta_enhanced_fields', 'Enhanced Fields', array( $this, 'metabox_enhanced_fields' ), 'store', 'normal', 'high' );
+        add_meta_box( 'pmd_meta_enhanced_fields', 'Enhanced Fields', array( $this, 'metabox_enhanced_fields' ), 'trans_dept', 'normal', 'high' );
+    }
+
+    /**
      * Handles display of the donation form via the [donationform] shortcode.
      *
      * @since 1.0.0
@@ -684,6 +696,10 @@ class DonationManager {
                 }
             }
         }
+    }
+
+    public function enqueue_admin_scripts(){
+        wp_enqueue_script( 'dm-admin-js', plugins_url( 'lib/js/admin.js', __FILE__ ), array( 'jquery' ) );
     }
 
     /**
@@ -1191,6 +1207,70 @@ class DonationManager {
 
     }
 
+    /**
+     * Meta box for enhanced fields.
+     *
+     * Provides extended information for help in selecting the
+     * correct Trans Dept and Organization.
+     *
+     * @since 1.0.1
+     *
+     * @param object $post Current post object.
+     * @return void
+     */
+    public function metabox_enhanced_fields( $post ){
+        $post_type = $post->post_type;
+
+        echo '<p>The following fields provide extended information not available under the <em>More Fields</em> meta box. When you make a selection in any fields here, the corresponding field under <em>More Fields</em> will also update.</p>';
+
+
+
+        $rows = array();
+
+        // Get all organizations
+        $args = array(
+            'posts_per_page' => -1,
+            'post_type' => 'organization',
+            'order' => 'ASC',
+            'orderby' => 'title',
+        );
+        $organizations = get_posts( $args );
+
+
+        if( $organizations ){
+            switch( $post_type ){
+                case 'trans_dept':
+                    $corg = get_post_meta( $post->ID, 'organization', true ); // current organization
+                    $rows['select'] = '<th><label>Organization</label></th>';
+                    foreach( $organizations as $org ){
+                        $selected = ( isset( $corg['ID'] ) && $corg['ID'] == $org->ID )? ' selected="selected"' : '' ;
+                        $excerpt = substr( strip_tags( $org->post_content ), 0, 65 ) . '...';
+                        $options[] = '<option value="' . $org->ID . '"' . $selected . '>' . strtoupper( $org->post_title ) . ' - ' . $excerpt . '</option>';
+                    }
+
+                    $rows['select'].= '<td><select id="enhanced-organization-select"><option value="">Select an organization...</option>' . implode( '', $options ) . '</select></td>';
+                break;
+                case 'store':
+                    $ctd = get_post_meta( $post->ID, 'trans_dept', true ); // current trans dept
+                    $rows['select'] = '<th><label>Transportation Department</label></th>';
+                    foreach( $organizations as $org ){
+                        $tds = get_post_meta( $org->ID, 'trans_depts', false );
+                        foreach( $tds as $td ){
+                            $selected = ( isset( $ctd['ID'] ) && $ctd['ID'] == $td['ID'] )? ' selected="selected"' : '' ;
+                            $options[] = '<option value="' . $td['ID'] . '"' . $selected . '>' . strtoupper( $org->post_title ) . ' - ' . $td['post_title'] . ' - ' . strip_tags( $td['post_content'] ) . '</option>';
+                        }
+                    }
+                    $rows['select'].= '<td><select id="enhanced-trans-dept-select"><option value="">Select a transportation department...</option>' . implode( '', $options ) . '</select></td>';
+                break;
+            }
+
+        } else {
+            $rows['select'].= '<td>No organizations found.</td>';
+        }
+
+        echo '<table class="form-table"><tbody><tr>' . implode( '</tr><tr>', $rows ) . '</tr></tbody></table>';
+    }
+
     public function return_content_type(){
         return 'text/html';
     }
@@ -1463,5 +1543,7 @@ add_shortcode( 'donationform', array( $DonationManager, 'callback_shortcode' ) )
 add_action( 'init', array( $DonationManager, 'callback_init' ), 99 );
 add_action( 'template_redirect', array( $DonationManager, 'callback_template_redirect' ) );
 add_action( 'wp_enqueue_scripts', array( $DonationManager, 'enqueue_scripts' ) );
+add_action( 'admin_enqueue_scripts', array( $DonationManager, 'enqueue_admin_scripts' ) );
+add_action( 'add_meta_boxes', array( $DonationManager, 'callback_metaboxes' ) );
 require 'dmimporter.php';
 ?>

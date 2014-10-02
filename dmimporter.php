@@ -297,7 +297,8 @@ class DMImporter extends DonationManager {
         if( false == $pmd2ID ){
             $response->message = '[DM] ERROR: `' . $transdept->Name . '` has NOT been imported.';
         } else {
-            $response->message = '[DM] SUCCESS: `' . $transdept->Name . '` has been imported.';
+            $update_create = ( 'Yes' == $transdept->exists )? 'updated' : 'created';
+            $response->message = '[DM] ' . strtoupper( $update_create ) . ': `' . $transdept->Name . '` has been ' . $update_create . '.';
             $response->transdept = $transdept;
             $response->pmd1ID = $ID;
             $response->pmd2ID = $pmd2ID;

@@ -698,6 +698,69 @@ class DonationManager {
         }
     }
 
+    public function columns_for_trans_dept( $defaults ){
+        $defaults = array(
+            'cb' => '<input type="checkbox" />',
+            'title' => 'Title',
+            'org' => 'Organization',
+            'taxonomy-pickup_code' => 'Pickup Codes',
+        );
+        return $defaults;
+    }
+
+    public function custom_column_content( $column ){
+        global $post;
+        switch( $column ){
+            case 'org':
+                $org_name = get_post_meta( $post->ID, '_organization_name', true );
+                if( $org_name )
+                    echo $org_name;
+            break;
+        }
+    }
+
+    public function custom_columns_sort( $vars ){
+        if( ! isset( $vars['orderby'] ) )
+            return $vars;
+
+        switch( $vars['orderby'] ){
+            case 'organization':
+                $vars = array_merge( $vars, array(
+                    'meta_key' => '_organization_name',
+                    'orderby' => 'meta_value'
+                ));
+            break;
+        }
+
+        return $vars;
+    }
+
+    public function custom_save_post( $post_id ){
+
+        if( wp_is_post_revision( $post_id ) )
+            return;
+
+        if( 'trans_dept' != get_post_type( $post_id ) )
+            return;
+
+        $org = get_post_meta( $post_id, 'organization', true );
+        if( $org && isset( $org['post_title'] ) ){
+            $org_name = $org['post_title'];
+
+            if( ! empty( $org_name ) )
+                update_post_meta( $post_id, '_organization_name', $org_name );
+        }
+
+    }
+
+    public function custom_sortable_columns($sortables){
+        //echo '<pre>$sortables = '.print_r($sortables,true).'</pre>';
+        return array(
+            'title' => 'title',
+            'org' => 'organization'
+        );
+    }
+
     public function enqueue_admin_scripts(){
         wp_enqueue_script( 'dm-admin-js', plugins_url( 'lib/js/admin.js', __FILE__ ), array( 'jquery' ) );
     }
@@ -1539,11 +1602,22 @@ class DonationManager {
 
 $DonationManager = DonationManager::get_instance();
 register_activation_hook( __FILE__, array( $DonationManager, 'activate' ) );
+
+// Frontend functionality
 add_shortcode( 'donationform', array( $DonationManager, 'callback_shortcode' ) );
 add_action( 'init', array( $DonationManager, 'callback_init' ), 99 );
 add_action( 'template_redirect', array( $DonationManager, 'callback_template_redirect' ) );
 add_action( 'wp_enqueue_scripts', array( $DonationManager, 'enqueue_scripts' ) );
+
+// Modifications to the WordPress Admin
 add_action( 'admin_enqueue_scripts', array( $DonationManager, 'enqueue_admin_scripts' ) );
 add_action( 'add_meta_boxes', array( $DonationManager, 'callback_metaboxes' ) );
+add_filter( 'manage_edit-trans_dept_columns', array( $DonationManager, 'columns_for_trans_dept' ) );
+add_action( 'manage_trans_dept_posts_custom_column', array( $DonationManager, 'custom_column_content' ), 10, 2 );
+add_filter( 'manage_edit-trans_dept_sortable_columns', array( $DonationManager, 'custom_sortable_columns') );
+add_filter( 'request', array( $DonationManager, 'custom_columns_sort' ) );
+add_action( 'save_post', array( $DonationManager, 'custom_save_post' ) );
+
+// Include our PMD1.0 Importer Class
 require 'dmimporter.php';
 ?>

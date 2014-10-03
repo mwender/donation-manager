@@ -1434,6 +1434,23 @@ class DonationManager {
         return $ID;
     }
 
+    /**
+     * Sends donor confirmation and transportation dept emails.
+     *
+     * The FROM: address for all emails sent by this function is
+     * `PickUpMyDonation <noreply@pickupmydonation.com>`. The
+     * Reply-To contact is the Transportation Department contact.
+     *
+     * @see Function/method/class relied on
+     * @link URL short description.
+     * @global type $varname short description.
+     *
+     * @since 1.0.0
+     *
+     * @param type $var Description.
+     * @param type $var Optional. Description.
+     * @return type Description. (@return void if a non-returning function)
+     */
     public function send_email( $type = '' ){
         $donor = $_SESSION['donor'];
         $organization_name = get_the_title( $donor['org_id'] );
@@ -1475,7 +1492,7 @@ class DonationManager {
 
         }
 
-        $headers[] = 'Reply-To: ' . $tc['contact_name'] . '<' . $tc['contact_email'] . '>';
+        $headers[] = 'Reply-To: ' . $tc['contact_name'] . ' <' . $tc['contact_email'] . '>';
 
         add_filter( 'wp_mail_from', function( $email ){
             return 'noreply@pickupmydonation.com';

@@ -86,6 +86,7 @@ class DMImporter extends DonationManager {
         $store_rows = '<table class="table table-striped">' . implode( "\n", $rows ) . '</tbody></table>';
 
         // Zip/Pickup Codes
+        /*
         $pickup_codes = $this->get_pmd1_table( 'tblmapzip' );
         $rows = array();
         $x = 1;
@@ -106,21 +107,29 @@ class DMImporter extends DonationManager {
         }
 
         $pickupcode_rows = implode( '', $rows );
+        /**/
 
         // Donations
         $total_donations = $this->get_pmd1_table_count( 'tbldonation' );
-        $start_donation = $this->get_pmd1_table( 'tbldonation', null, 1 );
-        $donation_count = wp_count_posts( 'donation' );
 
-        $donations_html = '<p style="text-align: center;"><strong>' . $total_donations . '</strong> donations found.<br /><span id="import-status" style="font-style: italic;"></span></p>
+        $start_donation = $this->get_pmd1_table( 'tbldonation', null, 1 );
+        $start_donation = $start_donation[0]->id;
+
+        $last_pmd1_donation_id = $this->get_pmd2_last_import( 'donation' );
+        if( $last_pmd1_donation_id > $start_donation )
+            $start_donation = $last_pmd1_donation_id;
+
+        $donation_count = wp_count_posts( 'donation' );
+        $total_donations = $total_donations - $donation_count->publish;
+
+        $donations_html = '<p style="text-align: center;"><strong>' . $total_donations . '</strong> PMD1.0 donations remaining for import.<br />Last PMD1.0 Donation ID: ' . $last_pmd1_donation_id . '<br /><span id="import-status" style="font-style: italic;"></span></p>
         <h4>Progress:</h4>
 <div class="progress">
   <div class="progress-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width: 0%; min-width: 30px;">
     0%
   </div>
 </div>
-<!--<pre>$start_donation = '.print_r($start_donation[0],true).'</pre>-->
-<input type="hidden" name="start_id" id="start_id" value="' . $start_donation[0]->id . '" />
+<input type="hidden" name="start_id" id="start_id" value="' . $start_donation . '" />
 <input type="hidden" name="total_donations" id="total_donations" value="' . $total_donations . '" />';
 
         $html = '<!-- Nav tabs -->
@@ -128,7 +137,7 @@ class DMImporter extends DonationManager {
   <li class="active"><a href="#organizations" role="tab" data-toggle="tab">Organizations</a></li>
   <li><a href="#transdepts" role="tab" data-toggle="tab">Trans Depts</a></li>
   <li><a href="#stores" role="tab" data-toggle="tab">Stores</a></li>
-  <li><a href="#zipcodes" role="tab" data-toggle="tab">Zip Codes</a></li>
+  <!--<li><a href="#zipcodes" role="tab" data-toggle="tab">Zip Codes</a></li>-->
   <li><a href="#donations" role="tab" data-toggle="tab">Donations</a></li>
   <li><a href="#delete" role="tab" data-toggle="tab">Delete</a></li>
 </ul>
@@ -142,16 +151,17 @@ class DMImporter extends DonationManager {
   </div>
   <div class="tab-pane" id="transdepts">
 	<br /><button type="button" class="btn btn-default" id="btn-import-transdepts">Import Transportation Departments</button>
+    <button type="button" class="btn btn-default" id="btn-import-transdepts-pickupcodes">Import Pickup Codes</button>
 	' . $td_rows . '
   </div>
   <div class="tab-pane" id="stores">
 	<br /><button type="button" class="btn btn-default" id="btn-import-stores">Import Stores</button>
 	' . $store_rows . '
   </div>
-  <div class="tab-pane" id="zipcodes">
+  <!--<div class="tab-pane" id="zipcodes">
 	<br /><button type="button" class="btn btn-default" id="btn-import-pickupcodes">Import Pickup Codes</button><br />
 	' . $pickupcode_rows . '
-  </div>
+  </div>-->
   <div class="tab-pane" id="donations">
     <br /><button type="button" class="btn btn-default" id="btn-import-donations">Import Donations</button><br /><br />
     ' . $donations_html . '
@@ -223,16 +233,17 @@ class DMImporter extends DonationManager {
         $pickupcode->pmd2_transdept_id = $this->pmd2_cpt_exists( $pickupcode->TransportID, 'trans_dept' );
         if( false != $pickupcode->pmd2_transdept_id ){
             if( ! has_term( $pickupcode->pmd2ID, 'pickup_code', $pickupcode->pmd2_transdept_id ) ){
+                settype( $pickupcode->pmd2ID, 'int' );
                 $return = wp_set_object_terms( $pickupcode->pmd2_transdept_id, $pickupcode->pmd2ID, 'pickup_code', true );
                 if( is_wp_error( $return ) ){
                     $response->message = '[DM] ERROR: Trans Dept ' . $pickupcode->pmd2_transdept_id . ' NOT tagged with `' . $pickupcode->Zip . '`. Error msg: ' . implode(', ', $return->error_data ) ;
                 } else {
                     $response->message = '[DM] SUCCESS: Trans Dept ' . $pickupcode->pmd2_transdept_id . ' tagged with `' . $pickupcode->Zip . '`.';
-                    /*
+                    //*
                     if( is_array( $return ) ){
-                        $response->message.= ' RETURN: Array of affected terms: ' . implode( ', ', $return );
+                        $response->message.= "\n" . '$return = Array of affected terms: ' . implode( ', ', $return );
                     } else {
-                        $response->message.= ' RETURN: First offending term: ' . $return;
+                        $response->message.= "\n" . '$return = First offending term: ' . $return;
                     }
                     /**/
                 }
@@ -307,6 +318,37 @@ class DMImporter extends DonationManager {
         wp_send_json( $response );
     }
 
+    public function callback_import_transdept_pickupcodes(){
+        global $wpdb;
+
+        $ID = intval( $_POST['transdeptID'] );
+
+        $response = new stdClass();
+        $response->pmd1ID = $ID;
+        $trans_dept_id = $this->pmd2_cpt_exists( $ID, 'trans_dept' );
+
+        if( null == $ID || ! is_numeric( $ID ) ){
+            $response->message = '[DM] Invalid ID supplied to callback_import_transdept()!';
+            wp_send_json( $response );
+        }
+
+        $sql = $wpdb->prepare( 'SELECT * FROM tblmapzip WHERE TransportID=%d ORDER BY id ASC', $ID );
+        $pickupcodes = $wpdb->get_results( $sql );
+        if( 0 < count( $pickupcodes ) ){
+            foreach( $pickupcodes as $pc ){
+                $pickup_code = trim( $pc->Zip );
+                settype( $pickup_code, 'string' );
+                wp_set_object_terms( $trans_dept_id, $pickup_code, 'pickup_code', true );
+            }
+            $total_pickupcodes = count( $pickupcodes );
+            $response->message = '[DM] TransportID ' . $ID . ' has ' . $total_pickupcodes . ' pickup codes assigned.';
+        } else {
+            $response->message = '[DM] TransportID ' . $ID . ': No pickup codes found.';
+        }
+
+        wp_send_json( $response );
+    }
+
     public function callback_import_org(){
         $ID = intval( $_POST['orgid'] );
         $response = new stdClass();
@@ -346,6 +388,22 @@ class DMImporter extends DonationManager {
         return $count;
     }
 
+    /**
+     * Returns a PMD1.0 table result.
+     *
+     * Specifying the $id attribute returns the row with the
+     * corresponding ID.
+     *
+     * @see $wpdb
+     * @global object $wpdb Global WordPress DB object.
+     *
+     * @since 1.0.1
+     *
+     * @param string $table PMD1.0 table name.
+     * @param int $id Optional. ID used to retrieve a specific table row.
+     * @param int $limit Optional. Specify the number of results to return (i.e. LIMIT).
+     * @return object Database result object.
+     */
     public function get_pmd1_table( $table = null, $id = null, $limit = null ){
         if( is_null( $table ) )
             return;
@@ -368,6 +426,38 @@ class DMImporter extends DonationManager {
         }
 
         return $result;
+    }
+
+    /**
+     * Retrieves last PMD1.0 import for a given post type.
+     *
+     * @see get_posts(), get_post_meta()
+     *
+     * @since 1.0.1
+     *
+     * @param string $cpt Name of the custom post_type.
+     * @return int PMD1.0 ID of most recent import.
+     */
+    public function get_pmd2_last_import( $cpt = null ){
+        if( is_null( $cpt ) )
+            return false;
+
+        $args = array(
+            'post_type' => $cpt,
+            'meta_key' => 'legacy_id',
+            'posts_per_page' => 1,
+            'orderby' => 'meta_value_num',
+            'order' => 'DESC',
+        );
+        $cpt_posts = get_posts( $args );
+        if( $cpt_posts ){
+            $post_id = $cpt_posts[0]->ID;
+            $legacy_id = get_post_meta( $post_id, 'legacy_id', true );
+            return $legacy_id;
+        } else {
+            return false;
+        }
+
     }
 
     public function get_donation_options_map(){
@@ -622,6 +712,7 @@ add_shortcode( 'dmimport', array( $DMImporter, 'callback_dmimport' ) );
 add_action( 'wp_ajax_delete_donations', array( $DMImporter, 'callback_delete_donations' ) );
 add_action( 'wp_ajax_import_org', array( $DMImporter, 'callback_import_org' ) );
 add_action( 'wp_ajax_import_transdept', array( $DMImporter, 'callback_import_transdept' ) );
+add_action( 'wp_ajax_import_transdept_pickupcodes', array( $DMImporter, 'callback_import_transdept_pickupcodes' ) );
 add_action( 'wp_ajax_import_store', array( $DMImporter, 'callback_import_store' ) );
 add_action( 'wp_ajax_import_pickupcode', array( $DMImporter, 'callback_import_pickupcode' ), 99 );
 add_action( 'wp_ajax_import_donation', array( $DMImporter, 'callback_import_donation' ) );

@@ -1261,7 +1261,7 @@ class DonationManager {
 
         $pod = pods( 'trans_dept' );
         $pod->fetch( $trans_dept_id );
-        $trans_dept_contact = array( 'contact_title' => '', 'contact_name' => '', 'contact_email' => '', 'bcc_email' => '', 'phone' => '' );
+        $trans_dept_contact = array( 'contact_title' => '', 'contact_name' => '', 'contact_email' => '', 'cc_emails' => '', 'phone' => '' );
         foreach( $trans_dept_contact as $key => $val ) {
             $trans_dept_contact[$key] = $pod->get_field( $key );
         }
@@ -1485,7 +1485,15 @@ class DonationManager {
                     'donationreceipt' => $donationreceipt,
                 ));
 
-                $recipients = array( $tc['contact_email'], $tc['bcc_email'] );
+                $recipients = array( $tc['contact_email'] );
+                if( is_array( $tc['cc_emails'] ) ){
+                    $cc_emails = $tc['cc_emails'];
+                } else if( stristr( $tc['cc_emails'], ',' ) ){
+                    $cc_emails = explode( ',', str_replace( ' ', '', $tc['cc_emails'] ) );
+                } else if( is_email( $tc['cc_emails'] ) ){
+                    $cc_emails = array( $tc['cc_emails'] );
+                }
+                $recipients = array_merge( $recipients, $cc_emails );
                 $subject = 'Scheduling Request from ' . $donor['address']['name'];
             break;
 

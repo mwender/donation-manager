@@ -462,15 +462,15 @@ class DMImporter extends DonationManager {
 
     public function get_donation_options_map(){
         $donation_options = array(
+            'Automobiles' => 0,
+            'Construction Materials' => 0,
+            'Large Appliances' => 0,
             'Large Furniture' => 0,
             'Medium Furniture' => 0,
-            'Large Appliances' => 0,
             'Medium General/Miscellaneous' => 0,
-            'Small Misc.' => 0,
-            'Automobiles' => 0,
             'Recreational/Outdoor Items' => 0,
             'Recyclable Materials' => 0,
-            'Construction Materials' => 0,
+            'Small Misc.' => 0,
         );
 
         foreach( $donation_options as $key => $id ){

@@ -1447,9 +1447,8 @@ class DonationManager {
      *
      * @since 1.0.0
      *
-     * @param type $var Description.
-     * @param type $var Optional. Description.
-     * @return type Description. (@return void if a non-returning function)
+     * @param string $type Specifies email `type` (e.g. donor_confirmation).
+     * @return void
      */
     public function send_email( $type = '' ){
         $donor = $_SESSION['donor'];

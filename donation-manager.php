@@ -1642,6 +1642,9 @@ add_filter( 'manage_edit-trans_dept_sortable_columns', array( $DonationManager, 
 add_filter( 'request', array( $DonationManager, 'custom_columns_sort' ) );
 add_action( 'save_post', array( $DonationManager, 'custom_save_post' ) );
 
+// Include our Reporting Class
+require 'donation-reports.php';
+
 // Include our PMD1.0 Importer Class
 require 'dmimporter.php';
 ?>

@@ -105,14 +105,19 @@ class DMReports extends DonationManager {
 							</p>
 							<?php
 							$orgs = $this->get_rows( 'organization' );
+							$date = new DateTime( current_time( 'Y-m-d' ) );
+							$interval = new DateInterval( 'P1M' );
+							$date->sub( $interval );
+							$month = $date->format( 'Y-m' );
 							?>
 							<table class="widefat report">
-								<colgroup><col style="width: 5%;" /><col style="width: 5%;" /><col style="width: 80%;" /><col style="width: 10%;" /></colgroup>
+								<colgroup><col style="width: 5%;" /><col style="width: 5%;" /><col style="width: 60%;" /><col style="width: 20%;" /><col style="width: 10%;" /></colgroup>
 								<thead>
 									<tr>
 										<th>#</th>
 										<th>ID</th>
 										<th>Organization</th>
+										<th style="text-align: right"><?php echo $date->format( 'M Y' )  ?> Donations</th>
 										<th>Action</th>
 									</tr>
 								</thead>
@@ -122,10 +127,15 @@ class DMReports extends DonationManager {
 									$x = 1;
 									foreach( $orgs as $post ){
 										setup_postdata( $post );
+
+										$donations = $this->get_donations( get_the_ID(), $month );
+										$donation_count = ( $donations )? count( $donations ) : 0 ;
+										$donations_dsp = ( is_array( $donations ) )? implode("\n", $donations) : $donations;
 										echo '<tr aria-org-id="' . get_the_ID() . '">
 												<td>' . $x . '</td>
 												<td>' . get_the_ID() . '</td>
 												<td>' . get_the_title() . '</td>
+												<td style="text-align: right;">' . $donation_count . '</td>
 												<td>' . get_submit_button( 'Export CSV', 'secondary small export-csv', 'export-csv-' . get_the_ID(), false, array( 'aria-org-id' => get_the_ID() ) ) . '</td>
 											</tr>';
 										$x++;

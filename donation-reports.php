@@ -275,7 +275,7 @@ class DMReports extends DonationManager {
     			'PickupDate3' => $custom_fields['pickupdate3'][0],
 			);
 
-			$donation_rows[] = implode( '","', '"' . $donation_row . '"' );
+			$donation_rows[] = '"' . implode( '","', $donation_row ) . '"';
     	}
 
     	return $donation_rows;

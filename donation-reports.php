@@ -136,7 +136,7 @@ class DMReports extends DonationManager {
 												<td>' . get_the_ID() . '</td>
 												<td>' . get_the_title() . '</td>
 												<td style="text-align: right;">' . $donation_count . '</td>
-												<td>' . get_submit_button( 'Export CSV', 'secondary small export-csv', 'export-csv-' . get_the_ID(), false, array( 'aria-org-id' => get_the_ID() ) ) . '</td>
+												<td>' . get_submit_button( 'Export ' . $date->format( 'M Y' ) . ' CSV', 'secondary small export-csv', 'export-csv-' . get_the_ID(), false, array( 'aria-org-id' => get_the_ID() ) ) . '</td>
 											</tr>';
 										$x++;
 									}

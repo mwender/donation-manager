@@ -1493,7 +1493,8 @@ class DonationManager {
                 } else if( is_email( $tc['cc_emails'] ) ){
                     $cc_emails = array( $tc['cc_emails'] );
                 }
-                $recipients = array_merge( $recipients, $cc_emails );
+                if( is_array( $cc_emails ) )
+                    $recipients = array_merge( $recipients, $cc_emails );
                 $subject = 'Scheduling Request from ' . $donor['address']['name'];
             break;
 

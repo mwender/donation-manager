@@ -25,6 +25,7 @@
     "tests"
   ],
   "dependencies": {
-    "gl-datepicker": "*"
+    "gl-datepicker": "*",
+    "jquery-file-download": "*"
   }
 }

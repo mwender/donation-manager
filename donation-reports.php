@@ -249,43 +249,46 @@ class DMReports extends DonationManager {
     	if( is_null( $month ) )
     		return;
 
-    	$args = array(
-    		'post_type' => 'donation',
-    		'posts_per_page' => -1,
-    		'date_query' => array(
-    			array(
-    				'year' => substr( $month, 0, 4 ),
-    				'month' => substr( $month, 5, 2 ),
-    			),
-			),
-			'meta_key' => 'organization',
-			'meta_value' => $orgID,
-		);
-    	$donations = get_posts( $args );
-    	if( ! $donations )
-    		return false;
-
-    	$donation_rows = array();
-    	foreach( $donations as $donation ){
-    		$custom_fields = get_post_custom( $donation->ID );
-    		$donation_row = array(
-    			'DonorName' => $custom_fields['donor_name'][0],
-    			'DonorAddress' => $custom_fields['donor_address'][0],
-    			'DonorCity' => $custom_fields['donor_city'][0],
-    			'DonorState' => $custom_fields['donor_state'][0],
-    			'DonorZip' => $custom_fields['donor_zip'][0],
-    			'DonorPhone' => $custom_fields['donor_phone'][0],
-    			'DonorEmail' => $custom_fields['donor_email'][0],
-    			'DonationAddress' => $custom_fields['pickup_address'][0],
-    			'DonationCity' => $custom_fields['pickup_city'][0],
-    			'DonationState' => $custom_fields['pickup_state'][0],
-    			'DonationZip' => $custom_fields['pickup_zip'][0],
-    			'PickupDate1' => $custom_fields['pickupdate1'][0],
-    			'PickupDate2' => $custom_fields['pickupdate2'][0],
-    			'PickupDate3' => $custom_fields['pickupdate3'][0],
+    	if( false === ( $donation_rows = get_transient( 'donations_' . $orgID . '_' . $month ) ) ){
+	    	$args = array(
+	    		'post_type' => 'donation',
+	    		'posts_per_page' => -1,
+	    		'date_query' => array(
+	    			array(
+	    				'year' => substr( $month, 0, 4 ),
+	    				'month' => substr( $month, 5, 2 ),
+	    			),
+				),
+				'meta_key' => 'organization',
+				'meta_value' => $orgID,
 			);
+	    	$donations = get_posts( $args );
+	    	if( ! $donations )
+	    		return false;
 
-			$donation_rows[] = '"' . implode( '","', $donation_row ) . '"';
+	    	$donation_rows = array();
+	    	foreach( $donations as $donation ){
+	    		$custom_fields = get_post_custom( $donation->ID );
+	    		$donation_row = array(
+	    			'DonorName' => $custom_fields['donor_name'][0],
+	    			'DonorAddress' => $custom_fields['donor_address'][0],
+	    			'DonorCity' => $custom_fields['donor_city'][0],
+	    			'DonorState' => $custom_fields['donor_state'][0],
+	    			'DonorZip' => $custom_fields['donor_zip'][0],
+	    			'DonorPhone' => $custom_fields['donor_phone'][0],
+	    			'DonorEmail' => $custom_fields['donor_email'][0],
+	    			'DonationAddress' => $custom_fields['pickup_address'][0],
+	    			'DonationCity' => $custom_fields['pickup_city'][0],
+	    			'DonationState' => $custom_fields['pickup_state'][0],
+	    			'DonationZip' => $custom_fields['pickup_zip'][0],
+	    			'PickupDate1' => $custom_fields['pickupdate1'][0],
+	    			'PickupDate2' => $custom_fields['pickupdate2'][0],
+	    			'PickupDate3' => $custom_fields['pickupdate3'][0],
+				);
+
+				$donation_rows[] = '"' . implode( '","', $donation_row ) . '"';
+	    	}
+    		set_transient( 'donations_' . $orgID . '_' . $month, $donation_rows, 12 * HOUR_IN_SECONDS );
     	}
 
     	return $donation_rows;

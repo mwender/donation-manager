@@ -217,7 +217,7 @@ class DMReports extends DonationManager {
     	$filename = $org->post_name . '.' . $month . '.csv';
     	$donations = $this->get_donations( $orgID, $month );
 
-    	$csv = 'DonorName,DonorAddress,DonorCity,DonorState,DonorZip,DonorPhone,DonorEmail,DonationAddress,DonationCity,DonationState,DonationZip,PickupDate1,PickupDate2,PickupDate3' . "\n" . implode( "\n", $donations );
+    	$csv = '"DonorName","DonorAddress","DonorCity","DonorState","DonorZip","DonorPhone","DonorEmail","DonationAddress","DonationCity","DonationState","DonationZip","PickupDate1","PickupDate2","PickupDate3"' . "\n" . implode( "\n", $donations );
 
 		header('Set-Cookie: fileDownload=true; path=/');
 		header('Cache-Control: max-age=60, must-revalidate');
@@ -275,7 +275,7 @@ class DMReports extends DonationManager {
     			'PickupDate3' => $custom_fields['pickupdate3'][0],
 			);
 
-			$donation_rows[] = implode( ',', $donation_row );
+			$donation_rows[] = implode( '","', '"' . $donation_row . '"' );
     	}
 
     	return $donation_rows;

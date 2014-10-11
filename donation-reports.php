@@ -53,6 +53,7 @@ class DMReports extends DonationManager {
     	wp_enqueue_script( 'dm-admin-js', plugins_url( 'lib/js/admin.js', __FILE__ ), array( 'jquery' ) );
     	wp_localize_script( 'dm-admin-js', 'ajax_object', array( 'ajax_url' => admin_url( 'admin-ajax.php' ), 'site_url' => site_url( '/download/' ) ) );
     	wp_enqueue_script( 'jquery-file-download', plugins_url( 'lib/components/vendor/jquery-file-download/src/Scripts/jquery.fileDownload.js', __FILE__ ), array( 'jquery', 'jquery-ui-dialog' ) );
+    	wp_enqueue_style( 'wp-jquery-ui-dialog' );
     }
 
     public function admin_menu(){

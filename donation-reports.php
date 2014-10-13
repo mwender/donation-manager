@@ -228,7 +228,7 @@ class DMReports extends DonationManager {
     	$filename = $org->post_name . '.' . $month . '.csv';
     	$donations = $this->get_donations( $orgID, $month );
 
-    	$csv = '"DonorName","DonorAddress","DonorCity","DonorState","DonorZip","DonorPhone","DonorEmail","DonationAddress","DonationCity","DonationState","DonationZip","PickupDate1","PickupDate2","PickupDate3"' . "\n" . implode( "\n", $donations );
+    	$csv = '"Timestamp","DonorName","DonorAddress","DonorCity","DonorState","DonorZip","DonorPhone","DonorEmail","DonationAddress","DonationCity","DonationState","DonationZip","PickupDate1","PickupDate2","PickupDate3"' . "\n" . implode( "\n", $donations );
 
 		header('Set-Cookie: fileDownload=true; path=/');
 		header('Cache-Control: max-age=60, must-revalidate');
@@ -262,6 +262,8 @@ class DMReports extends DonationManager {
 				),
 				'meta_key' => 'organization',
 				'meta_value' => $orgID,
+				'orderby' => 'post_date',
+				'order' =>'ASC',
 			);
 	    	$donations = get_posts( $args );
 	    	if( ! $donations )
@@ -271,6 +273,7 @@ class DMReports extends DonationManager {
 	    	foreach( $donations as $donation ){
 	    		$custom_fields = get_post_custom( $donation->ID );
 	    		$donation_row = array(
+	    			'Date' => $donation->post_date,
 	    			'DonorName' => $custom_fields['donor_name'][0],
 	    			'DonorAddress' => $custom_fields['donor_address'][0],
 	    			'DonorCity' => $custom_fields['donor_city'][0],

@@ -81,6 +81,12 @@ class DMReports extends DonationManager {
 
 						<h3><span>All Organizations</span></h3>
 						<div class="inside">
+						<?php
+						$date = new DateTime( current_time( 'Y-m-d' ) );
+						$interval = new DateInterval( 'P1M' );
+						$date->sub( $interval );
+						$last_month = $date->format( 'Y-m' );
+						?>
 							<p><label>Month:</label>
 							<select name="report-month" id="report-month">
 								<?php
@@ -91,26 +97,26 @@ class DMReports extends DonationManager {
 								$current_month = date( 'n', current_time( 'timestamp' ) );
 								for( $year = $current_year; $year >= $firstyear; $year-- ){
 									foreach( $months as $month ){
-										if( $year == $current_year && $current_month <= $month )
-											continue;
-
-										$date = $year . '-' . $month . '-1';
-										$timestamp = strtotime( $date );
+										$option_date = $year . '-' . $month . '-1';
+										$timestamp = strtotime( $option_date );
 										$option_value = date( 'Y-m', $timestamp );
 										$option_display = date( 'Y - F', $timestamp );
-										echo '<option value="' . $option_value . '">' . $option_display . '</option>';
+
+										if( $year == $current_year && $current_month == $month ){
+											$option_display = date( 'M Y', $timestamp );
+											echo '<option value="'.$option_value.'">Current Month ('.$option_display.')</option>';
+											continue;
+										} else if( $year == $current_year && $current_month < $month ){
+											continue;
+										} else {
+											$selected = ( $option_value == $last_month )? ' selected="selected"' : '';
+											echo '<option value="' . $option_value . '"' . $selected . '>' . $option_display . '</option>';
+										}
 									}
 								}
 								?>
 							</select>
 							</p>
-							<?php
-							$orgs = $this->get_rows( 'organization' );
-							$date = new DateTime( current_time( 'Y-m-d' ) );
-							$interval = new DateInterval( 'P1M' );
-							$date->sub( $interval );
-							$month = $date->format( 'Y-m' );
-							?>
 							<table class="widefat report">
 								<colgroup><col style="width: 5%;" /><col style="width: 5%;" /><col style="width: 60%;" /><col style="width: 20%;" /><col style="width: 10%;" /></colgroup>
 								<thead>
@@ -124,22 +130,27 @@ class DMReports extends DonationManager {
 								</thead>
 								<tbody>
 									<?php
+									$orgs = $this->get_rows( 'organization' );
 									global $post;
 									$x = 1;
-									foreach( $orgs as $post ){
-										setup_postdata( $post );
+									if( $orgs ){
+										foreach( $orgs as $post ){
+											setup_postdata( $post );
 
-										$donations = $this->get_donations( get_the_ID(), $month );
-										$donation_count = ( $donations )? count( $donations ) : 0 ;
-										$donations_dsp = ( is_array( $donations ) )? implode("\n", $donations) : $donations;
-										echo '<tr aria-org-id="' . get_the_ID() . '">
-												<td>' . $x . '</td>
-												<td>' . get_the_ID() . '</td>
-												<td>' . get_the_title() . '</td>
-												<td style="text-align: right;">' . $donation_count . '</td>
-												<td>' . get_submit_button( 'Export ' . $date->format( 'M Y' ) . ' CSV', 'secondary small export-csv', 'export-csv-' . get_the_ID(), false, array( 'aria-org-id' => get_the_ID() ) ) . '</td>
-											</tr>';
-										$x++;
+											$donations = $this->get_donations( get_the_ID(), $last_month );
+											$donation_count = ( $donations )? count( $donations ) : 0 ;
+											$donations_dsp = ( is_array( $donations ) )? implode( "\n", $donations ) : $donations;
+											echo '<tr aria-org-id="' . get_the_ID() . '">
+													<td>' . $x . '</td>
+													<td>' . get_the_ID() . '</td>
+													<td>' . get_the_title() . '</td>
+													<td style="text-align: right;">' . $donation_count . '</td>
+													<td>' . get_submit_button( 'Export ' . $date->format( 'M Y' ) . ' CSV', 'secondary small export-csv', 'export-csv-' . get_the_ID(), false, array( 'aria-org-id' => get_the_ID() ) ) . '</td>
+												</tr>';
+											$x++;
+										}
+									} else {
+										echo '<tr><td colspan="5" style="text-align: center;">No organizations found!</td></tr>';
 									}
 									?>
 								</tbody>

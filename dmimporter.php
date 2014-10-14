@@ -517,7 +517,7 @@ class DMImporter extends DonationManager {
             'address' => $address,
             'city' => $d_row->DonationCity,
             'state' => $d_row->DonationState,
-            'zip' => $d_rows->DonationZip,
+            'zip' => $d_row->DonationZip,
         );
 
         if( ! empty( $d_row->DonorEmail ) && is_email( $d_row->DonorEmail ) )

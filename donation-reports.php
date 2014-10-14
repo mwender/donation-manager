@@ -228,7 +228,7 @@ class DMReports extends DonationManager {
     	$filename = $org->post_name . '.' . $month . '.csv';
     	$donations = $this->get_donations( $orgID, $month );
 
-    	$csv = '"Timestamp","DonorName","DonorAddress","DonorCity","DonorState","DonorZip","DonorPhone","DonorEmail","DonationAddress","DonationCity","DonationState","DonationZip","PickupDate1","PickupDate2","PickupDate3"' . "\n" . implode( "\n", $donations );
+    	$csv = '"Date/Time Modified","DonorName","DonorAddress","DonorCity","DonorState","DonorZip","DonorPhone","DonorEmail","DonationAddress","DonationCity","DonationState","DonationZip","DonationDescription","PickupDate1","PickupDate2","PickupDate3"' . "\n" . implode( "\n", $donations );
 
 		header('Set-Cookie: fileDownload=true; path=/');
 		header('Cache-Control: max-age=60, must-revalidate');
@@ -272,6 +272,12 @@ class DMReports extends DonationManager {
 	    	$donation_rows = array();
 	    	foreach( $donations as $donation ){
 	    		$custom_fields = get_post_custom( $donation->ID );
+
+	    		$DonationAddress = ( empty( $custom_fields['pickup_address'][0] ) )? $custom_fields['donor_address'][0] : $custom_fields['pickup_address'][0];
+	    		$DonationCity = ( empty( $custom_fields['pickup_city'][0] ) )? $custom_fields['donor_city'][0] : $custom_fields['pickup_city'][0];
+	    		$DonationState = ( empty( $custom_fields['pickup_state'][0] ) )? $custom_fields['donor_state'][0] : $custom_fields['pickup_state'][0];
+	    		$DonationZip = ( empty( $custom_fields['pickup_zip'][0] ) )? $custom_fields['donor_zip'][0] : $custom_fields['pickup_zip'][0];
+
 	    		$donation_row = array(
 	    			'Date' => $donation->post_date,
 	    			'DonorName' => $custom_fields['donor_name'][0],
@@ -281,10 +287,11 @@ class DMReports extends DonationManager {
 	    			'DonorZip' => $custom_fields['donor_zip'][0],
 	    			'DonorPhone' => $custom_fields['donor_phone'][0],
 	    			'DonorEmail' => $custom_fields['donor_email'][0],
-	    			'DonationAddress' => $custom_fields['pickup_address'][0],
-	    			'DonationCity' => $custom_fields['pickup_city'][0],
-	    			'DonationState' => $custom_fields['pickup_state'][0],
-	    			'DonationZip' => $custom_fields['pickup_zip'][0],
+	    			'DonationAddress' => $DonationAddress,
+	    			'DonationCity' => $DonationCity,
+	    			'DonationState' => $DonationState,
+	    			'DonationZip' => $DonationZip,
+	    			'DonationDesc' => $custom_fields['pickup_description'][0],
 	    			'PickupDate1' => $custom_fields['pickupdate1'][0],
 	    			'PickupDate2' => $custom_fields['pickupdate2'][0],
 	    			'PickupDate3' => $custom_fields['pickupdate3'][0],

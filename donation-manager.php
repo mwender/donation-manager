@@ -699,6 +699,26 @@ class DonationManager {
     }
 
     /**
+     * Adds columns to admin donation custom post_type listings.
+     *
+     * @since 1.0.1
+     *
+     * @param array $defaults Array of default columns for the CPT.
+     * @return array Modified array of columns.
+     */
+    public function columns_for_donation( $defaults ){
+        $defaults = array(
+            'cb' => '<input type="checkbox" />',
+            'title' => 'Title',
+            'org' => 'Organization',
+            'taxonomy-donation_option' => 'Donation Options',
+            'taxonomy-pickup_code' => 'Pickup Codes',
+            'date' => 'Date',
+        );
+        return $defaults;
+    }
+
+    /**
      * Adds columns to admin store custom post_type listings.
      *
      * @since 1.0.1
@@ -775,20 +795,20 @@ class DonationManager {
 
         // Only update valid CPTs
         $post_type = get_post_type( $post_id );
-        $valid_cpts = array( 'trans_dept', 'store' );
+        $valid_cpts = array( 'donation', 'store', 'trans_dept' );
         if( ! in_array( $post_type, $valid_cpts ) )
             return;
 
         switch ( $post_type ) {
-            case 'trans_dept':
-                $org = get_post_meta( $post_id, 'organization', true );
-            break;
-
             case 'store':
                 $trans_dept = get_post_meta( $post_id, 'trans_dept', true );
                 if( $trans_dept ){
                     $org = get_post_meta( $trans_dept['ID'], 'organization', true );
                 }
+            break;
+            case 'donation':
+            case 'trans_dept':
+                $org = get_post_meta( $post_id, 'organization', true );
             break;
         }
 
@@ -1686,15 +1706,20 @@ add_action( 'wp_enqueue_scripts', array( $DonationManager, 'enqueue_scripts' ) )
 add_action( 'admin_enqueue_scripts', array( $DonationManager, 'enqueue_admin_scripts' ) );
 add_action( 'add_meta_boxes', array( $DonationManager, 'callback_metaboxes' ) );
 
-// Add columns to `trans_dept` CPT list in admin
-add_filter( 'manage_trans_dept_posts_columns', array( $DonationManager, 'columns_for_trans_dept' ) );
-add_action( 'manage_trans_dept_posts_custom_column', array( $DonationManager, 'custom_column_content' ), 10, 2 );
-add_filter( 'manage_edit-trans_dept_sortable_columns', array( $DonationManager, 'custom_sortable_columns') );
+// Add columns to `donation` CPT list in admin
+add_filter( 'manage_donation_posts_columns', array( $DonationManager, 'columns_for_donation' ) );
+add_action( 'manage_donation_posts_custom_column', array( $DonationManager, 'custom_column_content' ), 10, 2 );
+add_filter( 'manage_edit-donation_sortable_columns', array( $DonationManager, 'custom_sortable_columns') );
 
 // Add columns to `store` CPT list in admin
 add_filter( 'manage_store_posts_columns', array( $DonationManager, 'columns_for_store' ) );
 add_action( 'manage_store_posts_custom_column', array( $DonationManager, 'custom_column_content' ), 10, 2 );
 add_filter( 'manage_edit-store_sortable_columns', array( $DonationManager, 'custom_sortable_columns') );
+
+// Add columns to `trans_dept` CPT list in admin
+add_filter( 'manage_trans_dept_posts_columns', array( $DonationManager, 'columns_for_trans_dept' ) );
+add_action( 'manage_trans_dept_posts_custom_column', array( $DonationManager, 'custom_column_content' ), 10, 2 );
+add_filter( 'manage_edit-trans_dept_sortable_columns', array( $DonationManager, 'custom_sortable_columns') );
 
 add_filter( 'request', array( $DonationManager, 'custom_columns_sort' ) );
 add_action( 'save_post', array( $DonationManager, 'custom_save_post' ) );

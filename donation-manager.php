@@ -1499,6 +1499,9 @@ class DonationManager {
                 add_post_meta( $ID, $meta_key, $meta_value );
         }
 
+        // Save _organization_name for sorting purposes
+        add_post_meta( $ID, '_organization_name', get_the_title( $donation['org_id'] ) );
+
         return $ID;
     }
 

@@ -637,6 +637,12 @@ class DonationManager {
 
                 $template = $this->get_template_part( 'form1.select-your-organization.row' );
                 $search = array( '{name}', '{desc}', '{link}' );
+
+                if( ! $organizations ){
+                    $this->add_html( '<div class="alert alert-warning"><strong>No default organization found!</strong><br />No default organization has been specified in the Donation Manager settings.</div>' );
+                    continue;
+                }
+
                 foreach( $organizations as $org ) {
                     $link = $nextpage . '?oid=' . $org['id'] . '&tid=' . $org['trans_dept_id'];
                     $replace = array( $org['name'], $org['desc'], $link );

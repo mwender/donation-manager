@@ -83,18 +83,23 @@ class DonationManager {
         /**
          *  01. INITIAL ZIP/PICKUP CODE VALIDATION
          */
-        if( isset( $_REQUEST['pickupcode'] ) ) {
+        if( isset( $_REQUEST['pickupcode'] ) || isset( $_REQUEST['pcode'] ) ) {
             $form = new Form([
                 'pickupcode' => ['regexp' => '/^[a-zA-Z0-9_-]+\z/', 'required']
             ]);
-            $form->setValues( array( 'pickupcode' => $_REQUEST['pickupcode'] ) );
+
+            $pickupcode = ( isset( $_REQUEST['pickupcode'] ) )? $_REQUEST['pickupcode'] : $_REQUEST['pcode'] ;
+
+            $form->setValues( array( 'pickupcode' => $pickupcode ) );
 
             if( $form->validate( $_REQUEST ) ) {
-                $_SESSION['donor']['pickup_code'] = $_REQUEST['pickupcode'];
+                $_SESSION['donor']['pickup_code'] = $pickupcode;
                 $_SESSION['donor']['form'] = 'select-your-organization';
-                session_write_close();
-                header( 'Location: ' . $_REQUEST['nextpage'] . '?pcode=' . $_REQUEST['pickupcode'] );
-                die();
+                if( isset( $_REQUEST['pickupcode'] ) ){
+                    session_write_close();
+                    header( 'Location: ' . $_REQUEST['nextpage'] . '?pcode=' . $pickupcode );
+                    die();
+                }
             } else {
                 $step = 'default';
                 $msg = array();

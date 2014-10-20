@@ -1731,5 +1731,5 @@ add_action( 'save_post', array( $DonationManager, 'custom_save_post' ) );
 require 'donation-reports.php';
 
 // Include our PMD1.0 Importer Class
-require 'dmimporter.php';
+//require 'dmimporter.php';
 ?>

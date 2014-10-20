@@ -194,8 +194,7 @@ class DonationManager {
                     $msg[] = 'Please select at least one donation item.';
                 if( true == $errors['description']['required'] )
                     $msg[] = 'Please enter a description of your item(s).';
-                $html = '<div class="alert alert-danger"><p>There was a problem with your submission. Please correct the following errors:</p><ul><li>' . implode( '</li><
-                    li>', $msg ) . '</li></ul></div>';
+                $html = '<div class="alert alert-danger"><p>There was a problem with your submission. Please correct the following errors:</p><ul><li>' . implode( '</li><li>', $msg ) . '</li></ul></div>';
                 $this->add_html( $html );
             }
 

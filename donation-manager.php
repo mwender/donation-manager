@@ -902,6 +902,8 @@ class DonationManager {
             break;
         }
 
+        wp_enqueue_script( 'dm-scripts', plugins_url( 'lib/js/scripts.js', __FILE__ ), array( 'jquery' ) );
+
     }
 
     /**

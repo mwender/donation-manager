@@ -85,7 +85,7 @@ class DonationManager {
          */
         if( isset( $_REQUEST['pickupcode'] ) ) {
             $form = new Form([
-                'pickupcode' => ['regexp' => '/^[a-zA-Z0-9_-]+\z/']
+                'pickupcode' => ['regexp' => '/^[a-zA-Z0-9_-]+\z/', 'required']
             ]);
             $form->setValues( array( 'pickupcode' => $_REQUEST['pickupcode'] ) );
 
@@ -97,7 +97,14 @@ class DonationManager {
                 die();
             } else {
                 $step = 'default';
-                $html = '<div class="alert alert-danger">Invalid Pickup/Zip Code! Please try again.</div>';
+                $msg = array();
+                $errors = $form->getErrors();
+                if( true == $errors['pickupcode']['regexp'] )
+                    $msg[] = 'Zip or Donation Code can only be made up of numbers, letters, dashes, and underscores.';
+                if( true == $errors['pickupcode']['required'] )
+                    $msg[] = 'Zip or Donation Code can not be blank.';
+                $html = '<div class="alert alert-danger"><p>Invalid pick up code! Please correct the following errors:</p><ul><li>' . implode( '</li><
+                    li>', $msg ) . '</li></ul></div>';
                 $this->add_html( $html );
             }
         }

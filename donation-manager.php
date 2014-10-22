@@ -1553,6 +1553,8 @@ class DonationManager {
         // Retrieve the donation receipt
         $donationreceipt = $this->get_property( 'donationreceipt' );
 
+        $headers = array();
+
         switch( $type ){
 
             case 'donor_confirmation':
@@ -1566,6 +1568,9 @@ class DonationManager {
                 ));
                 $recipients = array( $donor['email'] );
                 $subject = 'Thank You for Donating to ' . $organization_name;
+
+                // Set Reply-To the Transportation Department
+                $headers[] = 'Reply-To: ' . $tc['contact_name'] . ' <' . $tc['contact_email'] . '>';
             break;
 
             case 'trans_dept_notification':
@@ -1586,11 +1591,14 @@ class DonationManager {
                 if( is_array( $cc_emails ) )
                     $recipients = array_merge( $recipients, $cc_emails );
                 $subject = 'Scheduling Request from ' . $donor['address']['name'];
+
+                // Set Reply-To our donor
+                $headers[] = 'Reply-To: ' . $donor['address']['name'] . ' <' . $donor['email'] . '>';
             break;
 
         }
 
-        $headers[] = 'Reply-To: ' . $tc['contact_name'] . ' <' . $tc['contact_email'] . '>';
+
 
         add_filter( 'wp_mail_from', function( $email ){
             return 'noreply@pickupmydonation.com';

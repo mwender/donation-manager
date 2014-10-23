@@ -381,6 +381,14 @@ class DonationManager {
                 }
                 $_SESSION['donor']['pickuplocation' ] = $_POST['donor']['pickuplocation' ];
 
+                // Notify admin if missing ORG or TRANS DEPT
+                if( empty( $_SESSION['donor']['org_id'] ) || empty( $_SESSION['donor']['trans_dept_id'] ) ){
+                    $this->send_email( 'missing_org_transdept_notification' );
+                    $pickup_code = ( 'Yes' == $_SESSION['donor']['different_pickup_address'] )? $_SESSION['donor']['pickup_address']['zip'] : $_SESSION['donor']['address']['zip'];
+                    header( 'Location: ' . site_url( '/select-your-organization/?pcode=' . $pickup_code . '&message=no_org_transdept' ) );
+                    die();
+                }
+
                 // Save the donation to the database and send the confirmation and notification emails.
                 $ID = $this->save_donation( $_SESSION['donor'] );
                 $this->tag_donation( $ID, $_SESSION['donor'] );
@@ -664,6 +672,12 @@ class DonationManager {
                     $this->add_html( '<div class="alert alert-warning"><strong>No default organization found!</strong><br />No default organization has been specified in the Donation Manager settings.</div>' );
                     continue;
                 }
+
+                // We use this to show the `no_org_transdept` message to users
+                // who reached the last form without having an org/trans_dept
+                // saved in $_SESSION['donor'].
+                if( isset( $_REQUEST['message'] ) && ! empty( $_REQUEST['message'] ) )
+                    $this->add_html( $this->get_message( $_REQUEST['message'] ) );
 
                 foreach( $organizations as $org ) {
                     $link = $nextpage . '?oid=' . $org['id'] . '&tid=' . $org['trans_dept_id'];
@@ -1000,6 +1014,27 @@ class DonationManager {
         ));
 
         return $donationreceipt;
+    }
+
+    /**
+     * Returns a message.
+     *
+     * @since 1.0.0
+     *
+     * @param string $message Specifies which message to return.
+     * @return string The message.
+     */
+    public function get_message( $message = null ){
+        switch( $message ){
+            case 'no_org_transdept':
+                $message = '<div class="alert alert-danger">We are sorry, but somehow you reached the end of our donation process without having an organization saved for your donation details. Because of this error, we have redirected you back to the "Select Your Organization" screen based off of the ZIP code for your pickup address.<br /><br />If you have any questions, or if you can provide any further details to us, please email <a href="mailto:webmaster@pickupmydonation.com">webmaster@pickupmydonation.com</a>.</div>';
+            break;
+            default:
+                $message = '<div class="alert alert-warning">No message defined for `' . $message . '`.</div>';
+            break;
+        }
+
+        return $message;
     }
 
     /**
@@ -1564,6 +1599,15 @@ class DonationManager {
         $headers = array();
 
         switch( $type ){
+
+            case 'missing_org_transdept_notification':
+                $html = $this->get_template_part( 'email.blank', array(
+                    'content' => '<p>This donation doesn\'t have an ORG and/or TRANS_DEPT set:</p><pre>$_SESSION[\'donor\'] = ' . print_r( $_SESSION['donor'], true ) . '</pre>',
+                ));
+                $recipients = array( 'webmaster@pickupmydonation.com' );
+                $subject = 'PMD Admin Notification';
+                $headers[] = 'Reply-To: PMD Support <support@pickupmydonation.com>';
+            break;
 
             case 'donor_confirmation':
 

@@ -689,7 +689,7 @@ class DonationManager {
         }
 
         if( current_user_can( 'activate_plugins') )
-            $this->add_html( '<br /><pre>$_SESSION[\'donor\'] = ' . print_r( $_SESSION['donor'], true ) . '</pre>' );
+            $this->add_html( '<br /><div class="alert alert-info"><strong>NOTE:</strong> This note and the following array output is only visible to logged in PMD Admins.</div><pre>$_SESSION[\'donor\'] = ' . print_r( $_SESSION['donor'], true ) . '</pre>' );
 
         $html = $this->html;
 

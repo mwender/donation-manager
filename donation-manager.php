@@ -955,10 +955,6 @@ class DonationManager {
     /**
      * Compiles the donation into an HTML receipt
      *
-     * @see Function/method/class relied on
-     * @link URL short description.
-     * @global type $varname short description.
-     *
      * @since 1.0.0
      *
      * @param array $donation Donation array.

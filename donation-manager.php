@@ -914,6 +914,9 @@ class DonationManager {
                     $scheduling_interval = get_post_meta( $_SESSION['donor']['org_id'], 'minimum_scheduling_interval', true );
                 }
 
+                if( empty( $scheduling_interval ) || ! is_numeric( $scheduling_interval ) )
+                    $scheduling_interval = 2;
+
                 $date = new DateTime();
                 $date->add( new DateInterval( 'P' . $scheduling_interval . 'D' ) );
                 $minPickUp = explode(',', $date->format( 'Y,n,j' ) );

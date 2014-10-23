@@ -1605,7 +1605,7 @@ class DonationManager {
 
             case 'missing_org_transdept_notification':
                 $html = $this->get_template_part( 'email.blank', array(
-                    'content' => '<p>This donation doesn\'t have an ORG and/or TRANS_DEPT set:</p><pre>$_SESSION[\'donor\'] = ' . print_r( $_SESSION['donor'], true ) . '</pre>',
+                    'content' => '<div style="text-align: left;"><p>This donation doesn\'t have an ORG and/or TRANS_DEPT set:</p><pre>$_SESSION[\'donor\'] = ' . print_r( $_SESSION['donor'], true ) . '</pre></div>',
                 ));
                 $recipients = array( 'webmaster@pickupmydonation.com' );
                 $subject = 'PMD Admin Notification';

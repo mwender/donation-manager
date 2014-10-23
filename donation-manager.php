@@ -304,6 +304,17 @@ class DonationManager {
                 $_SESSION['donor']['phone'] = $_POST['donor']['phone'];
                 $_SESSION['donor']['preferred_contact_method'] = $_POST['donor']['preferred_contact_method'];
 
+                /**
+                 * SET $_SESSION['donor']['pickup_code'] FOR DONORS WHO BYPASSED EARLIER SCREENS
+                 *
+                 * Whenever our clients link directly to their donation options form,
+                 * the donor will reach this point without having
+                 * $_SESSION['donor']['pickup_code'] set. So, we set it here according
+                 * to the donor's address/pickup_address:
+                 */
+                if( ! isset( $_SESSION['donor']['pickup_code'] ) )
+                    $_SESSION['donor']['pickup_code'] = ( 'Yes' == $_POST['donor']['different_pickup_address'] )? $_POST['donor']['pickup_address']['zip'] : $_POST['donor']['address']['zip'] ;
+
                 // Redirect to next step
                 $_SESSION['donor']['form'] = 'select-preferred-pickup-dates';
                 session_write_close();
@@ -677,7 +688,8 @@ class DonationManager {
             break;
         }
 
-        //$this->add_html( '<br /><pre>$_SESSION[\'donor\'] = ' . print_r( $_SESSION['donor'], true ) . '</pre>' );
+        if( current_user_can( 'activate_plugins') )
+            $this->add_html( '<br /><pre>$_SESSION[\'donor\'] = ' . print_r( $_SESSION['donor'], true ) . '</pre>' );
 
         $html = $this->html;
 

@@ -27,7 +27,7 @@ class DMReports extends DonationManager {
 	 * @return void
 	 */
     public function add_rewrite_rules(){
-    	add_rewrite_rule( 'download\/([0-9]{1,})\/([0-9]{4}-[0-9]{2})\/?', 'index.php?orgid=$matches[1]&month=$matches[2]', 'top' );
+    	add_rewrite_rule( 'download\/([0-9]{1,}|all)\/([0-9]{4}-[0-9]{2}|donations)\/?', 'index.php?orgid=$matches[1]&month=$matches[2]', 'top' );
     }
 
 	/**
@@ -43,9 +43,8 @@ class DMReports extends DonationManager {
 	 * @return void
 	 */
     public function add_rewrite_tags(){
-    	//add_rewrite_tag( '%dmfilename%', '([0-9a-z]*\.[a-z0-9]{3,})' );
-    	add_rewrite_tag( '%orgid%', '([0-9]{1,})' );
-    	add_rewrite_tag( '%month%', '([0-9]{4}-[0-9]{2})' );
+    	add_rewrite_tag( '%orgid%', '[0-9]{1,}|all' );
+    	add_rewrite_tag( '%month%', '[0-9]{4}-[0-9]{2}|donations' );
     }
 
     public function admin_enqueue_scripts(){
@@ -170,9 +169,10 @@ class DMReports extends DonationManager {
 
 					<div class="postbox">
 
-						<h3><span>Sidebar Content Header</span></h3>
+						<h3><span>All Donations</span></h3>
 						<div class="inside">
-							Content space
+							<p>Download all donations as a CSV.</p>
+							<?php submit_button( 'Download All Donations', 'secondary', 'export-all-donations', false  ) ?>
 						</div> <!-- .inside -->
 
 					</div> <!-- .postbox -->
@@ -208,9 +208,9 @@ class DMReports extends DonationManager {
     }
 
 	/**
-	 * Initiates a file download for $wp_query->query_vars['dmfilename']
+	 * Initiates a file download for $wp_query->query_vars['orgid'] and $wp_query->query_vars['month']
 	 *
-	 * Matches example.com/download/foo.bar
+	 * Matches example.com/download/orgid/month
 	 *
 	 * @see add_rewrite_rule()
 	 * @global object $wp_query WordPress global query object.
@@ -232,14 +232,23 @@ class DMReports extends DonationManager {
     	$orgID = get_query_var( 'orgid' );
     	$month = get_query_var( 'month' );
 
-    	$org = get_post( $orgID );
-    	if( ! $org )
-    		return;
+    	if( 'all' == $orgID && 'donations' == $month ){
+    		$filename = 'alldonations_' . current_time( 'Y-m-d_Gis' ) . '.csv';
+    	} else {
+	    	$org = get_post( $orgID );
+	    	if( ! $org )
+	    		return;
 
-    	$filename = $org->post_name . '.' . $month . '.csv';
+	    	$filename = $org->post_name . '.' . $month . '.csv';
+    	}
+
     	$donations = $this->get_donations( $orgID, $month );
 
-    	$csv = '"Date/Time Modified","DonorName","DonorAddress","DonorCity","DonorState","DonorZip","DonorPhone","DonorEmail","DonationAddress","DonationCity","DonationState","DonationZip","DonationDescription","PickupDate1","PickupDate2","PickupDate3"' . "\n" . implode( "\n", $donations );
+    	if( is_array( $donations ) ){
+	    	$csv = '"Date/Time Modified","DonorName","DonorAddress","DonorCity","DonorState","DonorZip","DonorPhone","DonorEmail","DonationAddress","DonationCity","DonationState","DonationZip","DonationDescription","PickupDate1","PickupDate2","PickupDate3"' . "\n" . implode( "\n", $donations );
+    	} else {
+    		$csv = 'No donations found for ' . $org->post_name . ' in ' . $month;
+    	}
 
 		header('Set-Cookie: fileDownload=true; path=/');
 		header('Cache-Control: max-age=60, must-revalidate');
@@ -254,28 +263,31 @@ class DMReports extends DonationManager {
     }
 
     private function get_donations( $orgID = null, $month = null ){
-    	if( is_null( $orgID ) )
-    		return;
-
     	// TODO: Rewrite to set $month to last month if `null`
-    	if( is_null( $month ) )
+    	if( is_null( $orgID ) || is_null( $month ) )
     		return;
 
-    	if( false === ( $donation_rows = get_transient( 'donations_' . $orgID . '_' . $month ) ) ){
+    	$transient_name = 'donations_' . $orgID . '_' . $month;
+
+    	if( false === ( $donation_rows = get_transient( $transient_name ) ) ){
 	    	$args = array(
 	    		'post_type' => 'donation',
 	    		'posts_per_page' => -1,
-	    		'date_query' => array(
+				'orderby' => 'post_date',
+				'order' =>'ASC',
+			);
+
+	    	if( 'donations_all_donations' != $transient_name ){
+	    		$args['date_query'] = array(
 	    			array(
 	    				'year' => substr( $month, 0, 4 ),
 	    				'month' => substr( $month, 5, 2 ),
 	    			),
-				),
-				'meta_key' => 'organization',
-				'meta_value' => $orgID,
-				'orderby' => 'post_date',
-				'order' =>'ASC',
-			);
+				);
+	    		$args['meta_key'] = 'organization';
+	    		$args['meta_value'] = $orgID;
+	    	}
+
 	    	$donations = get_posts( $args );
 	    	if( ! $donations )
 	    		return false;
@@ -310,7 +322,7 @@ class DMReports extends DonationManager {
 
 				$donation_rows[] = '"' . implode( '","', $donation_row ) . '"';
 	    	}
-    		set_transient( 'donations_' . $orgID . '_' . $month, $donation_rows, 12 * HOUR_IN_SECONDS );
+    		set_transient( $transient_name, $donation_rows, 12 * HOUR_IN_SECONDS );
     	}
 
     	return $donation_rows;

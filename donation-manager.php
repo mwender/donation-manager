@@ -316,7 +316,13 @@ class DonationManager {
                     $_SESSION['donor']['pickup_code'] = ( 'Yes' == $_POST['donor']['different_pickup_address'] )? $_POST['donor']['pickup_address']['zip'] : $_POST['donor']['address']['zip'] ;
 
                 // Redirect to next step
-                $_SESSION['donor']['form'] = 'select-preferred-pickup-dates';
+                $pod = pods( 'organization' );
+                $pod->fetch( $_SESSION['donor']['org_id'] );
+                $skip_pickup_dates = false;
+                $skip_pickup_dates = $pod->get_field( 'skip_pickup_dates' );
+                $_SESSION['donor']['form'] = ( true == $skip_pickup_dates )? 'location-of-items' : 'select-preferred-pickup-dates';
+
+                //$_SESSION['donor']['form'] = 'select-preferred-pickup-dates';
                 session_write_close();
                 header( 'Location: ' . $_REQUEST['nextpage'] );
                 die();
@@ -382,12 +388,16 @@ class DonationManager {
                 $_SESSION['donor']['pickuplocation' ] = $_POST['donor']['pickuplocation' ];
 
                 // Notify admin if missing ORG or TRANS DEPT
+                if( empty( $_SESSION['donor']['org_id'] ) || empty( $_SESSION['donor']['trans_dept_id'] ) )
+                    $this->notify_admin( 'missing_org_transdept' );
+                /*
                 if( empty( $_SESSION['donor']['org_id'] ) || empty( $_SESSION['donor']['trans_dept_id'] ) ){
                     $this->send_email( 'missing_org_transdept_notification' );
                     $pickup_code = ( 'Yes' == $_SESSION['donor']['different_pickup_address'] )? $_SESSION['donor']['pickup_address']['zip'] : $_SESSION['donor']['address']['zip'];
                     header( 'Location: ' . site_url( '/select-your-organization/?pcode=' . $pickup_code . '&message=no_org_transdept' ) );
                     die();
                 }
+                /**/
 
                 // Save the donation to the database and send the confirmation and notification emails.
                 $ID = $this->save_donation( $_SESSION['donor'] );
@@ -413,6 +423,51 @@ class DonationManager {
                         $error_msg[] = '<strong><em>' . $field . '</em></strong> must be a date in the format MM/DD/YYYY.';
                     if( true == $array['unique'] )
                         $error_msg[] = '<strong><em>' . $field . '</em></strong> matches another date. Please select three <em>unique</em> dates.';
+                }
+                if( 0 < count( $error_msg ) ){
+                    $error_msg_html = '<div class="alert alert-danger"><p>Please correct the following errors:</p><ul><li>' .implode( '</li><li>', $error_msg ) . '</li></ul></div>';
+                    $this->add_html( $error_msg_html );
+                }
+            }
+        }
+
+        /**
+         * 06b. VALIDATE PICKUP LOCATION (Skipping Pickup Dates)
+         */
+        if( $_POST['skip_pickup_dates'] ){
+            $form = new Form([
+                'Pickup Location' => [ 'required', 'trim' ],
+            ]);
+
+            $form->setValues( array(
+                'Pickup Location' => $_POST['donor']['pickuplocation'],
+            ));
+
+            if( $form->validate( $_POST ) ){
+                $_SESSION['donor']['pickuplocation' ] = $_POST['donor']['pickuplocation' ];
+
+                // Notify admin if missing ORG or TRANS DEPT
+                if( empty( $_SESSION['donor']['org_id'] ) || empty( $_SESSION['donor']['trans_dept_id'] ) )
+                    $this->notify_admin( 'missing_org_transdept' );
+
+                // Save the donation to the database and send the confirmation and notification emails.
+                $ID = $this->save_donation( $_SESSION['donor'] );
+                $this->tag_donation( $ID, $_SESSION['donor'] );
+                $this->send_email( 'trans_dept_notification' );
+                $this->send_email( 'donor_confirmation' );
+
+
+                // Redirect to next step
+                $_SESSION['donor']['form'] = 'thank-you';
+                session_write_close();
+                header( 'Location: ' . $_REQUEST['nextpage'] );
+                die();
+            } else {
+                $errors = $form->getErrors();
+                $error_msg = array();
+                foreach( $errors as $field => $array ){
+                    if( true == $array['required'] )
+                        $error_msg[] = '<strong><em>' . $field . '</em></strong> is a required field.';
                 }
                 if( 0 < count( $error_msg ) ){
                     $error_msg_html = '<div class="alert alert-danger"><p>Please correct the following errors:</p><ul><li>' .implode( '</li><li>', $error_msg ) . '</li></ul></div>';
@@ -536,6 +591,25 @@ class DonationManager {
                     'donor_phone' => $_POST['donor']['phone'],
                 ) );
 
+                $this->add_html( $html );
+            break;
+
+            case 'location-of-items':
+                $pickuplocations = $this->get_pickuplocations( $_SESSION['donor']['org_id'] );
+
+                $pickuplocations_template = $this->get_template_part( 'form5.pickup-location' );
+                $search = array( '{key}', '{location}', '{location_attr_esc}', '{checked}' );
+                foreach( $pickuplocations as $key => $location ){
+                    $checked = ( isset( $_POST['donor']['pickuplocation'] ) && $location['name'] == $_POST['donor']['pickuplocation'] )? ' checked="checked"' : '';
+                    $replace = array( $key, $location['name'], esc_attr( $location['name'] ), $checked );
+                    $locations[] = str_replace( $search, $replace, $pickuplocations_template );
+                }
+
+                $html = $this->get_template_part( 'form5.location-of-items', array(
+                        'organization' => get_the_title( $_SESSION['donor']['org_id'] ),
+                        'nextpage' => $nextpage,
+                        'pickuplocations' => implode( "\n", $locations ),
+                    ));
                 $this->add_html( $html );
             break;
 
@@ -998,7 +1072,9 @@ class DonationManager {
             $screening_questions = '<em>Not applicable.</em>';
         }
 
-        $donationreceipt = $this->get_template_part( 'email.donation-receipt', array(
+        $template = ( empty( $donation['pickupdate1'] ) && empty( $donation['pickuptime1'] ) )? 'email.donation-receipt_without-dates' : 'email.donation-receipt' ;
+
+        $donationreceipt = $this->get_template_part( $template, array(
             'id' => $donation['ID'],
             'donor_info' => $donation['address']['name'] . '<br>' . $donation['address']['address'] . '<br>' . $donation['address']['city'] . ', ' . $donation['address']['state'] . ' ' . $donation['address']['zip'] . '<br>' . $donation['phone'] . '<br>' . $donation['email'],
             'pickupaddress' => $donation[$pickup_add_key]['address'] . '<br>' . $donation[$pickup_add_key]['city'] . ', ' . $donation[$pickup_add_key]['state'] . ' ' . $donation[$pickup_add_key]['zip'],
@@ -1419,8 +1495,6 @@ class DonationManager {
 
         echo '<p>The following fields provide extended information not available under the <em>More Fields</em> meta box. When you make a selection in any fields here, the corresponding field under <em>More Fields</em> will also update.</p>';
 
-
-
         $rows = array();
 
         // Get all organizations
@@ -1431,7 +1505,6 @@ class DonationManager {
             'orderby' => 'title',
         );
         $organizations = get_posts( $args );
-
 
         if( $organizations ){
             switch( $post_type ){
@@ -1465,6 +1538,25 @@ class DonationManager {
         }
 
         echo '<table class="form-table"><tbody><tr>' . implode( '</tr><tr>', $rows ) . '</tr></tbody></table>';
+    }
+
+    /**
+     * Sends an alert email to PMD Admin.
+     *
+     * @since 1.0.1
+     *
+     * @param string $message Specify the message to send.
+     * @return void
+     */
+    public function notify_admin( $message = '' ){
+        switch( $message ){
+            default:
+                $this->send_email( 'missing_org_transdept_notification' );
+                $pickup_code = ( 'Yes' == $_SESSION['donor']['different_pickup_address'] )? $_SESSION['donor']['pickup_address']['zip'] : $_SESSION['donor']['address']['zip'];
+                header( 'Location: ' . site_url( '/select-your-organization/?pcode=' . $pickup_code . '&message=no_org_transdept' ) );
+                die();
+            break;
+        }
     }
 
     public function return_content_type(){

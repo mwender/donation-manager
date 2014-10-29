@@ -662,6 +662,13 @@ class DonationManager {
                 $terms = $this->get_organization_meta_array( $oid, 'donation_option' );
                 //$this->add_html( '<pre>$terms = '.print_r($terms,true).'</pre>' );
 
+                $step_one_note = '';
+                $pod = pods( 'organization' );
+                $pod->fetch( $oid );
+                $note = $pod->get_field( 'step_one_note' );
+                if( ! empty( $note ) )
+                    $step_one_note = $note;
+
                 $donation_options = array();
                 foreach( $terms as $term ) {
                     $ID = $term['id'];
@@ -685,6 +692,7 @@ class DonationManager {
                 $description = ( isset( $_POST['donor']['description'] ) )? esc_textarea( $_POST['donor']['description'] ) : '';
 
                 $html.= $this->get_template_part( 'form2.donation-options-form', array(
+                    'step_one_note' => $step_one_note,
                     'nextpage' => $nextpage,
                     'donation-option-rows' => '<tr><td>' . implode( '</td></tr><tr><td>', $checkboxes ) . '</td></tr>',
                     'description' => $description,

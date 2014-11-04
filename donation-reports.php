@@ -55,6 +55,13 @@ class DMReports extends DonationManager {
     	wp_enqueue_style( 'wp-jquery-ui-dialog' );
     }
 
+	/**
+	 * Adds page to admin menu.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @return void
+	 */
     public function admin_menu(){
     	$page = add_menu_page( 'Donation Reports', 'Donation Reports', 'moderate_comments', 'donation_reports', array( $this, 'callback_donation_reports_page' ), 'dashicons-analytics' );
     	add_action( 'admin_print_styles-' . $page, array( $this, 'admin_enqueue_scripts' ) );

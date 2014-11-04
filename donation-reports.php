@@ -47,6 +47,13 @@ class DMReports extends DonationManager {
     	add_rewrite_tag( '%month%', '[0-9]{4}-[0-9]{2}|donations' );
     }
 
+	/**
+	 * Enqueues scripts and styles for the admin.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @return void
+	 */
     public function admin_enqueue_scripts(){
     	wp_enqueue_style( 'dm-admin-css', plugins_url( 'lib/css/admin.css', __FILE__ ) );
     	wp_enqueue_script( 'dm-admin-js', plugins_url( 'lib/js/admin.js', __FILE__ ), array( 'jquery' ) );

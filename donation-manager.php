@@ -985,7 +985,7 @@ class DonationManager {
 
                 if( isset( $_SESSION['donor']['org_id'] ) && is_numeric( $_SESSION['donor']['org_id'] ) ) {
                     //*
-                    $pickup_dow_array = get_post_meta( $_SESSION['donor']['org_id'], '_pods_pickup_days', true );
+                    $pickup_dow_array = array_unique( get_post_meta( $_SESSION['donor']['org_id'], 'pickup_days', false ) );
                     if( is_array( $pickup_dow_array ) && 0 < count( $pickup_dow_array ) ){
                         $pickup_dow = array();
                         foreach( $pickup_dow_array as $day ){

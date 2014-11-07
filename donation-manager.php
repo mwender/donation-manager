@@ -984,17 +984,23 @@ class DonationManager {
                 $scheduling_interval = 2;
 
                 if( isset( $_SESSION['donor']['org_id'] ) && is_numeric( $_SESSION['donor']['org_id'] ) ) {
-                    //*
-                    $pickup_dow_array = array_unique( get_post_meta( $_SESSION['donor']['org_id'], 'pickup_days', false ) );
+                    $pickup_dow_array = get_post_meta( $_SESSION['donor']['org_id'], 'pickup_days', false );
+                    echo '<!-- $pickup_dow_array = '.print_r($pickup_dow_array,true).' -->';
+                    $pickup_dow_array = array_unique( $pickup_dow_array );
+
+                    if( isset( $pickup_dow_array[0] ) && is_array( $pickup_dow_array[0] ) && ( 0 == count( $pickup_dow_array[0] ) ) )
+                        unset( $pickup_dow_array ); // No pickup days set for org, skip $pickup_dow_array processing b/c it is empty!
+
                     if( is_array( $pickup_dow_array ) && 0 < count( $pickup_dow_array ) ){
                         $pickup_dow = array();
                         foreach( $pickup_dow_array as $day ){
                             $pickup_dow[] = intval( $day );
                         }
                     }
-                    /**/
+
                     $scheduling_interval = get_post_meta( $_SESSION['donor']['org_id'], 'minimum_scheduling_interval', true );
                 }
+                echo '<!-- $pickup_dow = '.print_r($pickup_dow,true).' -->';
 
                 if( empty( $scheduling_interval ) || ! is_numeric( $scheduling_interval ) )
                     $scheduling_interval = 2;

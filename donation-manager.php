@@ -122,11 +122,39 @@ class DonationManager {
          *  our chosen Organization and its associated transportation
          *  department. With those two vars set, we're able to display
          *  an Organization specific "Describe Your Donation" form.
+         *
+         *  We validate the `oid` and `tid` to make sure they are
+         *  numeric, and we check to make sure a post exists for each
+         *  of those IDs. If either of these values are not numeric or
+         *  no post exists, we redirect back to the home page.
+         *
+         *  Non-numeric values for either `oid` or `tid` result in the
+         *  donor making it all the way through the donation process
+         *  w/o having an `org_id` and `trans_dept_id` set.
          */
-        if ( isset( $_REQUEST['oid'] ) && isset( $_REQUEST['tid'] ) && is_numeric( $_REQUEST['oid'] ) && is_numeric( $_REQUEST['tid'] ) && ! isset( $_POST['donor'] ) ) {
-            $_SESSION['donor']['form'] = 'describe-your-donation';
-            $_SESSION['donor']['org_id'] = $_REQUEST['oid'];
-            $_SESSION['donor']['trans_dept_id'] = $_REQUEST['tid'];
+        if ( isset( $_REQUEST['oid'] ) && isset( $_REQUEST['tid'] ) && ! isset( $_POST['donor'] ) ) {
+            $is_numeric_validator = function( $number ){
+                return is_numeric( $number );
+            };
+
+            $org_or_trans_dept_exists = function( $id ){
+                return ( FALSE === get_post_status( $id ) )? false : true ;
+            };
+
+            $form = new Form([
+                'org_id' => ['is_numeric' => $is_numeric_validator, 'exists' => $org_or_trans_dept_exists],
+                'trans_dept_id' => ['is_numeric' => $is_numeric_validator, 'exists' => $org_or_trans_dept_exists],
+            ]);
+
+            if( $form->validate( array( 'org_id' => $_REQUEST['oid'], 'trans_dept_id' => $_REQUEST['tid'] ) ) ){
+                $_SESSION['donor']['form'] = 'describe-your-donation';
+                $_SESSION['donor']['org_id'] = $_REQUEST['oid'];
+                $_SESSION['donor']['trans_dept_id'] = $_REQUEST['tid'];
+            } else {
+                // Invalid org_id or trans_dept_id, redirect to site home page
+                header( 'Location: ' . site_url() );
+                die();
+            }
         }
 
         /**

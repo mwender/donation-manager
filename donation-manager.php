@@ -152,6 +152,7 @@ class DonationManager {
                 $_SESSION['donor']['trans_dept_id'] = $_REQUEST['tid'];
             } else {
                 // Invalid org_id or trans_dept_id, redirect to site home page
+                $this->notify_admin( 'invalid_link' );
                 header( 'Location: ' . site_url() );
                 die();
             }
@@ -1592,6 +1593,9 @@ class DonationManager {
      */
     public function notify_admin( $message = '' ){
         switch( $message ){
+            case 'invalid_link':
+                $this->send_email( 'invalid_link' );
+            break;
             default:
                 $this->send_email( 'missing_org_transdept_notification' );
                 $pickup_code = ( 'Yes' == $_SESSION['donor']['different_pickup_address'] )? $_SESSION['donor']['pickup_address']['zip'] : $_SESSION['donor']['address']['zip'];
@@ -1737,12 +1741,21 @@ class DonationManager {
 
         switch( $type ){
 
+            case 'invalid_link':
+                 $html = $this->get_template_part( 'email.blank', array(
+                    'content' => '<div style="text-align: left;"><p>The following page has an invalid link to our system:</p><pre>$_SERVER[\'HTTP_REFERER\'] = ' . $_SERVER['HTTP_REFERER'] . '</pre></div>',
+                ));
+                $recipients = array( 'webmaster@pickupmydonation.com' );
+                $subject = 'PMD Admin Notification - Invalid Link';
+                $headers[] = 'Reply-To: PMD Support <support@pickupmydonation.com>';
+            break;
+
             case 'missing_org_transdept_notification':
                 $html = $this->get_template_part( 'email.blank', array(
                     'content' => '<div style="text-align: left;"><p>This donation doesn\'t have an ORG and/or TRANS_DEPT set:</p><pre>$_SESSION[\'donor\'] = ' . print_r( $_SESSION['donor'], true ) . '</pre></div>',
                 ));
                 $recipients = array( 'webmaster@pickupmydonation.com' );
-                $subject = 'PMD Admin Notification';
+                $subject = 'PMD Admin Notification - No Org/Trans Dept Set';
                 $headers[] = 'Reply-To: PMD Support <support@pickupmydonation.com>';
             break;
 

@@ -182,6 +182,15 @@ class DonationManager {
             $form->setValues( array( 'description' => $_POST['donor']['description'], 'options' => $_POST['donor']['options'] ) );
 
             if( $form->validate( $_POST ) ) {
+                /**
+                 * ARE WE PICKING UP THIS DONATION?
+                 *
+                 * By default, we set the form to `no-pickup-message`. Then
+                 * we check each donation option to see if we are picking
+                 * up this item (i.e. true == $option['pickup'] ). If we
+                 * pickup any of the items, then we set the form to
+                 * `screening-questions`.
+                 */
                 $_SESSION['donor']['form'] = 'no-pickup-message';
 
                 // Should we skip the screening questions?

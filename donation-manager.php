@@ -668,7 +668,7 @@ class DonationManager {
                 $organization = get_the_title( $_SESSION['donor']['org_id'] );
                 $replace = array( $organization );
                 $html.= str_replace( $search, $replace, $no_pickup_message );
-                $html.= DonationManager::get_stores_footer( $_SESSION['donor']['trans_dept_id'] );
+                $html.= $this->get_stores_footer( $_SESSION['donor']['trans_dept_id'] );
                 $this->add_html( $html );
             break;
 
@@ -1464,6 +1464,7 @@ class DonationManager {
             // Query the Transportation Department's stores
             $args = array(
                 'post_type' => 'store',
+                'posts_per_page' => -1,
                 'meta_query' => array(
                     array(
                         'key' => 'trans_dept',

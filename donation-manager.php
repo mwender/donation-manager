@@ -993,7 +993,8 @@ class DonationManager {
     }
 
     public function enqueue_admin_scripts(){
-        wp_enqueue_script( 'dm-admin-js', plugins_url( 'lib/js/admin.js', __FILE__ ), array( 'jquery' ) );
+        wp_register_script( 'dm-admin-js', plugins_url( 'lib/js/admin.js', __FILE__ ), array( 'jquery' ), filemtime( plugin_dir_path( __FILE__ ) . 'lib/js/admin.js' ) );
+        wp_enqueue_script( 'dm-admin-js' );
     }
 
     /**

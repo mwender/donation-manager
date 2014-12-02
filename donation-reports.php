@@ -309,10 +309,15 @@ class DMReports extends DonationManager {
     				global $wp_filesystem;
 
     				// Create the directory for the report
+					if( ! $wp_filesystem->is_dir( $upload_dir['basedir'] . '/reports' ) )
+						$wp_filesystem->mkdir( $upload_dir['basedir'] . '/reports' );
+
     				if( ! $wp_filesystem->is_dir( $reports_dir ) )
     					$wp_filesystem->mkdir( $reports_dir );
 
     				if( ! $wp_filesystem->is_dir( $reports_dir ) ){
+
+
     					$response->message = 'Unable to create reports directory (' . $reports_dir . ').';
     					break;
     				}

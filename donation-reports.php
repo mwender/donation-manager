@@ -254,7 +254,7 @@ class DMReports extends DonationManager {
 				global $wp_filesystem;
 
 				if( false === ( $csv = $wp_filesystem->get_contents( $filename ) ) ){
-					$response->message( 'Unable to open ' . basename( $filename ) );
+					$response->message = 'Unable to open ' . basename( $filename );
 					break;
 				}
 
@@ -517,7 +517,7 @@ class DMReports extends DonationManager {
 			global $wp_filesystem;
 
 			if( false === ( $csv = $wp_filesystem->get_contents( $filename ) ) ){
-				$response->message( 'Unable to open ' . basename( $filename ) );
+				$response->message = 'Unable to open ' . basename( $filename );
 				break;
 			}
 

@@ -291,7 +291,7 @@ class DMReports extends DonationManager {
     		case 'create_file':
     			$upload_dir = wp_upload_dir();
     			$response->upload_dir = $upload_dir;
-    			$reports_dir = $upload_dir['basedir'] . '/reports' . $upload_dir['subdir'];
+    			$reports_dir = trailingslashit( $upload_dir['basedir'] . '/reports' . $upload_dir['subdir'] );
     			$response->reports_dir = $reports_dir;
 
     			if( 'direct' === $access_type ){

@@ -28,6 +28,7 @@ class DMReports extends DonationManager {
 	 */
     public function add_rewrite_rules(){
     	add_rewrite_rule( 'download\/([0-9]{1,}|all)\/([0-9]{4}-[0-9]{2}|donations)\/?', 'index.php?orgid=$matches[1]&month=$matches[2]', 'top' );
+    	add_rewrite_rule( 'getattachment\/([0-9]{1,})\/?', 'index.php?attach_id=$matches[1]', 'top' );
     }
 
 	/**
@@ -45,6 +46,7 @@ class DMReports extends DonationManager {
     public function add_rewrite_tags(){
     	add_rewrite_tag( '%orgid%', '[0-9]{1,}|all' );
     	add_rewrite_tag( '%month%', '[0-9]{4}-[0-9]{2}|donations' );
+    	add_rewrite_tag( '%attach_id%', '[0-9]{1,}' );
     }
 
 	/**
@@ -55,10 +57,11 @@ class DMReports extends DonationManager {
 	 * @return void
 	 */
     public function admin_enqueue_scripts(){
-    	wp_enqueue_style( 'dm-admin-css', plugins_url( 'lib/css/admin.css', __FILE__ ) );
-    	wp_enqueue_script( 'dm-admin-js', plugins_url( 'lib/js/admin.js', __FILE__ ), array( 'jquery' ) );
+    	wp_enqueue_style( 'dm-admin-css', plugins_url( 'lib/css/admin.css', __FILE__ ), false, filemtime( plugin_dir_path( __FILE__ ) . 'lib/css/admin.css' ) );
+    	wp_register_script( 'dm-admin-js', plugins_url( 'lib/js/admin.js', __FILE__ ), array( 'jquery' ), filemtime( plugin_dir_path( __FILE__ ) . 'lib/js/admin.js' ) );
+    	wp_enqueue_script( 'dm-admin-js' );
     	wp_localize_script( 'dm-admin-js', 'ajax_object', array( 'ajax_url' => admin_url( 'admin-ajax.php' ), 'site_url' => site_url( '/download/' ) ) );
-    	wp_enqueue_script( 'jquery-file-download', plugins_url( 'lib/components/vendor/jquery-file-download/src/Scripts/jquery.fileDownload.js', __FILE__ ), array( 'jquery', 'jquery-ui-dialog' ) );
+    	wp_enqueue_script( 'jquery-file-download', plugins_url( 'lib/components/vendor/jquery-file-download/src/Scripts/jquery.fileDownload.js', __FILE__ ), array( 'jquery', 'jquery-ui-dialog', 'jquery-ui-progressbar' ) );
     	wp_enqueue_style( 'wp-jquery-ui-dialog' );
     }
 
@@ -187,6 +190,13 @@ class DMReports extends DonationManager {
 						<div class="inside">
 							<p>Download all donations as a CSV.</p>
 							<?php submit_button( 'Download All Donations', 'secondary', 'export-all-donations', false  ) ?>
+							<div class="ui-overlay">
+								<div class="ui-widget-overlay" id="donation-download-overlay" style="display: none;"></div>
+								<div id="donation-download-modal" title="Building file..." style="display: none;">
+									<p><strong>IMPORTANT:</strong> DO NOT close this window or your browser. Once your file is built, we'll initiate the download for you.</p>
+									<div id="donation-download-progress"></div>
+								</div>
+							</div>
 						</div> <!-- .inside -->
 
 					</div> <!-- .postbox -->
@@ -204,6 +214,145 @@ class DMReports extends DonationManager {
     	<?php
     }
 
+	/**
+	 * Handles writing, building, and downloading report files.
+	 *
+	 * @see Function/method/class relied on
+	 * @link URL short description.
+	 * @global type $varname short description.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @return void
+	 */
+    public function callback_donation_report(){
+    	$switch = $_POST['switch'];
+
+    	$response = new stdClass();
+		$access_type = get_filesystem_method();
+		$response->access_type = $access_type;
+
+    	switch( $switch ){
+    		case 'build_file':
+    			$attach_id = $_POST['attach_id'];
+    			$response->attach_id = $attach_id;
+    			$filename = get_attached_file( $attach_id );
+
+
+    			if( 'direct' != $access_type ){
+    				$response->message = 'Unable to write to file system.';
+    				break;
+    			}
+
+    			$creds = request_filesystem_credentials( site_url() . '/wp-admin/', '', false, false, array() );
+				// break if we find any problems
+				if( ! WP_Filesystem( $creds ) ){
+					$response->message = 'Unable to get filesystem credentials.';
+					break;
+				}
+
+				global $wp_filesystem;
+
+				if( false === ( $csv = $wp_filesystem->get_contents( $filename ) ) ){
+					$response->message( 'Unable to open ' . basename( $filename ) );
+					break;
+				}
+
+				// Get _offset and donations
+				$offset = get_post_meta( $attach_id, '_offset', true );
+				$donations_per_page = 1000;
+				$donations = $this->get_all_donations( $offset, $donations_per_page );
+
+				// Update _offset and write donations to file
+				update_post_meta( $attach_id, '_offset', $donations['offset'], $offset );
+				$csv.= "\n" . implode( "\n", $donations['rows'] );
+
+				if( ! $wp_filesystem->put_contents( $filename, $csv, FS_CHMOD_FILE ) ){
+					$response->message = 'Unable to write donations to file!';
+				} else {
+					$response->message = 'Successfully wrote donations to file.';
+				}
+
+				// Continue?
+				$count_donations = wp_count_posts( 'donation' );
+				$published_donations = $count_donations->publish;
+				$response->published_donations = $published_donations;
+				$response->progress_percent = number_format( ( $donations['offset'] / $published_donations ) * 100 );
+
+				$response->offset = $donations['offset'];
+
+				if( $published_donations > $donations['offset'] ){
+					$response->status = 'continue';
+				} else {
+					$response->status = 'end';
+					$response->fileurl = site_url( '/getattachment/' . $attach_id );
+				}
+    		break;
+    		case 'create_file':
+    			$upload_dir = wp_upload_dir();
+    			$response->upload_dir = $upload_dir;
+    			$reports_dir = $upload_dir['basedir'] . '/reports' . $upload_dir['subdir'];
+    			$response->reports_dir = $reports_dir;
+
+    			if( 'direct' === $access_type ){
+    				$creds = request_filesystem_credentials( site_url() . '/wp-admin/', '', false, false, array() );
+
+    				// break if we find any problems
+    				if( ! WP_Filesystem( $creds ) ){
+    					$response->message = 'Unable to get filesystem credentials.';
+    					break;
+    				}
+
+    				global $wp_filesystem;
+
+    				// Create the directory for the report
+    				if( ! $wp_filesystem->is_dir( $reports_dir ) )
+    					$wp_filesystem->mkdir( $reports_dir );
+
+    				// Create the CSV file
+    				$csv_columns = '"Date/Time Modified","DonorName","DonorAddress","DonorCity","DonorState","DonorZip","DonorPhone","DonorEmail","DonationAddress","DonationCity","DonationState","DonationZip","DonationDescription","PickupDate1","PickupDate2","PickupDate3"' . "\n";
+
+    				$filename = 'all-donations_' . date( 'Y-m-d_Hi' ) . '.csv';
+    				$filetype = wp_check_filetype( $filename, null );
+
+    				$filepath = trailingslashit( $reports_dir ) . $filename;
+    				if( ! $wp_filesystem->put_contents( $filepath, $csv_columns, FS_CHMOD_FILE ) ){
+    					$response->message = 'Error saving file!';
+    				} else {
+    					$response->message = 'CSV file `' . $filename .  '` created at:' . "\n" . $reports_dir;
+    				}
+
+    				$attachment = array(
+    					'guid' => trailingslashit( $upload_dir['baseurl'] . '/reports' . $upload_dir['subdir'] ) . $filename,
+    					'post_mime_type' => $filetype['type'],
+						'post_title'     => preg_replace( '/\.[^.]+$/', '', basename( $filename ) ),
+						'post_content'   => '',
+						'post_status'    => 'inherit'
+					);
+					$attach_id = wp_insert_attachment( $attachment, $filepath );
+
+					// Make sure that this file is included, as wp_generate_attachment_metadata() depends on it.
+					require_once( ABSPATH . 'wp-admin/includes/image.php' );
+
+					// Generate the metadata for the attachment, and update the database record.
+					$attach_data = wp_generate_attachment_metadata( $attach_id, $filename );
+					wp_update_attachment_metadata( $attach_id, $attach_data );
+
+					// Set offset meta value
+					update_post_meta( $attach_id, '_offset', 0 );
+
+					$response->attach_id = $attach_id;
+
+					$get_attached_file_response = get_attached_file( $attach_id );
+					$response->path_to_file = $get_attached_file_response;
+    			}
+    		break;
+    	}
+
+    	wp_send_json( $response );
+    }
+
+    /*
     public function callback_export_csv(){
     	$org_id = $_POST['org_id'];
 
@@ -220,6 +369,7 @@ class DMReports extends DonationManager {
 
     	wp_send_json( $response );
     }
+    /**/
 
 	/**
 	 * Initiates a file download for $wp_query->query_vars['orgid'] and $wp_query->query_vars['month']
@@ -274,6 +424,112 @@ class DMReports extends DonationManager {
 
     public function flush_rewrites(){
     	flush_rewrite_rules();
+    }
+
+    private function get_all_donations( $offset = 0, $posts_per_page = 100 ){
+
+    	$args = array(
+    		'posts_per_page' => $posts_per_page,
+    		'offset' => $offset,
+    		'post_type' => 'donation',
+    		'orderby' => 'post_date',
+			'order' =>'ASC',
+		);
+    	$donations = get_posts( $args );
+    	if( ! $donations )
+    		return false;
+
+    	$donation_rows = array();
+    	foreach( $donations as $donation ){
+    		$custom_fields = get_post_custom( $donation->ID );
+
+    		$DonationAddress = ( empty( $custom_fields['pickup_address'][0] ) )? $custom_fields['donor_address'][0] : $custom_fields['pickup_address'][0];
+    		$DonationCity = ( empty( $custom_fields['pickup_city'][0] ) )? $custom_fields['donor_city'][0] : $custom_fields['pickup_city'][0];
+    		$DonationState = ( empty( $custom_fields['pickup_state'][0] ) )? $custom_fields['donor_state'][0] : $custom_fields['pickup_state'][0];
+    		$DonationZip = ( empty( $custom_fields['pickup_zip'][0] ) )? $custom_fields['donor_zip'][0] : $custom_fields['pickup_zip'][0];
+
+    		$donation_row = array(
+    			'Date' => $donation->post_date,
+    			'DonorName' => $custom_fields['donor_name'][0],
+    			'DonorAddress' => $custom_fields['donor_address'][0],
+    			'DonorCity' => $custom_fields['donor_city'][0],
+    			'DonorState' => $custom_fields['donor_state'][0],
+    			'DonorZip' => $custom_fields['donor_zip'][0],
+    			'DonorPhone' => $custom_fields['donor_phone'][0],
+    			'DonorEmail' => $custom_fields['donor_email'][0],
+    			'DonationAddress' => $DonationAddress,
+    			'DonationCity' => $DonationCity,
+    			'DonationState' => $DonationState,
+    			'DonationZip' => $DonationZip,
+    			'DonationDesc' => htmlentities( $custom_fields['pickup_description'][0] ),
+    			'PickupDate1' => $custom_fields['pickupdate1'][0],
+    			'PickupDate2' => $custom_fields['pickupdate2'][0],
+    			'PickupDate3' => $custom_fields['pickupdate3'][0],
+			);
+
+			$donation_rows[] = '"' . implode( '","', $donation_row ) . '"';
+    	}
+
+    	$new_offset = $posts_per_page + $offset;
+    	$data = array( 'rows' => $donation_rows, 'offset' => $new_offset );
+
+    	return $data;
+    }
+
+	/**
+	 * Initiates a file download for a given attachment ID.
+	 *
+	 * @global int $wp_query->query_vars['attach_id'] ID for the attachment we're downloading.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @return file Attachment file.
+	 */
+    public function get_attachment(){
+    	// Only editors or higher can download reports
+    	if( ! current_user_can( 'publish_pages' ) )
+    		return;
+
+    	global $wp_query;
+    	$response = new stdClass();
+
+    	if( ! isset( $wp_query->query_vars['attach_id'] ) )
+    		return;
+
+    	$attach_id = get_query_var( 'attach_id' );
+    	$response->attach_id = $attach_id;
+    	$filename = get_attached_file( $attach_id );
+    	$response->filename = $filename;
+
+    	require_once( trailingslashit( dirname( __FILE__ ) ) . '../../../wp-admin/includes/file.php' );
+		$access_type = get_filesystem_method();
+		$response->access_type = $access_type;
+
+		if( 'direct' === $access_type ){
+			$creds = request_filesystem_credentials( site_url() . '/wp-admin/', '', false, false, array() );
+
+			// break if we find any problems
+			if( ! WP_Filesystem( $creds ) ){
+				$response->message = 'Unable to get filesystem credentials.';
+				break;
+			}
+
+			global $wp_filesystem;
+
+			if( false === ( $csv = $wp_filesystem->get_contents( $filename ) ) ){
+				$response->message( 'Unable to open ' . basename( $filename ) );
+				break;
+			}
+
+			header('Set-Cookie: fileDownload=true; path=/');
+			header('Cache-Control: max-age=60, must-revalidate');
+			header("Content-type: text/csv");
+			header('Content-Disposition: attachment; filename="' . basename( $filename ) );
+			echo $csv;
+			die();
+		}
+
+		wp_send_json( $response );
     }
 
     private function get_donations( $orgID = null, $month = null ){
@@ -365,8 +621,10 @@ class DMReports extends DonationManager {
 
 $DMReports = DMReports::get_instance();
 add_action( 'admin_menu', array( $DMReports, 'admin_menu' ) );
-add_action( 'wp_ajax_export-csv', array( $DMReports, 'callback_export_csv' ) );
+//add_action( 'wp_ajax_export-csv', array( $DMReports, 'callback_export_csv' ) );
+add_action( 'wp_ajax_donation-report', array( $DMReports, 'callback_donation_report' ) );
 add_action( 'template_redirect', array( $DMReports, 'download_report' ) );
+add_action( 'template_redirect', array( $DMReports, 'get_attachment' ) );
 add_action( 'init', array( $DMReports, 'add_rewrite_rules' ) );
 add_action( 'init', array( $DMReports, 'add_rewrite_tags' ) );
 register_activation_hook( __FILE__, array( $DMReports, 'flush_rewrites' ) );

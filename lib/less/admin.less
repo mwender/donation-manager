@@ -5,3 +5,50 @@ table.report{
 		}
 	}
 }
+
+.no-close .ui-dialog-titlebar-close {
+	display: none;
+}
+
+#donation-download-modal{
+	p{
+		margin-top: 0;
+	}
+}
+
+@progressfontsize: 72px;
+#donation-download-progress{
+	font-size: @progressfontsize;
+	font-weight: 600;
+	font-family: 'Helvetica Neue', 'Helvetica', 'Arial', sans-serif;
+	text-align: center;
+	margin-top: 8px;
+	height: @progressfontsize;
+	line-height: @progressfontsize;
+}
+
+@progresscolor: #000;
+.ui-progressbar{
+	height:1.75em;
+	text-align: left;
+	overflow: hidden;
+	background-color: lighten(@progresscolor,93%);
+	border: 1px solid lighten(@progresscolor,30%);
+	border-radius: 3px;
+	position: relative;
+
+	.ui-progressbar-value{
+		margin: -1px;
+		height:104%;
+		background-color: lighten(@progresscolor,78%);
+	}
+
+	.progress-label{
+		position: absolute;
+		left: 47%;
+	    top: 2px;
+	    font-weight: bold;
+	    text-shadow: 1px 1px 0 #fff;
+	}
+}
+

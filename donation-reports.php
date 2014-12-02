@@ -230,6 +230,7 @@ class DMReports extends DonationManager {
 
     	$response = new stdClass();
     	$response->message = '';
+		$response->status = 'end';
 
 		$access_type = get_filesystem_method();
 		$response->access_type = $access_type;
@@ -311,6 +312,11 @@ class DMReports extends DonationManager {
     				if( ! $wp_filesystem->is_dir( $reports_dir ) )
     					$wp_filesystem->mkdir( $reports_dir );
 
+    				if( ! $wp_filesystem->is_dir( $reports_dir ) ){
+    					$response->message = 'Unable to create reports directory (' . $reports_dir . ').';
+    					break;
+    				}
+
     				// Create the CSV file
     				$csv_columns = '"Date/Time Modified","DonorName","DonorAddress","DonorCity","DonorState","DonorZip","DonorPhone","DonorEmail","DonationAddress","DonationCity","DonationState","DonationZip","DonationDescription","PickupDate1","PickupDate2","PickupDate3"' . "\n";
 
@@ -347,6 +353,7 @@ class DMReports extends DonationManager {
 
 					$get_attached_file_response = get_attached_file( $attach_id );
 					$response->path_to_file = $get_attached_file_response;
+					$response->status = 'continue';
     			}
     		break;
     	}

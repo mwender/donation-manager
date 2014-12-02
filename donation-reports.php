@@ -331,7 +331,7 @@ class DMReports extends DonationManager {
     				}
 
     				// Create the CSV file
-    				$csv_columns = '"Date/Time Modified","DonorName","DonorAddress","DonorCity","DonorState","DonorZip","DonorPhone","DonorEmail","DonationAddress","DonationCity","DonationState","DonationZip","DonationDescription","PickupDate1","PickupDate2","PickupDate3"' . "\n";
+    				$csv_columns = '"Date/Time Modified","DonorName","DonorAddress","DonorCity","DonorState","DonorZip","DonorPhone","DonorEmail","DonationAddress","DonationCity","DonationState","DonationZip","DonationDescription","PickupDate1","PickupDate2","PickupDate3"';
 
     				$filename = 'all-donations_' . date( 'Y-m-d_Hi' ) . '.csv';
     				$filetype = wp_check_filetype( $filename, null );

@@ -15,7 +15,7 @@ module.exports = function(grunt) {
     },
     watch: {
       options: {
-        livereload: 35732,
+        livereload: 35799,
       },
       styles: {
         files: ['lib/less/**/*.less'], // which files to watch

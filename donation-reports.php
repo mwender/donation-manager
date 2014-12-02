@@ -229,6 +229,8 @@ class DMReports extends DonationManager {
     	$switch = $_POST['switch'];
 
     	$response = new stdClass();
+    	$response->message = '';
+
 		$access_type = get_filesystem_method();
 		$response->access_type = $access_type;
 
@@ -317,7 +319,7 @@ class DMReports extends DonationManager {
 
     				$filepath = trailingslashit( $reports_dir ) . $filename;
     				if( ! $wp_filesystem->put_contents( $filepath, $csv_columns, FS_CHMOD_FILE ) ){
-    					$response->message = 'Error saving file!';
+    					$response->message = '$wp_filesystem->put_contents( ' . $filepath . ') Error saving file!';
     				} else {
     					$response->message = 'CSV file `' . $filename .  '` created at:' . "\n" . $reports_dir;
     				}

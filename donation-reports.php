@@ -331,7 +331,7 @@ class DMReports extends DonationManager {
     				}
 
     				// Create the CSV file
-    				$csv_columns = '"Date/Time Modified","DonorName","DonorAddress","DonorCity","DonorState","DonorZip","DonorPhone","DonorEmail","DonationAddress","DonationCity","DonationState","DonationZip","DonationDescription","PickupDate1","PickupDate2","PickupDate3"';
+    				$csv_columns = '"Date/Time Modified","DonorName","DonorAddress","DonorCity","DonorState","DonorZip","DonorPhone","DonorEmail","DonationAddress","DonationCity","DonationState","DonationZip","DonationDescription","PickupDate1","PickupDate2","PickupDate3","Organization"';
 
     				$filename = 'all-donations_' . date( 'Y-m-d_Hi' ) . '.csv';
     				$filetype = wp_check_filetype( $filename, null );
@@ -469,6 +469,8 @@ class DMReports extends DonationManager {
     		$DonationCity = ( empty( $custom_fields['pickup_city'][0] ) )? $custom_fields['donor_city'][0] : $custom_fields['pickup_city'][0];
     		$DonationState = ( empty( $custom_fields['pickup_state'][0] ) )? $custom_fields['donor_state'][0] : $custom_fields['pickup_state'][0];
     		$DonationZip = ( empty( $custom_fields['pickup_zip'][0] ) )? $custom_fields['donor_zip'][0] : $custom_fields['pickup_zip'][0];
+    		$organization = $custom_fields['organization'][0];
+    		$org_name = ( is_numeric( $organization ) )? get_the_title( $organization ) : '--';
 
     		$donation_row = array(
     			'Date' => $donation->post_date,
@@ -487,6 +489,7 @@ class DMReports extends DonationManager {
     			'PickupDate1' => $custom_fields['pickupdate1'][0],
     			'PickupDate2' => $custom_fields['pickupdate2'][0],
     			'PickupDate3' => $custom_fields['pickupdate3'][0],
+    			'Organization' => htmlentities( $org_name ),
 			);
 
 			$donation_rows[] = '"' . implode( '","', $donation_row ) . '"';

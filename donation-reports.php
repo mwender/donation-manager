@@ -482,7 +482,7 @@ class DMReports extends DonationManager {
     			'PickupDate2' => $custom_fields['pickupdate2'][0],
     			'PickupDate3' => $custom_fields['pickupdate3'][0],
     			'Organization' => htmlentities( $org_name ),
-    			'Referer' => esc_url( $custom_fields['referer'] ),
+    			'Referer' => esc_url( $custom_fields['referer'][0] ),
 			);
 
 			$donation_rows[] = '"' . implode( '","', $donation_row ) . '"';
@@ -640,7 +640,7 @@ class DMReports extends DonationManager {
 	 * Returns HTML for <select> month options.
 	 *
 	 * @access callback_donation_reports_page()
-	 * @since 1.1.0
+	 * @since 1.2.0
 	 *
 	 * @return array Array of HTML <options>.
 	 */

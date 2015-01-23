@@ -516,6 +516,18 @@ class DonationManager {
     }
 
     /**
+     * Hooks to `init`. Sets the referring URL for the donation.
+     *
+     * @since 1.?.?
+     *
+     * @return void
+     */
+    function callback_init_set_referer(){
+        if( ! isset( $_SESSION['donor']['referer'] ) )
+            $_SESSION['donor']['referer'] = $_SERVER['HTTP_REFERER'];
+    }
+
+    /**
      * Adds meta boxes to WordPress admin.
      *
      * @since 1.0.1
@@ -1677,7 +1689,8 @@ class DonationManager {
             'pickuptime2' => 'pickuptime2',
             'pickupdate3' => 'pickupdate3',
             'pickuptime3' => 'pickuptime3',
-            'legacy_id' => 'legacy_id'
+            'legacy_id' => 'legacy_id',
+            'referer' => 'referer'
         );
         foreach( $post_meta as $meta_key => $donation_key ){
             switch( $meta_key ){
@@ -1941,6 +1954,7 @@ register_activation_hook( __FILE__, array( $DonationManager, 'activate' ) );
 // Frontend functionality
 add_shortcode( 'donationform', array( $DonationManager, 'callback_shortcode' ) );
 add_action( 'init', array( $DonationManager, 'callback_init' ), 99 );
+add_action( 'init', array( $DonationManager, 'callback_init_set_referer' ), 100 );
 add_action( 'template_redirect', array( $DonationManager, 'callback_template_redirect' ) );
 add_action( 'wp_enqueue_scripts', array( $DonationManager, 'enqueue_scripts' ) );
 

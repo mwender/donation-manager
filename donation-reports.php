@@ -95,7 +95,7 @@ class DMReports extends DonationManager {
 
 					<div class="postbox">
 
-						<h3><span>All Organizations</span></h3>
+						<h3><span>Donations by Organization</span></h3>
 						<div class="inside">
 						<?php
 						$date = new DateTime( current_time( 'Y-m-d' ) );
@@ -105,32 +105,7 @@ class DMReports extends DonationManager {
 						?>
 							<p><label>Month:</label>
 							<select name="report-month" id="report-month">
-								<?php
-								$months = array( 1,2,3,4,5,6,7,8,9,10,11,12 );
-								arsort( $months );
-								$firstyear = 2011;
-								$current_year = date( 'Y', current_time( 'timestamp' ) );
-								$current_month = date( 'n', current_time( 'timestamp' ) );
-								for( $year = $current_year; $year >= $firstyear; $year-- ){
-									foreach( $months as $month ){
-										$option_date = $year . '-' . $month . '-1';
-										$timestamp = strtotime( $option_date );
-										$option_value = date( 'Y-m', $timestamp );
-										$option_display = date( 'Y - F', $timestamp );
-
-										if( $year == $current_year && $current_month == $month ){
-											$option_display = date( 'M Y', $timestamp );
-											echo '<option value="'.$option_value.'">Current Month ('.$option_display.')</option>';
-											continue;
-										} else if( $year == $current_year && $current_month < $month ){
-											continue;
-										} else {
-											$selected = ( $option_value == $last_month )? ' selected="selected"' : '';
-											echo '<option value="' . $option_value . '"' . $selected . '>' . $option_display . '</option>';
-										}
-									}
-								}
-								?>
+								<?php echo implode( '', $this->get_select_month_options() ); ?>
 							</select>
 							</p>
 							<table class="widefat report">
@@ -186,10 +161,15 @@ class DMReports extends DonationManager {
 
 					<div class="postbox">
 
-						<h3><span>All Donations</span></h3>
+						<h3><span>Combined Donations</span></h3>
 						<div class="inside">
-							<p>Download all donations as a CSV.</p>
-							<?php submit_button( 'Download All Donations', 'secondary', 'export-all-donations', false  ) ?>
+							<p>Download reports for all organizations as a CSV.</p>
+							<p><select name="all-donations-report-month" id="all-donations-report-month">
+								<?php
+								echo '<option value="alldonations">All donations</option>';
+								echo implode( '', $this->get_select_month_options() ); ?>
+							</select></p>
+							<?php submit_button( 'Download', 'secondary', 'export-all-donations', false  ) ?>
 							<div class="ui-overlay">
 								<div class="ui-widget-overlay" id="donation-download-overlay" style="display: none;"></div>
 								<div id="donation-download-modal" title="Building file..." style="display: none;">
@@ -256,6 +236,7 @@ class DMReports extends DonationManager {
 
 				global $wp_filesystem;
 
+				// Open the file we're building so we can append more rows below
 				if( false === ( $csv = $wp_filesystem->get_contents( $filename ) ) ){
 					$response->message = 'Unable to open ' . basename( $filename );
 					break;
@@ -263,8 +244,9 @@ class DMReports extends DonationManager {
 
 				// Get _offset and donations
 				$offset = get_post_meta( $attach_id, '_offset', true );
+				$month = get_post_meta( $attach_id, '_month', true );
 				$donations_per_page = 1000;
-				$donations = $this->get_all_donations( $offset, $donations_per_page );
+				$donations = $this->get_all_donations( $offset, $donations_per_page, $month );
 
 				// Update _offset and write donations to file
 				update_post_meta( $attach_id, '_offset', $donations['offset'], $offset );
@@ -277,8 +259,11 @@ class DMReports extends DonationManager {
 				}
 
 				// Continue?
+				/*
 				$count_donations = wp_count_posts( 'donation' );
 				$published_donations = $count_donations->publish;
+				*/
+				$published_donations = $donations['found_posts'];
 				$response->published_donations = $published_donations;
 				$response->progress_percent = number_format( ( $donations['offset'] / $published_donations ) * 100 );
 
@@ -292,6 +277,11 @@ class DMReports extends DonationManager {
 				}
     		break;
     		case 'create_file':
+    			/**
+    			 * Creates the `all_donations` CSV and returns response.status = continue
+    			 * for admin.js. Then, admin.js calls `build_file` until all donations
+    			 * have been written to the CSV and response.status = end.
+    			 */
     			$upload_dir = wp_upload_dir();
     			$response->upload_dir = $upload_dir;
     			$reports_dir = trailingslashit( $upload_dir['basedir'] . '/reports' . $upload_dir['subdir'] );
@@ -331,9 +321,13 @@ class DMReports extends DonationManager {
     				}
 
     				// Create the CSV file
-    				$csv_columns = '"Date/Time Modified","DonorName","DonorAddress","DonorCity","DonorState","DonorZip","DonorPhone","DonorEmail","DonationAddress","DonationCity","DonationState","DonationZip","DonationDescription","PickupDate1","PickupDate2","PickupDate3","Organization"';
+    				$csv_columns = '"Date/Time Modified","DonorName","DonorAddress","DonorCity","DonorState","DonorZip","DonorPhone","DonorEmail","DonationAddress","DonationCity","DonationState","DonationZip","DonationDescription","PickupDate1","PickupDate2","PickupDate3","Organization","Referer"';
 
-    				$filename = 'all-donations_' . date( 'Y-m-d_Hi', current_time( 'timestamp' ) ) . '.csv';
+    				$month = ( isset( $_POST['month'] ) && preg_match( '/[0-9]{4}-[0-9]{2}/', $_POST['month'] ) )? $_POST['month'] : '';
+    				$filename = 'all-donations';
+    				if( ! empty( $month ) )
+    					$filename.= '_' . $month;
+    				$filename.= '_' . date( 'Y-m-d_Hi', current_time( 'timestamp' ) ) . '.csv';
     				$filetype = wp_check_filetype( $filename, null );
 
     				$filepath = trailingslashit( $reports_dir ) . $filename;
@@ -362,6 +356,10 @@ class DMReports extends DonationManager {
 					// Set offset meta value
 					update_post_meta( $attach_id, '_offset', 0 );
 
+					// Store `month`
+					if( isset( $month ) )
+						update_post_meta( $attach_id, '_month', $month );
+
 					$response->attach_id = $attach_id;
 
 					$get_attached_file_response = get_attached_file( $attach_id );
@@ -374,29 +372,10 @@ class DMReports extends DonationManager {
     	wp_send_json( $response );
     }
 
-    /*
-    public function callback_export_csv(){
-    	$org_id = $_POST['org_id'];
-
-    	$response = new stdClass();
-
-    	if( ! is_numeric( $org_id ) ){
-    		$response->message = '[DM] Invalid Org ID!';
-    		$response->success = false;
-    		wp_send_json( $response );
-    	}
-
-    	$response->message = '[DM] Downloading CSV for Org ID: ' . $org_id;
-    	$response->filename = $org_id . '.csv';
-
-    	wp_send_json( $response );
-    }
-    /**/
-
 	/**
 	 * Initiates a file download for $wp_query->query_vars['orgid'] and $wp_query->query_vars['month']
 	 *
-	 * Matches example.com/download/orgid/month
+	 * Matches example.com/download/orgid/YYYY-MM
 	 *
 	 * @see add_rewrite_rule()
 	 * @global object $wp_query WordPress global query object.
@@ -448,7 +427,7 @@ class DMReports extends DonationManager {
     	flush_rewrite_rules();
     }
 
-    private function get_all_donations( $offset = 0, $posts_per_page = 100 ){
+    private function get_all_donations( $offset = 0, $posts_per_page = 100, $month = null ){
 
     	$args = array(
     		'posts_per_page' => $posts_per_page,
@@ -457,7 +436,20 @@ class DMReports extends DonationManager {
     		'orderby' => 'post_date',
 			'order' =>'ASC',
 		);
-    	$donations = get_posts( $args );
+
+		if( ! is_null( $month ) && 'alldonations' != $month ){
+    		$args['date_query'] = array(
+    			array(
+    				'year' => substr( $month, 0, 4 ),
+    				'month' => substr( $month, 5, 2 ),
+    			),
+			);
+		}
+
+    	//$donations = get_posts( $args );
+    	$donations_query = new WP_Query( $args );
+    	$donations = $donations_query->get_posts();
+
     	if( ! $donations )
     		return false;
 
@@ -490,13 +482,14 @@ class DMReports extends DonationManager {
     			'PickupDate2' => $custom_fields['pickupdate2'][0],
     			'PickupDate3' => $custom_fields['pickupdate3'][0],
     			'Organization' => htmlentities( $org_name ),
+    			'Referer' => esc_url( $custom_fields['referer'] ),
 			);
 
 			$donation_rows[] = '"' . implode( '","', $donation_row ) . '"';
     	}
 
     	$new_offset = $posts_per_page + $offset;
-    	$data = array( 'rows' => $donation_rows, 'offset' => $new_offset );
+    	$data = array( 'rows' => $donation_rows, 'offset' => $new_offset, 'found_posts' => $donations_query->found_posts );
 
     	return $data;
     }
@@ -641,6 +634,44 @@ class DMReports extends DonationManager {
     	$rows = get_posts( $args );
 
     	return $rows;
+    }
+
+	/**
+	 * Returns HTML for <select> month options.
+	 *
+	 * @access callback_donation_reports_page()
+	 * @since 1.1.0
+	 *
+	 * @return array Array of HTML <options>.
+	 */
+    private function get_select_month_options(){
+    	$options = array();
+		$months = array( 1,2,3,4,5,6,7,8,9,10,11,12 );
+		arsort( $months );
+		$firstyear = 2011;
+		$current_year = date( 'Y', current_time( 'timestamp' ) );
+		$current_month = date( 'n', current_time( 'timestamp' ) );
+		for( $year = $current_year; $year >= $firstyear; $year-- ){
+			foreach( $months as $month ){
+				$option_date = $year . '-' . $month . '-1';
+				$timestamp = strtotime( $option_date );
+				$option_value = date( 'Y-m', $timestamp );
+				$option_display = date( 'Y - F', $timestamp );
+
+				if( $year == $current_year && $current_month == $month ){
+					$option_display = date( 'M Y', $timestamp );
+					$options[] = '<option value="'.$option_value.'">Current Month ('.$option_display.')</option>';
+					continue;
+				} else if( $year == $current_year && $current_month < $month ){
+					continue;
+				} else {
+					$selected = ( $option_value == $last_month )? ' selected="selected"' : '';
+					$options[] = '<option value="' . $option_value . '"' . $selected . '>' . $option_display . '</option>';
+				}
+			}
+		}
+
+		return $options;
     }
 }
 

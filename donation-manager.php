@@ -26,7 +26,7 @@ define( 'DONMAN_DIR', dirname( __FILE__ ) );
 require 'vendor/autoload.php';
 
 class DonationManager {
-    const VER = '1.0.0';
+    const VER = '1.1.0';
     public $html = '';
     public $donationreceipt = '';
 

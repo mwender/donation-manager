@@ -1982,7 +1982,7 @@ add_filter( 'request', array( $DonationManager, 'custom_columns_sort' ) );
 add_action( 'save_post', array( $DonationManager, 'custom_save_post' ) );
 
 // Include our Reporting Class
-require 'donation-reports.php';
+require 'lib/classes/donation-reports.php';
 
 // Include our PMD1.0 Importer Class
 //require 'dmimporter.php';

@@ -1203,7 +1203,8 @@ class DonationManager {
                 global $post;
                 setup_postdata( $post );
                 $org = get_post_meta( $post->ID, 'organization', true );
-                $organizations[] = array( 'id' => $org['ID'], 'name' => $org['post_title'], 'desc' => $org['post_content'], 'trans_dept_id' => $post->ID );
+                if( $org )
+                    $organizations[] = array( 'id' => $org['ID'], 'name' => $org['post_title'], 'desc' => $org['post_content'], 'trans_dept_id' => $post->ID );
             }
             wp_reset_postdata();
         } else {

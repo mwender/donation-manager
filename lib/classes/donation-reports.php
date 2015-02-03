@@ -105,7 +105,7 @@ class DMReports extends DonationManager {
 						?>
 							<p><label>Month:</label>
 							<select name="report-month" id="report-month">
-								<?php echo implode( '', $this->get_select_month_options() ); ?>
+								<?php echo implode( '', $this->get_select_month_options( $last_month ) ); ?>
 							</select>
 							</p>
 							<table class="widefat report">
@@ -167,7 +167,7 @@ class DMReports extends DonationManager {
 							<p><select name="all-donations-report-month" id="all-donations-report-month">
 								<?php
 								echo '<option value="alldonations">All donations</option>';
-								echo implode( '', $this->get_select_month_options() ); ?>
+								echo implode( '', $this->get_select_month_options( $last_month ) ); ?>
 							</select></p>
 							<?php submit_button( 'Download', 'secondary', 'export-all-donations', false  ) ?>
 							<div class="ui-overlay">
@@ -644,7 +644,7 @@ class DMReports extends DonationManager {
 	 *
 	 * @return array Array of HTML <options>.
 	 */
-    private function get_select_month_options(){
+    private function get_select_month_options( $last_month = null ){
     	$options = array();
 		$months = array( 1,2,3,4,5,6,7,8,9,10,11,12 );
 		arsort( $months );

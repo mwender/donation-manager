@@ -116,7 +116,7 @@ class DMReports extends DonationManager {
 										<th>ID</th>
 										<th>Organization</th>
 										<th style="text-align: right"><?php echo $date->format( 'M Y' )  ?> Donations</th>
-										<th>Action</th>
+										<th style="white-space: nowrap">Export CSV</th>
 									</tr>
 								</thead>
 								<tbody>
@@ -136,7 +136,7 @@ class DMReports extends DonationManager {
 													<td>' . get_the_ID() . '</td>
 													<td>' . get_the_title() . '</td>
 													<td style="text-align: right;">' . $donation_count . '</td>
-													<td>' . get_submit_button( 'Export ' . $date->format( 'M Y' ) . ' CSV', 'secondary small export-csv', 'export-csv-' . get_the_ID(), false, array( 'aria-org-id' => get_the_ID() ) ) . '</td>
+													<td>' . get_submit_button( $date->format( 'M Y' ), 'secondary small export-csv', 'export-csv-' . get_the_ID(), false, array( 'aria-org-id' => get_the_ID() ) ) . '</td>
 												</tr>';
 											$x++;
 										}

@@ -2006,6 +2006,9 @@ add_action( 'save_post', array( $DonationManager, 'custom_save_post' ) );
 // Include our Reporting Class
 require 'lib/classes/donation-reports.php';
 
+// Include Shortcodes Class
+require 'lib/classes/shortcodes.php'
+
 // Include our PMD1.0 Importer Class
 //require 'dmimporter.php';
 ?>

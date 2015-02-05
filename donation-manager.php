@@ -1078,6 +1078,28 @@ class DonationManager {
     }
 
     /**
+     * Returns a bootstrap alert
+     *
+     * @since 1.1.1
+     *
+     * @param string $message Alert text.
+     * @param string $type Optional. Alert type.
+     * @return string Alert html.
+     */
+    function get_alert( $message = null, $type = 'warning' ){
+        if( is_null( $message ) )
+            $message = 'No message passed to <code>get_alert</code>.';
+
+        $alert_types = array( 'success', 'info', 'warning', 'danger' );
+
+        $type = ( in_array( $type, $alert_types ) )? $type : 'warning';
+
+        $format = '<div class="alert alert-%1$s" role="alert">%2$s</div>';
+
+        return sprintf( $format, $type, $message );
+    }
+
+    /**
      * Retrieves the default organization as defined on the Donation Settings option screen.
      */
     public function get_default_organization() {

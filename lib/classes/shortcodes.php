@@ -64,6 +64,7 @@ Our mission is to connect you with organizations who will pick up your donation.
     function get_pickup_codes( $atts ){
       	extract( shortcode_atts( array(
     		'id' => null,
+    		'tid' => null,
     		'title' => 'donation pick up for',
     		'keyword' => null,
     		'location' => null,
@@ -78,55 +79,26 @@ Our mission is to connect you with organizations who will pick up your donation.
 		if( is_null( $keyword ) )
 			$keyword = $organization;
 
-		// 1. Select all trans_dept where OrgID=$id.
-        $params = array(
-        	'where' => 'organization.id=' . $id,
-        );
-        $trans_depts = pods( 'trans_dept', $params );
-
-        if( 0 === $trans_depts->total() )
-        	return $this->get_alert( '<strong>Warning:</strong> Pickup Code List: No Transportation Depts for given org ID (' . $id . ')!', 'warning' );
-
-        while( $trans_depts->fetch() ){
-        	$ids[] = $trans_depts->id();
+        if( ! is_null( $tid ) && is_numeric( $tid ) ){
+        	$ids = array( $tid );
+        } else {
+	        // Select all trans_dept where OrgID=$id.
+	        $ids = $this->get_trans_dept_ids( $id );
+	        if( 0 === count( $ids ) )
+	        	return $this->get_alert( '<strong>Warning:</strong> Pickup Code List: No Transportation Depts for given org ID (' . $id . ')!', 'warning' );
         }
 
 		// 2. For each trans_dept, SELECT all pickup_codes.
+		$links = '';
 		foreach( $ids as $trans_dept_id ){
-			$pickup_codes = wp_get_object_terms( $trans_dept_id, 'pickup_code' );
-
-			if( empty( $pickup_codes ) )
-				continue;
-
-			if( ! is_wp_error( $pickup_codes ) ){
-				$columns = 6;
-				$links = '';
-				$col = 1;
-				$last = end( $pickup_codes );
-				reset( $pickup_codes );
-				foreach( $pickup_codes as $pickup_code ){
-					if( 1 === $col )
-						$links.= '<div class="row" style="margin-bottom: 30px; text-align: center; font-size: 160%; font-weight: bold;">';
-					$format = '<div class="col-md-2"><a href="/select-your-organization/?pcode=%1$s" title="%2$s %1$s">%1$s</a></div>';
-					$links.= sprintf( $format, $pickup_code->name, $title );
-					if( $columns == $col ){
-						$links.= '</div>';
-						$col = 1;
-					} else {
-						$col++;
-						// If we're on the last element of the array, close the </div> for the div.row.
-						if( $last === $pickup_code )
-							$links.= '</div>';
-					}
-				}
-			}
+			$links.= $this->get_pickup_codes_html( $trans_dept_id, $title );
 		}
 
 		if( true == $showheading ){
 			if( is_null( $location ) )
 				$location = $keyword;
 			$format = '<h2>%2$s donation pick up &ndash; Zip Codes</h2><p><em>Looking for a donation pick up provider in the %3$s area?</em> Look no further...
-%4$s picks up donations in the following %3$s area Zip Codes:</p><div class="ziprow">%1$s<br class="clearfix" /></div>';
+%4$s picks up donations in the following %3$s area Zip Codes. Click on your Zip Code to donate now:</p><div class="ziprow">%1$s<br class="clearfix" /></div>';
 			$html = sprintf( $format, $links, $keyword, $location, $organization );
 		} else {
 			$format = '<div class="ziprow">%1$s<br class="clearfix" /></div>';
@@ -134,6 +106,38 @@ Our mission is to connect you with organizations who will pick up your donation.
 		}
 
 		return $html;
+    }
+
+    function get_pickup_codes_html( $tid, $title = 'donation pick up for' ){
+		$pickup_codes = wp_get_object_terms( $tid, 'pickup_code' );
+
+		if( empty( $pickup_codes ) )
+			return;
+
+		if( ! is_wp_error( $pickup_codes ) ){
+			$columns = 6;
+			$links = '';
+			$col = 1;
+			$last = end( $pickup_codes );
+			reset( $pickup_codes );
+			foreach( $pickup_codes as $pickup_code ){
+				if( 1 === $col )
+					$links.= '<div class="row" style="margin-bottom: 30px; text-align: center; font-size: 160%; font-weight: bold;">';
+				$format = '<div class="col-md-2"><a href="/select-your-organization/?pcode=%1$s" title="%2$s %1$s">%1$s</a></div>';
+				$links.= sprintf( $format, $pickup_code->name, $title );
+				if( $columns == $col ){
+					$links.= '</div>';
+					$col = 1;
+				} else {
+					$col++;
+					// If we're on the last element of the array, close the </div> for the div.row.
+					if( $last === $pickup_code )
+						$links.= '</div>';
+				}
+			}
+		}
+
+		return $links;
     }
 
     function get_organization_description( $atts ){
@@ -174,8 +178,22 @@ Our mission is to connect you with organizations who will pick up your donation.
 			return $this->get_alert( '<strong>Error!</strong> No $id passed to get_organization_seo_page().', 'danger' );
 
 		$html[] = $this->get_organization_description( array( 'id' => $id, 'location' => $location ) );
-		$html[] = $this->get_donate_now_button( array( 'id' => $id, 'tid' => $tid, 'label' => $label ) );
-		$html[] = $this->get_pickup_codes( array( 'id' => $id, 'keyword' => $keyword, 'location' => $location, 'title' => $location . ' donation pick up' ) );
+
+		// Get all Trans
+		$trans_dept_ids = $this->get_trans_dept_ids( $id );
+        if( 0 === count( $trans_dept_ids ) )
+        	return $this->get_alert( '<strong>Warning:</strong> Pickup Code List: No Transportation Depts for given org ID (' . $id . ')!', 'warning' );
+
+        $x = 1;
+        foreach( $trans_dept_ids as $tid ){
+        	$html[] = $this->get_pickup_codes( array( 'id' => $id, 'tid' => $tid, 'keyword' => $keyword, 'location' => $location, 'title' => $location . ' donation pick up' ) );
+
+        	// Show the donate now button lead paragraph for the last set of pickup codes
+        	$showlead = ( $x == count( $trans_dept_ids ) )? true : false;
+        	$html[] = $this->get_donate_now_button( array( 'id' => $id, 'tid' => $tid, 'label' => $label, 'showlead' => $showlead ) );
+        	$x++;
+        }
+
 		$html[] = $this->get_boilerplate( array( 'title' => 'about-pmd' ) );
 
 		return implode( "\n", $html );

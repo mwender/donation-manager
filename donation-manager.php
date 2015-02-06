@@ -1523,6 +1523,35 @@ class DonationManager {
     }
 
     /**
+     * Returns an array of trans_dept IDs for a given Org ID.
+     *
+     * @since 1.1.1
+     *
+     * @param int $id Organization ID.
+     * @return array Array of trans_dept IDs.
+     */
+    function get_trans_dept_ids( $id = null ){
+        $ids = array();
+
+        if( is_null( $id ) )
+            return $ids;
+
+        $params = array(
+            'where' => 'organization.id=' . $id,
+        );
+        $trans_depts = pods( 'trans_dept', $params );
+
+        if( 0 === $trans_depts->total() )
+            return $ids;
+
+        while( $trans_depts->fetch() ){
+            $ids[] = $trans_depts->id();
+        }
+
+        return $ids;
+    }
+
+    /**
      * Retrieves template from /lib/html/
      */
     public function get_template_part( $filename = '', $search_replace_array = array() ) {

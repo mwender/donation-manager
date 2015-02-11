@@ -69,6 +69,7 @@ Our mission is to connect you with organizations who will pick up your donation.
     		'keyword' => null,
     		'location' => null,
     		'showheading' =>  true,
+    		'donate_button' => '',
 		), $atts ) );
 
 		if( is_null( $id ) )
@@ -98,8 +99,8 @@ Our mission is to connect you with organizations who will pick up your donation.
 			if( is_null( $location ) )
 				$location = $keyword;
 			$format = '<h2>%2$s donation pick up &ndash; Zip Codes</h2><p><em>Looking for a donation pick up provider in the %3$s area?</em> Look no further...
-%4$s picks up donations in the following %3$s area Zip Codes. Click on your Zip Code to donate now:</p><div class="ziprow">%1$s<br class="clearfix" /></div>';
-			$html = sprintf( $format, $links, $keyword, $location, $organization );
+<em>%4$s</em> picks up donations in the following %3$s area Zip Codes. Click on the button or your Zip Code to donate now:</p>%5$s<div class="ziprow">%1$s<br class="clearfix" /></div>';
+			$html = sprintf( $format, $links, $keyword, $location, $organization, $donate_button );
 		} else {
 			$format = '<div class="ziprow">%1$s<br class="clearfix" /></div>';
 			$html = sprintf( $format, $links );
@@ -186,7 +187,8 @@ Our mission is to connect you with organizations who will pick up your donation.
 
         $x = 1;
         foreach( $trans_dept_ids as $tid ){
-        	$html[] = $this->get_pickup_codes( array( 'id' => $id, 'tid' => $tid, 'keyword' => $keyword, 'location' => $location, 'title' => $location . ' donation pick up' ) );
+        	$donate_now_button = $this->get_donate_now_button( array( 'id' => $id, 'tid' => $tid, 'label' => $label, 'showlead' => $showlead ) );
+        	$html[] = $this->get_pickup_codes( array( 'id' => $id, 'tid' => $tid, 'keyword' => $keyword, 'location' => $location, 'title' => $location . ' donation pick up', 'donate_button' => $donate_now_button ) );
 
         	// Show the donate now button lead paragraph for the last set of pickup codes
         	$showlead = ( $x == count( $trans_dept_ids ) )? true : false;

@@ -297,7 +297,8 @@ class DonationManager {
          */
         if( isset( $_POST['donor']['address'] ) ) {
             $form = new Form([
-                'Contact Name' => [ 'required', 'trim', 'max_length' => 80 ],
+                'First Name' => [ 'required', 'trim', 'max_length' => 40 ],
+                'Last Name' => [ 'required', 'trim', 'max_length' => 40 ],
                 'Address' => [ 'required', 'trim', 'max_length' => 255 ],
                 'City' => [ 'required', 'trim', 'max_length' => 80 ],
                 'State' => [ 'required', 'trim', 'max_length' => 80 ],
@@ -307,7 +308,8 @@ class DonationManager {
             ]);
 
             $form->setValues( array(
-                'Contact Name' => $_POST['donor']['address']['name'],
+                'First Name' => $_POST['donor']['address']['name']['first'],
+                'Last Name' => $_POST['donor']['address']['name']['last'],
                 'Address' => $_POST['donor']['address']['address'],
                 'City' => $_POST['donor']['address']['city'],
                 'State' => $_POST['donor']['address']['state'],
@@ -644,7 +646,8 @@ class DonationManager {
                     'checked_no' => $checked_no,
                     'checked_phone' => $checked_phone,
                     'checked_email' => $checked_email,
-                    'donor_name' => $_POST['donor']['address']['name'],
+                    'donor_name_first' => $_POST['donor']['address']['name']['first'],
+                    'donor_name_last' => $_POST['donor']['address']['name']['last'],
                     'donor_address' => $_POST['donor']['address']['address'],
                     'donor_city' => $_POST['donor']['address']['city'],
                     'donor_zip' => $_POST['donor']['address']['zip'],
@@ -1175,7 +1178,7 @@ class DonationManager {
 
         $donationreceipt = $this->get_template_part( $template, array(
             'id' => $donation['ID'],
-            'donor_info' => $donation['address']['name'] . '<br>' . $donation['address']['address'] . '<br>' . $donation['address']['city'] . ', ' . $donation['address']['state'] . ' ' . $donation['address']['zip'] . '<br>' . $donation['phone'] . '<br>' . $donation['email'],
+            'donor_info' => $donation['address']['name']['first'] . ' ' . $donation['address']['name']['last'] . '<br>' . $donation['address']['address'] . '<br>' . $donation['address']['city'] . ', ' . $donation['address']['state'] . ' ' . $donation['address']['zip'] . '<br>' . $donation['phone'] . '<br>' . $donation['email'],
             'pickupaddress' => $donation[$pickup_add_key]['address'] . '<br>' . $donation[$pickup_add_key]['city'] . ', ' . $donation[$pickup_add_key]['state'] . ' ' . $donation[$pickup_add_key]['zip'],
             'preferred_contact_method' => $donation['preferred_contact_method'] . ' - ' . $contact_info,
             'pickupdate1' => $donation['pickupdate1'],
@@ -1728,7 +1731,7 @@ class DonationManager {
         $post = array(
             'ID' => $ID,
             'post_content' => $donationreceipt,
-            'post_title' => implode( ', ', $donation['items'] ) . ' - ' . $donation['address']['name'],
+            'post_title' => implode( ', ', $donation['items'] ) . ' - ' . $donation['address']['name']['first'] . ' ' . $donation['address']['name']['last'],
             'post_status' => 'publish',
         );
 
@@ -1761,6 +1764,9 @@ class DonationManager {
         foreach( $post_meta as $meta_key => $donation_key ){
             switch( $meta_key ){
                 case 'donor_name':
+                    $meta_value = $donation['address']['name']['first'] . ' ' . $donation['address']['name']['last'];
+                break;
+
                 case 'donor_address':
                 case 'donor_city':
                 case 'donor_state':
@@ -1866,7 +1872,7 @@ class DonationManager {
 
             case 'trans_dept_notification':
                 $html = $this->get_template_part( 'email.trans-dept-notification', array(
-                    'donor_name' => $donor['address']['name'],
+                    'donor_name' => $donor['address']['name']['first'] . ' ' .$donor['address']['name']['last'],
                     'contact_info' => str_replace( '<a href', '<a style="color: #6f6f6f; text-decoration: none;" href', $contact_info ),
                     'donationreceipt' => $donationreceipt,
                 ));
@@ -1881,10 +1887,10 @@ class DonationManager {
                 }
                 if( is_array( $cc_emails ) )
                     $recipients = array_merge( $recipients, $cc_emails );
-                $subject = 'Scheduling Request from ' . $donor['address']['name'];
+                $subject = 'Scheduling Request from ' . $donor['address']['name']['first'] . ' ' .$donor['address']['name']['last'];
 
                 // Set Reply-To our donor
-                $headers[] = 'Reply-To: ' . $donor['address']['name'] . ' <' . $donor['email'] . '>';
+                $headers[] = 'Reply-To: ' . $donor['address']['name']['first'] . ' ' .$donor['address']['name']['last'] . ' <' . $donor['email'] . '>';
             break;
 
         }
@@ -2019,6 +2025,7 @@ register_activation_hook( __FILE__, array( $DonationManager, 'activate' ) );
 
 // Frontend functionality
 add_shortcode( 'donationform', array( $DonationManager, 'callback_shortcode' ) );
+add_action( 'init', array( $DonationManager, 'callback_init_set_debug' ), 98 );
 add_action( 'init', array( $DonationManager, 'callback_init' ), 99 );
 add_action( 'init', array( $DonationManager, 'callback_init_set_referer' ), 100 );
 add_action( 'template_redirect', array( $DonationManager, 'callback_template_redirect' ) );
@@ -2050,7 +2057,7 @@ add_action( 'save_post', array( $DonationManager, 'custom_save_post' ) );
 require 'lib/classes/donation-reports.php';
 
 // Include Shortcodes Class
-require 'lib/classes/shortcodes.php'
+require 'lib/classes/shortcodes.php';
 
 // Include our PMD1.0 Importer Class
 //require 'dmimporter.php';

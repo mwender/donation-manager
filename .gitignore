@@ -1,3 +1,4 @@
 vendor/
 lib/components/vendor
 node_modules/
+mailtrap.php

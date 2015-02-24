@@ -516,6 +516,20 @@ class DonationManager {
     }
 
     /**
+     * Sets $_COOKIE[‘dmdebug’] for debuging purposes.
+     *
+     * @since 1.?.?
+     *
+     * @return void
+     */
+    function callback_init_set_debug(){
+        if( ! isset( $_GET['dmdebug'] ) )
+            return;
+
+        setcookie( 'dmdebug', 'on', time() + 3600, COOKIEPATH, COOKIE_DOMAIN );
+    }
+
+    /**
      * Hooks to `init`. Sets the referring URL for the donation.
      *
      * @since 1.?.?
@@ -834,7 +848,7 @@ class DonationManager {
             break;
         }
 
-        if( current_user_can( 'activate_plugins') && true == $_COOKIE['dmdebug'] )
+        if( current_user_can( 'activate_plugins') && 'on' == $_COOKIE['dmdebug'] )
             $this->add_html( '<br /><div class="alert alert-info"><strong>NOTE:</strong> This note and the following array output is only visible to logged in PMD Admins.</div><pre>$_SESSION[\'donor\'] = ' . print_r( $_SESSION['donor'], true ) . '</pre>' );
 
         $html = $this->html;

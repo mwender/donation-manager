@@ -2061,4 +2061,8 @@ require 'lib/classes/shortcodes.php';
 
 // Include our PMD1.0 Importer Class
 //require 'dmimporter.php';
+
+$mailtrap = dirname( __FILE__ ) . '/mailtrap.php';
+if( file_exists( $mailtrap ) )
+    require( $mailtrap );
 ?>

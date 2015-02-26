@@ -430,14 +430,6 @@ class DonationManager {
                 // Notify admin if missing ORG or TRANS DEPT
                 if( empty( $_SESSION['donor']['org_id'] ) || empty( $_SESSION['donor']['trans_dept_id'] ) )
                     $this->notify_admin( 'missing_org_transdept' );
-                /*
-                if( empty( $_SESSION['donor']['org_id'] ) || empty( $_SESSION['donor']['trans_dept_id'] ) ){
-                    $this->send_email( 'missing_org_transdept_notification' );
-                    $pickup_code = ( 'Yes' == $_SESSION['donor']['different_pickup_address'] )? $_SESSION['donor']['pickup_address']['zip'] : $_SESSION['donor']['address']['zip'];
-                    header( 'Location: ' . site_url( '/select-your-organization/?pcode=' . $pickup_code . '&message=no_org_transdept' ) );
-                    die();
-                }
-                /**/
 
                 // Save the donation to the database and send the confirmation and notification emails.
                 $ID = $this->save_donation( $_SESSION['donor'] );

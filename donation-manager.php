@@ -261,20 +261,37 @@ class DonationManager {
             ]);
             $form->setValues( array( 'answers' => $_POST['donor']['answers'], 'answered' => $_POST['donor']['question']['ids'] ) );
 
+            // Does the organization allow additional details?
+            $provide_additional_details = get_post_meta( $_SESSION['donor']['org_id'], 'provide_additional_details', true );
+            if( $provide_additional_details ){
+                foreach( $_POST['donor']['answers'] as $answer ){
+                    if( 'yes' == strtolower( $answer ) ){
+                        $form->addRules(['additional_details' => ['required'] ]);
+                        $form->setValue( 'additional_details', $_POST['donor']['additional_details'] );
+                        break;
+                    }
+                }
+            }
+
             $step = 'contact-details';
             if( $form->validate( $_POST ) ){
                 if( isset( $_POST['donor']['answers'] ) ) {
                     $redirect = true;
+
+                    if( $provide_additional_details )
+                        $_SESSION['donor']['description'].= "\n\n---- ADDITIONAL DETAILS for DAMAGED/PET/SMOKING Items ----\n" . $_POST['donor']['additional_details'];
+
                     foreach( $_POST['donor']['answers'] as $key => $answer ) {
                         $_SESSION['donor']['screening_questions'][$key] = array(
                             'question' => $_POST['donor']['questions'][$key],
                             'answer' => $_POST['donor']['answers'][$key]
                         );
-                        if( 'Yes' == $answer ) {
+                        if( 'Yes' == $answer && ! $provide_additional_details ) {
                             $_SESSION['donor']['form'] = 'no-damaged-items-message';
                             $redirect = false;
                         }
                     }
+
                     if( true == $redirect ){
                         $_SESSION['donor']['form'] = 'contact-details';
                         if( isset( $_POST['nextpage'] ) && ! empty( $_POST['nextpage'] ) ){
@@ -697,7 +714,7 @@ class DonationManager {
                 $screening_questions = DonationManager::get_screening_questions( $_SESSION['donor']['org_id'] );
 
                 $row_template = DonationManager::get_template_part( 'form3.screening-questions.row' );
-                $search = array( '{question}', '{question_esc_attr}', '{key}', '{checked_yes}', '{checked_no}' );
+                $search = array( '{question}', '{question_esc_attr}', '{key}', '{checked_yes}', '{checked_no}', '{additional_details}' );
                 $questions = array();
                 foreach( $screening_questions as $question ) {
                     $key = $question['id'];
@@ -706,10 +723,12 @@ class DonationManager {
                     $replace = array( $question['desc'], esc_attr( $question['desc'] ), $key, $checked_yes, $checked_no );
                     $questions[] = str_replace( $search, $replace, $row_template );
                 }
+                $provide_additional_details = get_post_meta( $_SESSION['donor']['org_id'], 'provide_additional_details', true );
+                $additional_details = ( isset( $_POST['donor']['additional_details'] ) )? esc_textarea( $_POST['donor']['additional_details'] ) : '';
 
                 $form_template = DonationManager::get_template_part( 'form3.screening-questions.form' );
-                $search = array( '{nextpage}', '{question_rows}' );
-                $replace = array( $nextpage, implode( "\n", $questions) );
+                $search = array( '{nextpage}', '{question_rows}', '{additional_details}', '{provide_additional_details}' );
+                $replace = array( $nextpage, implode( "\n", $questions ), $additional_details, $provide_additional_details );
                 $html.= str_replace( $search, $replace, $form_template );
                 $this->add_html( $html );
             break;
@@ -1181,7 +1200,7 @@ class DonationManager {
             'pickupdate3' => $donation['pickupdate3'],
             'pickuptime3' => $donation['pickuptime3'],
             'items' => implode( ', ', $donation['items'] ),
-            'description' => $donation['description'],
+            'description' => nl2br( $donation['description'] ),
             'screening_questions' => $screening_questions,
             'pickuplocation' =>  $donation['pickuplocation'],
             'pickup_code' => $donation['pickup_code'],

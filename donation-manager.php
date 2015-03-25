@@ -1172,6 +1172,7 @@ class DonationManager {
             'id' => $donation['ID'],
             'donor_info' => $donation['address']['name']['first'] . ' ' . $donation['address']['name']['last'] . '<br>' . $donation['address']['address'] . '<br>' . $donation['address']['city'] . ', ' . $donation['address']['state'] . ' ' . $donation['address']['zip'] . '<br>' . $donation['phone'] . '<br>' . $donation['email'],
             'pickupaddress' => $donation[$pickup_add_key]['address'] . '<br>' . $donation[$pickup_add_key]['city'] . ', ' . $donation[$pickup_add_key]['state'] . ' ' . $donation[$pickup_add_key]['zip'],
+            'pickupaddress_query' => urlencode( $donation[$pickup_add_key]['address'] . ', ' . $donation[$pickup_add_key]['city'] . ', ' . $donation[$pickup_add_key]['state'] . ' ' . $donation[$pickup_add_key]['zip'] ),
             'preferred_contact_method' => $donation['preferred_contact_method'] . ' - ' . $contact_info,
             'pickupdate1' => $donation['pickupdate1'],
             'pickuptime1' => $donation['pickuptime1'],

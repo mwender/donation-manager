@@ -10,6 +10,29 @@ table.report{
 	display: none;
 }
 
+.progress{
+	width: 80%;
+	margin: 200px auto;
+	height: 36px;
+	border: 1px solid #aaa;
+	border-radius: 3px;
+	position: relative;
+
+	span.bar{
+		background-color: #ccc;
+		width: 0;
+		display: block;
+		height: 36px;
+	}
+	span.percent{
+		position: absolute;
+		left: 50%;
+		top: 10px;
+		font-weight: bold;
+		font-size: 16px;
+	}
+}
+
 #donation-download-modal{
 	p{
 		margin-top: 0;

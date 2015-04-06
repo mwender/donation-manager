@@ -99,51 +99,25 @@ class DMReports extends DonationManager {
 						<div class="inside">
 						<?php
 						$date = new DateTime( current_time( 'Y-m-d' ) );
-						$interval = new DateInterval( 'P1M' );
-						$date->sub( $interval );
-						$last_month = $date->format( 'Y-m' );
+						$month = $date->format( 'Y-m' );
 						?>
 							<p><label>Month:</label>
 							<select name="report-month" id="report-month">
-								<?php echo implode( '', $this->get_select_month_options( $last_month ) ); ?>
+								<?php echo implode( '', $this->get_select_month_options( $month ) ); ?>
 							</select>
 							</p>
-							<table class="widefat report">
+							<table class="widefat report" id="donation-display">
 								<colgroup><col style="width: 5%;" /><col style="width: 5%;" /><col style="width: 60%;" /><col style="width: 20%;" /><col style="width: 10%;" /></colgroup>
 								<thead>
 									<tr>
 										<th>#</th>
 										<th>ID</th>
 										<th>Organization</th>
-										<th style="text-align: right"><?php echo $date->format( 'M Y' )  ?> Donations</th>
+										<th style="text-align: right" id="heading-date"></th>
 										<th style="white-space: nowrap">Export CSV</th>
 									</tr>
 								</thead>
 								<tbody>
-									<?php
-									$orgs = $this->get_rows( 'organization' );
-									global $post;
-									$x = 1;
-									if( $orgs ){
-										foreach( $orgs as $post ){
-											setup_postdata( $post );
-
-											$donations = $this->get_donations( get_the_ID(), $last_month );
-											$donation_count = ( $donations )? count( $donations ) : 0 ;
-											$donations_dsp = ( is_array( $donations ) )? implode( "\n", $donations ) : $donations;
-											echo '<tr aria-org-id="' . get_the_ID() . '">
-													<td>' . $x . '</td>
-													<td>' . get_the_ID() . '</td>
-													<td>' . get_the_title() . '</td>
-													<td style="text-align: right;">' . $donation_count . '</td>
-													<td>' . get_submit_button( $date->format( 'M Y' ), 'secondary small export-csv', 'export-csv-' . get_the_ID(), false, array( 'aria-org-id' => get_the_ID() ) ) . '</td>
-												</tr>';
-											$x++;
-										}
-									} else {
-										echo '<tr><td colspan="5" style="text-align: center;">No organizations found!</td></tr>';
-									}
-									?>
 								</tbody>
 							</table>
 						</div> <!-- .inside -->
@@ -366,6 +340,49 @@ class DMReports extends DonationManager {
 					$response->path_to_file = $get_attached_file_response;
 					$response->status = 'continue';
     			}
+    		break;
+
+    		case 'get_orgs':
+    			if( false === ( $organizations = get_transient( 'get_orgs' ) ) ){
+	    			$orgs = $this->get_rows( 'organization' );
+	    			$organizations = array();
+	    			if( $orgs ){
+	    				foreach( $orgs as $post ){
+	    					$organizations[] = $post->ID;
+	    				}
+	    			}
+	    			set_transient( 'get_orgs', $organizations, 6 * HOUR_IN_SECONDS );
+    			}
+    			$response->orgs = $organizations;
+    		break;
+
+    		case 'get_org_report':
+    			if( ! is_numeric( $_POST['id'] ) || empty( $_POST['id'] ) )
+    				return;
+    			$id = $_POST['id'];
+    			$response->id = $id;
+    			$month = ( $_POST['month'] )? $_POST['month'] : current_time( 'Y-m' );
+    			$date = new DateTime( $month );
+
+    			$transient_name = 'org_' . $id . '_donation_report_' . $month;
+
+    			if( false === ( $org = get_transient( $transient_name ) ) ){
+	    			$post = get_post( $id );
+	    			$org = new stdClass();
+	    			$org->ID = $id;
+	    			$org->title = $post->post_title;
+
+					$donations = $this->get_donations( $id, $month );
+					$donation_count = ( $donations )? count( $donations ) : 0 ;
+					$org->count = $donation_count;
+
+					$org->button = get_submit_button( $date->format( 'M Y' ), 'secondary small export-csv', 'export-csv-' . $id, false, array( 'aria-org-id' => $id ) );
+    				set_transient( $transient_name, $org, 1 * HOUR_IN_SECONDS );
+    			}
+
+				$response->columnHeading = $date->format( 'M Y' ) . ' Donations';
+				$response->org = $org;
+				$response->post = $post;
     		break;
     	}
 

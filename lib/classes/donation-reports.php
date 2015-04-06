@@ -118,6 +118,9 @@ class DMReports extends DonationManager {
 									</tr>
 								</thead>
 								<tbody>
+									<tr>
+										<td colspan="5" style="text-align: center; padding: 50px; background: #fff;"><a href="#" class="button" id="load-report" style="">Load Report</a></td>
+									</tr>
 								</tbody>
 							</table>
 						</div> <!-- .inside -->

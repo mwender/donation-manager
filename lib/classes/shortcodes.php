@@ -35,7 +35,7 @@ class DMShortcodes extends DonationManager {
 				if( $matches )
 					$id = $matches[1];
 
-				preg_match( '/location=[\"\']{1}(.*)[\"\']{1}/U', $regex_matches[3], $matches );
+				preg_match( '/keyword=[\"\']{1}(.*)[\"\']{1}/U', $regex_matches[3], $matches );
 				if( $matches )
 					$location = $matches[1];
 

@@ -11,6 +11,44 @@ class DMShortcodes extends DonationManager {
     }
 
     private function __construct() {
+    	add_filter( 'wpseo_metadesc', array( $this, 'add_seo_page_metadesc' ), 11, 1 );
+    }
+
+	/**
+	 * Hooks to `wpseo_metadesc` provided by Yoast SEO.
+	 *
+	 * @since x.x.x
+	 *
+	 * @param string $description Meta description for current page.
+	 * @return string Filtered meta description.
+	 */
+    public function add_seo_page_metadesc( $description ){
+		global $post;
+		if( has_shortcode( $post->post_content, 'organization-seo-page' ) ){
+			//return 'This is a test description.';
+
+			$regex_pattern = get_shortcode_regex();
+			preg_match ( '/'.$regex_pattern.'/s', $post->post_content, $regex_matches );
+			if( $regex_matches[2] == 'organization-seo-page' ){
+				//  Turn the attributes into a URL parm string
+	            $attribureStr = str_replace (" ", "&", trim ($regex_matches[3]));
+	            $attribureStr = str_replace ('"', '', $attribureStr);
+	            //return $attribureStr;
+	            $defaults = array(
+	            	'id' => null,
+	            	'location' => null,
+	        	);
+	            $attributes = wp_parse_args( $attribureStr, $defaults );
+
+	            if( isset( $attributes['location'] ) && ! is_null( $attributes['location'] ) ){
+	            	$organization = get_the_title( $attributes['id'] );
+	            	$format = 'Looking for a donation pick up provider in the %1$s area? Look no further...%2$s picks up donations in the following %1$s area Zip Codes.';
+	            	$description = sprintf( $format, $attributes['location'], $organization );
+	            }
+			}
+		}
+
+		return $description;
     }
 
     function get_boilerplate( $atts ){

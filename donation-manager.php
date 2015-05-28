@@ -842,7 +842,11 @@ class DonationManager {
                 foreach( $organizations as $org ) {
                     $link = $nextpage . '?oid=' . $org['id'] . '&tid=' . $org['trans_dept_id'];
                     $replace = array( $org['name'], $org['desc'], $link );
+
+                    $ads = $this->get_trans_dept_ads( $org['trans_dept_id'] );
+
                     $rows[] = str_replace( $search, $replace, $template );
+
                 }
                 $this->add_html( implode( "\n", $rows ) );
             break;
@@ -861,6 +865,12 @@ class DonationManager {
                 $this->add_html( $html );
             break;
         }
+
+        if( isset( $_SESSION['donor']['trans_dept_id'] ) )
+            $ads = $this->get_trans_dept_ads( $_SESSION['donor']['trans_dept_id'] );
+
+        if( $ads )
+            $this->add_html( $ads );
 
         if( current_user_can( 'activate_plugins') && 'on' == $_COOKIE['dmdebug'] )
             $this->add_html( '<br /><div class="alert alert-info"><strong>NOTE:</strong> This note and the following array output is only visible to logged in PMD Admins.</div><pre>$_SESSION[\'donor\'] = ' . print_r( $_SESSION['donor'], true ) . '</pre>' );
@@ -1547,6 +1557,49 @@ class DonationManager {
                     $html.= str_replace( $search, $replace, $nopickup_store_row_html );
                 }
             }
+        }
+
+        return $html;
+    }
+
+    /**
+     * Returns HTML for transportation depatment ads.
+     *
+     * @since 1.x.x
+     *
+     * @param int $id Transportation Department ID.
+     * @return string HTML for banner ads.
+     */
+    function get_trans_dept_ads( $id = null ){
+        if( is_null( $id ) )
+            return;
+
+        $html = '';
+
+        for( $x = 1; $x <= 3; $x++ ){
+            $graphic = get_post_meta( $id, 'ad_' . $x . '_graphic', true );
+            if( $graphic ){
+                $attachment = wp_get_attachment_image_src( $graphic['ID'], 'full' );
+                $ads[$x]['src'] = $attachment[0];
+                $link = get_post_meta( $id, 'ad_' . $x . '_link', true );
+                if( $link )
+                    $ads[$x]['link'] = $link;
+            }
+        }
+
+        if( 0 < count( $ads ) ){
+            for( $x = 1; $x <= 3; $x++ ){
+                if( $ads[$x] ){
+                    $banner = '<img src="' . $ads[$x]['src'] . '" />';
+                    if( $ads[$x]['link'] )
+                        $banner = '<a href="' . $ads[$x]['link'] . '" target="_blank">' . $banner . '</a>';
+                    $replace['ad-' . $x ] = $banner;
+                } else {
+                    $replace['ad-' . $x ] = '';
+                }
+            }
+
+            $html = $this->get_template_part( 'banner-ad.row', $replace );
         }
 
         return $html;

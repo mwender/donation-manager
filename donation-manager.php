@@ -549,7 +549,7 @@ class DonationManager {
      */
     function callback_init_set_referer(){
         if( ! isset( $_SESSION['donor']['referer'] ) )
-            $_SESSION['donor']['referer'] = ( isset( $_SERVER['HTTP_REFERER'] ) )? $_SERVER['HTTP_REFERER'] : '';
+            $_SESSION['donor']['referer'] = wp_get_referer();
     }
 
     /**

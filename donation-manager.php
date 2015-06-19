@@ -543,13 +543,18 @@ class DonationManager {
     /**
      * Hooks to `init`. Sets the referring URL for the donation.
      *
+     * The referer only gets set if it != the domain for this WordPress install.
+     *
      * @since 1.?.?
      *
      * @return void
      */
     function callback_init_set_referer(){
-        if( ! isset( $_SESSION['donor']['referer'] ) )
-            $_SESSION['donor']['referer'] = wp_get_referer();
+        $sitedomain = str_replace( array( 'http://', 'https://' ), '', site_url() );
+        $referer = ( isset( $_SERVER['HTTP_REFERER'] ) && ! empty( $_SERVER['HTTP_REFERER'] ) )? $_SERVER['HTTP_REFERER'] : '' ;
+
+        if( ! isset( $_SESSION['donor']['referer'] ) || empty( $_SESSION['donor']['referer'] ) )
+            $_SESSION['donor']['referer'] = ( ! empty( $referer ) && ! stristr( $referer, $sitedomain ) )? $referer : '' ;
     }
 
     /**
@@ -612,6 +617,8 @@ class DonationManager {
          */
         if( is_front_page() )
             $_SESSION['donor'] = array();
+
+        $this->callback_init_set_referer();
 
         $form = ( isset( $_SESSION['donor']['form'] ) )? $_SESSION['donor']['form'] : '';
         if( isset( $_REQUEST['pcode'] ) ){

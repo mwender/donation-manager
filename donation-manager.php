@@ -541,20 +541,30 @@ class DonationManager {
     }
 
     /**
-     * Hooks to `init`. Sets the referring URL for the donation.
-     *
-     * The referer only gets set if it != the domain for this WordPress install.
+     * Hooks to `init`. Logs the donor's entire path through the system.
      *
      * @since 1.?.?
      *
      * @return void
      */
-    function callback_init_set_referer(){
-        $sitedomain = str_replace( array( 'http://', 'https://' ), '', site_url() );
-        $referer = ( isset( $_SERVER['HTTP_REFERER'] ) && ! empty( $_SERVER['HTTP_REFERER'] ) )? $_SERVER['HTTP_REFERER'] : '' ;
+    function callback_init_track_url_path(){
+        if( ! is_array( $_SESSION['donor']['url_path'] ) || ! isset( $_SESSION['donor']['url_path'] ) )
+            $_SESSION['donor']['url_path'] = array();
 
-        if( ! isset( $_SESSION['donor']['referer'] ) || empty( $_SESSION['donor']['referer'] ) )
-            $_SESSION['donor']['referer'] = ( ! empty( $referer ) && ! stristr( $referer, $sitedomain ) )? $referer : '' ;
+        $site_host = str_replace( array( 'http://', 'https://' ), '', site_url() );
+
+        $referer = ( isset( $_SERVER['HTTP_REFERER'] ) && ! empty( $_SERVER['HTTP_REFERER'] ) )? $_SERVER['HTTP_REFERER'] : '' ;
+        $referer_url = parse_url( $referer );
+        $referer_host = $referer_url['host'];
+
+        // Start a new array if our referer is not from this site
+        if( $site_host != $referer_host )
+            $_SESSION['donor']['url_path'] = array( $referer );
+
+        $last_referer = end( $_SESSION['donor']['url_path'] );
+        reset( $_SESSION['donor']['url_path'] );
+        if( ! empty( $referer ) && $referer != $last_referer )
+            $_SESSION['donor']['url_path'][] = $referer;
     }
 
     /**
@@ -618,7 +628,7 @@ class DonationManager {
         if( is_front_page() )
             $_SESSION['donor'] = array();
 
-        $this->callback_init_set_referer();
+        $this->callback_init_track_url_path();
 
         $form = ( isset( $_SESSION['donor']['form'] ) )? $_SESSION['donor']['form'] : '';
         if( isset( $_REQUEST['pcode'] ) ){
@@ -1423,6 +1433,25 @@ class DonationManager {
     }
 
     /**
+     * Returns first array value from $_SESSION[‘donor’][‘url_path’]
+     *
+     * @since 1.x.x
+     *
+     * @return string First value from $_SESSION[‘donor’][‘url_path’]
+     */
+    private function _get_referer(){
+        if(
+            ! isset( $_SESSION['donor']['url_path'] )
+            || ! is_array( $_SESSION['donor']['url_path'] )
+            || ! isset( $_SESSION['donor']['url_path'][0] )
+        )
+            return null;
+
+        $referer = $_SESSION['donor']['url_path'][0];
+        return $referer;
+    }
+
+    /**
      * Retrieves an organization's screening questions. If none are assigned, returns the default questions.
      */
     public function get_screening_questions( $org_id ) {
@@ -1848,6 +1877,10 @@ class DonationManager {
                     $meta_value = $donation['address'][$key];
                 break;
 
+                case 'referer':
+                    $meta_value = $this->_get_referer();
+                break;
+
                 case 'organization':
                 case 'trans_dept':
                     $meta_value = $donation[$donation_key];
@@ -1911,7 +1944,7 @@ class DonationManager {
 
             case 'invalid_link':
                  $html = $this->get_template_part( 'email.blank', array(
-                    'content' => '<div style="text-align: left;"><p>The following page has an invalid link to our system:</p><pre>$_SERVER[\'HTTP_REFERER\'] = ' . $_SERVER['HTTP_REFERER'] . '</pre></div>',
+                    'content' => '<div style="text-align: left;"><p>The following page has an invalid link to our system:</p><pre>Referrering URL = ' . $this->_get_referer() . '</pre></div>',
                 ));
                 $recipients = array( 'webmaster@pickupmydonation.com' );
                 $subject = 'PMD Admin Notification - Invalid Link';
@@ -2100,7 +2133,7 @@ register_activation_hook( __FILE__, array( $DonationManager, 'activate' ) );
 add_shortcode( 'donationform', array( $DonationManager, 'callback_shortcode' ) );
 add_action( 'init', array( $DonationManager, 'callback_init_set_debug' ), 98 );
 add_action( 'init', array( $DonationManager, 'callback_init' ), 99 );
-add_action( 'init', array( $DonationManager, 'callback_init_set_referer' ), 100 );
+add_action( 'init', array( $DonationManager, 'callback_init_track_url_path' ), 100 );
 add_action( 'template_redirect', array( $DonationManager, 'callback_template_redirect' ) );
 add_action( 'wp_enqueue_scripts', array( $DonationManager, 'enqueue_scripts' ) );
 

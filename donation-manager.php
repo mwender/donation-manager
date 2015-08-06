@@ -27,6 +27,7 @@ require 'vendor/autoload.php';
 
 class DonationManager {
     const VER = '1.1.0';
+    const DBVER = '1.0.0';
     public $html = '';
     public $donationreceipt = '';
 
@@ -42,6 +43,8 @@ class DonationManager {
 
     private function __construct() {
         if( ! defined( 'WP_CLI' ) ) session_start();
+        register_activation_hook( __FILE__, array( 'DonationManager', 'db_tables_install' ) );
+        add_action( 'plugins_loaded', array( 'DonationManager', 'db_tables_check' ) );
     }
 
     static function activate() {
@@ -1059,6 +1062,57 @@ class DonationManager {
         );
     }
 
+    /**
+     * Checks to see if we need to update the DB tables.
+     */
+    static function db_tables_check(){
+        if( get_site_option( 'db_db_version' ) != DonationManager::DBVER )
+            DonationManager::db_tables_install();
+    }
+
+    /**
+     * Creates tables used by the plugin.
+     */
+    static function db_tables_install(){
+        global $wpdb;
+
+        $table_name = $wpdb->prefix . 'dm_zipcodes';
+
+        $charset_collate = $wpdb->get_charset_collate();
+
+        $sql = "CREATE TABLE $table_name (
+            ID bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+            ZIPCode mediumint(5) unsigned NOT NULL,
+            ZIPType char(1) NOT NULL,
+            CityName varchar(35) NOT NULL,
+            CityType char(1) NOT NULL,
+            CountyName varchar(45) NOT NULL,
+            CountyFIPS varchar(6) NOT NULL,
+            StateName varchar(35) NOT NULL,
+            StateAbbr char(2) NOT NULL,
+            StateFIPS varchar(3) NOT NULL,
+            MSACode varchar(5) NOT NULL,
+            AreaCode varchar(15) NOT NULL,
+            TimeZone varchar(20) NOT NULL,
+            UTC mediumint(9) NOT NULL,
+            DST char(1) NOT NULL,
+            Latitude decimal(14,7) NOT NULL,
+            Longitude decimal(14,7) NOT NULL,
+            PRIMARY KEY  (ID),
+            KEY ZIPCode (ZIPCode),
+            KEY CityName (CityName),
+            KEY StateName (StateName),
+            KEY city_stateabbr (CityName,StateAbbr),
+            KEY StateAbbr (StateAbbr)
+        ) $charset_collate;";
+
+        require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
+        dbDelta( $sql );
+
+        add_option( 'dm_db_version', DonationManager::DBVER );
+
+    }
+
     public function enqueue_admin_scripts(){
         wp_register_script( 'dm-admin-js', plugins_url( 'lib/js/admin.js', __FILE__ ), array( 'jquery' ), filemtime( plugin_dir_path( __FILE__ ) . 'lib/js/admin.js' ) );
         wp_localize_script( 'dm-admin-js', 'ajax_object', array( 'ajax_url' => admin_url( 'admin-ajax.php' ), 'site_url' => site_url( '/download/' ), 'permalink_url' => admin_url( 'options-permalink.php' ) ) );
@@ -1977,6 +2031,16 @@ class DonationManager {
             break;
 
             case 'trans_dept_notification':
+                /*
+                 * ORPHANED DONATION ROUTING
+                 *
+                 * If $donor['trans_dept_id'] == get_option( 'donation_settings_default_trans_dept' ),
+                 * SELECT all email addresses from database that are associated with
+                 * this donation's $donor['pickup_code'].
+                 *
+                 * Continue working here: https://codex.wordpress.org/Creating_Tables_with_Plugins
+                 */
+
                 $html = $this->get_template_part( 'email.trans-dept-notification', array(
                     'donor_name' => $donor['address']['name']['first'] . ' ' .$donor['address']['name']['last'],
                     'contact_info' => str_replace( '<a href', '<a style="color: #6f6f6f; text-decoration: none;" href', $contact_info ),

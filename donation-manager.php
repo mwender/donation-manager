@@ -30,6 +30,8 @@ class DonationManager {
     const DBVER = '1.0.0';
     public $html = '';
     public $donationreceipt = '';
+    public $tbl_zipcodes = $wpdb->prefix . 'dm_zipcodes';
+    public $tbl_contacts = $wpdb->prefix . 'dm_contacts';
 
     private static $instance = null;
 
@@ -1076,11 +1078,15 @@ class DonationManager {
     static function db_tables_install(){
         global $wpdb;
 
-        $table_name = $wpdb->prefix . 'dm_zipcodes';
+        $table_names = array();
+        $table_names[] = $this->tbl_zipcodes; // $wpdb->prefix . 'dm_zipcodes';
+        $table_names[] = $this->tbl_contacts; // $wpdb->prefix . 'dm_contacts';
 
         $charset_collate = $wpdb->get_charset_collate();
 
-        $sql = "CREATE TABLE $table_name (
+        $sql = array();
+
+        $sql[] = 'CREATE TABLE ' . $table_names[0] . ' (
             ID bigint(20) unsigned NOT NULL AUTO_INCREMENT,
             ZIPCode mediumint(5) unsigned NOT NULL,
             ZIPType char(1) NOT NULL,
@@ -1104,7 +1110,16 @@ class DonationManager {
             KEY StateName (StateName),
             KEY city_stateabbr (CityName,StateAbbr),
             KEY StateAbbr (StateAbbr)
-        ) $charset_collate;";
+        ) ' . $charset_collate . ';';
+
+        $sql[] = 'CREATE TABLE ' . $table_names[1] . ' (
+            ID bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+            zipcode bigint(10) unsigned NOT NULL,
+            email_address varchar(100) NOT NULL DEFAULT \'\',
+            receive_emails tinyint(1) unsigned NOT NULL DEFAULT \'1\',
+            unsubscribe_hash varchar(32) DEFAULT NULL,
+            PRIMARY KEY  (id)
+        ) ' . $charset_collate. ';';
 
         require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
         dbDelta( $sql );

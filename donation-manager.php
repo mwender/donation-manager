@@ -988,6 +988,64 @@ class DonationManager {
         return $defaults;
     }
 
+    /**
+     * Updates/creates contacts in the orphaned donations contacts table.
+     *
+     * @since 1.x.x
+     *
+     * @param type $var Description.
+     * @param type $var Optional. Description.
+     * @return type Description. (@return void if a non-returning function)
+     */
+    public function contact_update( $args ){
+        global $wpdb;
+
+        extract( $args );
+
+        $contact = $this->contact_exists( array( 'zipcode' => $zipcode, 'email' => $email ) );
+
+        if( false == $contact ){
+            $sql = 'INSERT INTO ' . $this->tbl_contacts . ' (zipcode,email) VALUES (%s,%s)';
+            $wpdb->query( $wpdb->prepare( $sql, $zipcode, $email ) );
+        } elseif ( is_numeric( $contact ) ) {
+            $receive_emails = ( 'true' == $receive_emails || 1 == $receive_emails )? 1 : 0;
+            $sql = 'UPDATE ' . $this->tbl_contacts . ' SET receive_emails="%d" WHERE ID=' . $contact;
+            $wpdb->query( $wpdb->prepare( $sql, $receive_emails ) );
+        }
+
+    }
+
+    /**
+     * Checks to see if a contact exists.
+     *
+     * Queries zipcode + email to see if we find a matching
+     * contact.
+     *
+     * @since 1.x.x
+     *
+     * @param type $var Description.
+     * @param type $var Optional. Description.
+     * @return mixed Returns contact ID if exists. `false` if not exists.
+     */
+    private function contact_exists( $args ){
+        global $wpdb;
+
+        extract( $args );
+
+        if( ! isset( $zipcode ) || empty( $zipcode ) || ! isset( $email ) )
+            return false;
+
+        if( ! is_email( $email ) )
+            return false;
+
+
+        $sql = 'SELECT FROM ' . $this->tbl_contacts . ' WHERE zipcode="%s" AND email="%s" ORDER BY zipcode ASC';
+        $contacts = $wpdb->get_results( $wpdb->prepare( $sql, $zipcode, $email ) );
+        if( $contacts ){
+            return $contacts[0]->ID;
+        }
+    }
+
     public function custom_column_content( $column ){
         global $post;
         switch( $column ){

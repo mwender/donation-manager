@@ -30,8 +30,6 @@ class DonationManager {
     const DBVER = '1.0.0';
     public $html = '';
     public $donationreceipt = '';
-    public $tbl_zipcodes = $wpdb->prefix . 'dm_zipcodes';
-    public $tbl_contacts = $wpdb->prefix . 'dm_contacts';
 
     private static $instance = null;
 
@@ -1005,11 +1003,11 @@ class DonationManager {
         $contact = $this->contact_exists( array( 'zipcode' => $zipcode, 'email' => $email ) );
 
         if( false == $contact ){
-            $sql = 'INSERT INTO ' . $this->tbl_contacts . ' (zipcode,email) VALUES (%s,%s)';
+            $sql = 'INSERT INTO ' . $wpdb->prefix . 'dm_contacts' . ' (zipcode,email) VALUES (%s,%s)';
             $wpdb->query( $wpdb->prepare( $sql, $zipcode, $email ) );
         } elseif ( is_numeric( $contact ) ) {
             $receive_emails = ( 'true' == $receive_emails || 1 == $receive_emails )? 1 : 0;
-            $sql = 'UPDATE ' . $this->tbl_contacts . ' SET receive_emails="%d" WHERE ID=' . $contact;
+            $sql = 'UPDATE ' . $wpdb->prefix . 'dm_contacts' . ' SET receive_emails="%d" WHERE ID=' . $contact;
             $wpdb->query( $wpdb->prepare( $sql, $receive_emails ) );
         }
 
@@ -1039,7 +1037,7 @@ class DonationManager {
             return false;
 
 
-        $sql = 'SELECT FROM ' . $this->tbl_contacts . ' WHERE zipcode="%s" AND email="%s" ORDER BY zipcode ASC';
+        $sql = 'SELECT FROM ' . $wpdb->prefix . 'dm_contacts' . ' WHERE zipcode="%s" AND email="%s" ORDER BY zipcode ASC';
         $contacts = $wpdb->get_results( $wpdb->prepare( $sql, $zipcode, $email ) );
         if( $contacts ){
             return $contacts[0]->ID;
@@ -1137,8 +1135,8 @@ class DonationManager {
         global $wpdb;
 
         $table_names = array();
-        $table_names[] = $this->tbl_zipcodes; // $wpdb->prefix . 'dm_zipcodes';
-        $table_names[] = $this->tbl_contacts; // $wpdb->prefix . 'dm_contacts';
+        $table_names[] = $wpdb->prefix . 'dm_zipcodes';
+        $table_names[] = $wpdb->prefix . 'dm_contacts';
 
         $charset_collate = $wpdb->get_charset_collate();
 

@@ -3,3 +3,4 @@ lib/components/vendor
 node_modules/
 mailtrap.php
 *.sublime-*
+zipcodes.sql

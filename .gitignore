@@ -1,5 +1,6 @@
 vendor/
 lib/components/vendor
+lib/css/admin.css
 node_modules/
 mailtrap.php
 *.sublime-*

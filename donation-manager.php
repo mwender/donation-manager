@@ -27,7 +27,6 @@ require 'vendor/autoload.php';
 
 class DonationManager {
     const VER = '1.1.0';
-    const DBVER = '1.0.0';
     public $html = '';
     public $donationreceipt = '';
 
@@ -43,8 +42,6 @@ class DonationManager {
 
     private function __construct() {
         if( ! defined( 'WP_CLI' ) ) session_start();
-        register_activation_hook( __FILE__, array( 'DonationManager', 'db_tables_install' ) );
-        add_action( 'plugins_loaded', array( 'DonationManager', 'db_tables_check' ) );
     }
 
     static function activate() {
@@ -986,64 +983,6 @@ class DonationManager {
         return $defaults;
     }
 
-    /**
-     * Updates/creates contacts in the orphaned donations contacts table.
-     *
-     * @since 1.x.x
-     *
-     * @param type $var Description.
-     * @param type $var Optional. Description.
-     * @return type Description. (@return void if a non-returning function)
-     */
-    public function contact_update( $args ){
-        global $wpdb;
-
-        extract( $args );
-
-        $contact = $this->contact_exists( array( 'zipcode' => $zipcode, 'email' => $email ) );
-
-        if( false == $contact ){
-            $sql = 'INSERT INTO ' . $wpdb->prefix . 'dm_contacts' . ' (zipcode,email) VALUES (%s,%s)';
-            $wpdb->query( $wpdb->prepare( $sql, $zipcode, $email ) );
-        } elseif ( is_numeric( $contact ) ) {
-            $receive_emails = ( 'true' == $receive_emails || 1 == $receive_emails )? 1 : 0;
-            $sql = 'UPDATE ' . $wpdb->prefix . 'dm_contacts' . ' SET receive_emails="%d" WHERE ID=' . $contact;
-            $wpdb->query( $wpdb->prepare( $sql, $receive_emails ) );
-        }
-
-    }
-
-    /**
-     * Checks to see if a contact exists.
-     *
-     * Queries zipcode + email to see if we find a matching
-     * contact.
-     *
-     * @since 1.x.x
-     *
-     * @param type $var Description.
-     * @param type $var Optional. Description.
-     * @return mixed Returns contact ID if exists. `false` if not exists.
-     */
-    private function contact_exists( $args ){
-        global $wpdb;
-
-        extract( $args );
-
-        if( ! isset( $zipcode ) || empty( $zipcode ) || ! isset( $email ) )
-            return false;
-
-        if( ! is_email( $email ) )
-            return false;
-
-
-        $sql = 'SELECT FROM ' . $wpdb->prefix . 'dm_contacts' . ' WHERE zipcode="%s" AND email="%s" ORDER BY zipcode ASC';
-        $contacts = $wpdb->get_results( $wpdb->prepare( $sql, $zipcode, $email ) );
-        if( $contacts ){
-            return $contacts[0]->ID;
-        }
-    }
-
     public function custom_column_content( $column ){
         global $post;
         switch( $column ){
@@ -1118,70 +1057,6 @@ class DonationManager {
             'title' => 'title',
             'org' => 'organization'
         );
-    }
-
-    /**
-     * Checks to see if we need to update the DB tables.
-     */
-    static function db_tables_check(){
-        if( get_site_option( 'db_db_version' ) != DonationManager::DBVER )
-            DonationManager::db_tables_install();
-    }
-
-    /**
-     * Creates tables used by the plugin.
-     */
-    static function db_tables_install(){
-        global $wpdb;
-
-        $table_names = array();
-        $table_names[] = $wpdb->prefix . 'dm_zipcodes';
-        $table_names[] = $wpdb->prefix . 'dm_contacts';
-
-        $charset_collate = $wpdb->get_charset_collate();
-
-        $sql = array();
-
-        $sql[] = 'CREATE TABLE ' . $table_names[0] . ' (
-            ID bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-            ZIPCode mediumint(5) unsigned NOT NULL,
-            ZIPType char(1) NOT NULL,
-            CityName varchar(35) NOT NULL,
-            CityType char(1) NOT NULL,
-            CountyName varchar(45) NOT NULL,
-            CountyFIPS varchar(6) NOT NULL,
-            StateName varchar(35) NOT NULL,
-            StateAbbr char(2) NOT NULL,
-            StateFIPS varchar(3) NOT NULL,
-            MSACode varchar(5) NOT NULL,
-            AreaCode varchar(15) NOT NULL,
-            TimeZone varchar(20) NOT NULL,
-            UTC mediumint(9) NOT NULL,
-            DST char(1) NOT NULL,
-            Latitude decimal(14,7) NOT NULL,
-            Longitude decimal(14,7) NOT NULL,
-            PRIMARY KEY  (ID),
-            KEY ZIPCode (ZIPCode),
-            KEY CityName (CityName),
-            KEY StateName (StateName),
-            KEY city_stateabbr (CityName,StateAbbr),
-            KEY StateAbbr (StateAbbr)
-        ) ' . $charset_collate . ';';
-
-        $sql[] = 'CREATE TABLE ' . $table_names[1] . ' (
-            ID bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-            zipcode bigint(10) unsigned NOT NULL,
-            email_address varchar(100) NOT NULL DEFAULT \'\',
-            receive_emails tinyint(1) unsigned NOT NULL DEFAULT \'1\',
-            unsubscribe_hash varchar(32) DEFAULT NULL,
-            PRIMARY KEY  (ID)
-        ) ' . $charset_collate. ';';
-
-        require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
-        dbDelta( $sql );
-
-        add_option( 'dm_db_version', DonationManager::DBVER );
-
     }
 
     public function enqueue_admin_scripts(){
@@ -2293,6 +2168,9 @@ add_filter( 'manage_edit-trans_dept_sortable_columns', array( $DonationManager, 
 
 add_filter( 'request', array( $DonationManager, 'custom_columns_sort' ) );
 add_action( 'save_post', array( $DonationManager, 'custom_save_post' ) );
+
+// Include our Orphaned Donations Class
+require 'lib/classes/orphaned-donations.php';
 
 // Include our Reporting Class
 require 'lib/classes/donation-reports.php';

@@ -1174,7 +1174,7 @@ class DonationManager {
             email_address varchar(100) NOT NULL DEFAULT \'\',
             receive_emails tinyint(1) unsigned NOT NULL DEFAULT \'1\',
             unsubscribe_hash varchar(32) DEFAULT NULL,
-            PRIMARY KEY  (id)
+            PRIMARY KEY  (ID)
         ) ' . $charset_collate. ';';
 
         require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );

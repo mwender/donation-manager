@@ -1,6 +1,6 @@
 <?php
 class DMOrphanedDonations extends DonationManager {
-    const DBVER = '1.0.0';
+    const DBVER = '1.0.1';
 
     private static $instance = null;
 
@@ -144,6 +144,7 @@ class DMOrphanedDonations extends DonationManager {
 
         $sql[] = 'CREATE TABLE ' . $table_names[1] . ' (
             ID bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+            store_name varchar(150) NOT NULL DEFAULT \'\',
             zipcode bigint(10) unsigned NOT NULL,
             email_address varchar(100) NOT NULL DEFAULT \'\',
             receive_emails tinyint(1) unsigned NOT NULL DEFAULT \'1\',

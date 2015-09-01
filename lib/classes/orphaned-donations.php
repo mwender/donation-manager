@@ -29,7 +29,129 @@ class DMOrphanedDonations extends DonationManager {
         if( 'donation_page_orphaned-donations' != $hook )
             return;
 
-        wp_enqueue_style( 'dm-admin-css', plugins_url( '../css/admin.css', __FILE__ ), array( 'dashicons' ), filemtime( plugin_dir_path( __FILE__ ) . '../css/admin.css' ) );
+        wp_enqueue_style( 'dm-admin-css', plugins_url( '../css/admin.css', __FILE__ ), array( 'dashicons', 'thickbox' ), filemtime( plugin_dir_path( __FILE__ ) . '../css/admin.css' ) );
+        wp_enqueue_script( 'dm-orphaned-donations', plugins_url( '../js/orphaned-donations.js', __FILE__ ), array( 'jquery', 'media-upload', 'thickbox', 'jquery-ui-progressbar' ), filemtime( plugin_dir_path( __FILE__ ) . '../js/orphaned-donations.js' ), false );
+        wp_localize_script( 'dm-orphaned-donations', 'ajax_vars', array( 'ajax_url' => admin_url( 'admin-ajax.php' ) ) );
+    }
+
+    /**
+     * Processes AJAX callbacks for the Orphaned Donations admin screens
+     *
+     * @since 1.x.x
+     *
+     * @return string JSON Object.
+     */
+    public function callback_ajax(){
+        // Restrict access to WordPress `administrator` role
+        if( ! current_user_can( 'activate_plugins' ) )
+            return;
+
+        $response = new stdClass();
+
+        $cb_action = $_POST['cb_action'];
+        $id = $_POST['csvID'];
+
+        switch ( $cb_action ) {
+            case 'delete_csv':
+                wp_delete_attachment( $id );
+                $data['deleted'] = true;
+
+                $response->data = $data;
+            break;
+
+            case 'get_csv_list':
+                $args = array(
+                    'post_type' => 'attachment',
+                    'numberposts' => -1,
+                    'post_mime_type' => 'text/csv',
+                    'orderby' => 'date',
+                    'order' => 'DESC'
+
+                );
+                $files = get_posts( $args );
+                $x = 0;
+                foreach ( $files as $file ) {
+                    setup_postdata( $file );
+                    $data['csv'][$x]['id'] = $file->ID;
+                    $data['csv'][$x]['post_title'] = $file->post_title;
+                    $data['csv'][$x]['timestamp'] = date( 'm/d/y g:i:sa', strtotime( $file->post_date ) );
+                    $data['csv'][$x]['filename'] = basename( $file->guid );
+                    $data['csv'][$x]['last_import'] = get_post_meta( $file->ID, '_last_import', true );
+                    if ( empty( $data['csv'][$x]['last_import'] ) )
+                        $data['csv'][$x]['last_import'] = 0;
+                    $x++;
+                }
+
+                $response->data = $data;
+                break;
+
+            case 'import_csv':
+                $limit = 100; // limit the number of rows to import
+                $offset = $_POST['csvoffset'];
+
+                $response->id = $id;
+                $response->title = get_the_title( $id );
+
+                // Get the URL and filename of the CSV
+                $url = wp_get_attachment_url( $id );
+                $response->url = $url;
+                $response->filename = basename( $url );
+
+                // Open this CSV
+                $csvfile = str_replace( get_bloginfo( 'url' ) . '/', ABSPATH, $url );
+                $csv = $this->open_csv( $csvfile, $id );
+                $response->total_rows = count( $csv['rows'] );
+                $csv['rows'] = array_slice( $csv['rows'], $offset, $limit );
+                $response->selected_rows = count( $csv['rows'] );
+                $response->csv = $csv;
+                //$response->contacts = array();
+                foreach ( $response->csv['rows'] as $row ) {
+                    $x = 0;
+                    $contact = array();
+                    foreach ( $row as $key => $value ) {
+                        $assoc_key = $csv['columns'][$x];
+                        $contact[$assoc_key] = $value;
+                        $x++;
+                    }
+                    $last_import = $offset + $limit;
+
+                    $args = array(
+                        'store_name' => $contact['store_name'],
+                        'zipcode' => $contact['zipcode'],
+                        'email' => $contact['email'],
+                        'csvID' => $id,
+                        'offset' => $last_import,
+                    );
+                    //$response->contacts[] = $args;
+                    $status = $this->contact_update( $args );
+                    $response->statuses[] = $status;
+                }
+                $response->current_offset = ( 1 == $limit )? 'Importing row ' . ( $offset + 1 ) : 'Importing rows '.( $offset + 1 ).' - '.( $offset + $limit );
+                $response->offset = $offset + $limit;
+                break;
+
+            case 'load_csv':
+                $url = wp_get_attachment_url( $id );
+                $data['id'] = $id;
+                $data['url'] = $url;
+                $data['title'] = get_the_title( $id );
+                $data['filename'] = basename( $url );
+                $csvfile = str_replace( get_bloginfo( 'url' ). '/', ABSPATH, $url );
+                $data['filepath'] = $csvfile;
+                $data['csv'] = $this->open_csv( $csvfile, $id );
+                $data['offset'] = 0;
+
+                $response->notice = '<div class="notice error" id="import-notice"><p>' . esc_attr( 'IMPORTANT: Do not leave or refresh this screen until the import completes!', 'wp_admin_style' ) . '</p></div>';
+
+                $response->csv = $data;
+                break;
+
+            default:
+                # code...
+                break;
+        }
+
+        wp_send_json( $response );
     }
 
     function callback_orphaned_donations_admin(){
@@ -41,56 +163,112 @@ class DMOrphanedDonations extends DonationManager {
      *
      * @since 1.x.x
      *
-     * @param type $var Description.
-     * @param type $var Optional. Description.
-     * @return type Description. (@return void if a non-returning function)
+     * @param array $args {
+     *      @type string $store_name Name of store associated with contact.
+     *      @type string $zipcode Zipcode.
+     *      @type string $email Contact's email address.
+     *      @type string $unsubscribe_hash Hash used to check if we have permission to unsubscribe this. Optional.
+     *      @type bool $receive_emails `true` or `false`. Optional.
+     * }
+     * @return string Update status message.
      */
     public function contact_update( $args ){
         global $wpdb;
 
+        $defaults = array(
+            'store_name' => null,
+            'zipcode' => null,
+            'email' => null,
+            'unsubscribe_hash' => null,
+            'receive_emails' => true,
+        );
+
+        $args = wp_parse_args( $args, $defaults );
         extract( $args );
 
-        $contact = $this->contact_exists( array( 'zipcode' => $zipcode, 'email' => $email ) );
+        if( empty( $store_name ) || empty( $zipcode ) || empty( $email ) )
+            return false;
 
-        if( false == $contact ){
-            $sql = 'INSERT INTO ' . $wpdb->prefix . 'dm_contacts' . ' (zipcode,email) VALUES (%s,%s)';
-            $wpdb->query( $wpdb->prepare( $sql, $zipcode, $email ) );
-        } elseif ( is_numeric( $contact ) ) {
-            $receive_emails = ( 'true' == $receive_emails || 1 == $receive_emails )? 1 : 0;
-            $sql = 'UPDATE ' . $wpdb->prefix . 'dm_contacts' . ' SET receive_emails="%d" WHERE ID=' . $contact;
-            $wpdb->query( $wpdb->prepare( $sql, $receive_emails ) );
+        $emails = array();
+        if( stristr( $email, ',' ) ){
+            $emails = explode( ',', $email );
+            foreach( $emails as $email ){
+                $this->contact_update( array( 'store_name' => $store_name, 'zipcode' => $zipcode, 'email' => trim( $email ) ) );
+            }
+            return;
         }
 
+        if( ! is_email( $email ) )
+            return false;
+
+        // Returns `false` for does not exist, or contact ID.
+        $contact = $this->contact_exists( array( 'store_name' => $store_name, 'zipcode' => $zipcode, 'email' => $email ) );
+
+        if( false == $contact ){
+            $unsubscribe_hash = wp_hash( $email . current_time( 'timestamp' ) );
+            $sql = 'INSERT INTO ' . $wpdb->prefix . 'dm_contacts' . ' (store_name,zipcode,email_address,unsubscribe_hash) VALUES (%s,%s,%s,%s)';
+            $affected = $wpdb->query( $wpdb->prepare( $sql, $store_name, $zipcode, $email, $unsubscribe_hash ) );
+            if( false === $affected ){
+                $message = 'Error encountered while attempting to create contact';
+            } else if( 0 === $affected ){
+                $message = '0 rows affected';
+            } else {
+                $message = $affected . ' contact created';
+            }
+        } elseif ( is_numeric( $contact ) ) {
+            // The following logic requires a `receive_emails` column in our import CSV:
+            $receive_emails = ( 'true' == $receive_emails || 1 == $receive_emails )? 1 : 0;
+            $sql = 'UPDATE ' . $wpdb->prefix . 'dm_contacts' . ' SET receive_emails="%d" WHERE ID=' . $contact;
+            $affected = $wpdb->query( $wpdb->prepare( $sql, $receive_emails ) );
+            if( false === $affected ){
+                $message = 'Could not update contact';
+            } else if( 0 === $affected ){
+                $message = '0 rows updated';
+            } else {
+                $message = $affected . ' rows updated';
+            }
+        }
+
+        $message.= ' (' . $store_name . ', ' . $zipcode . ', ' . $email . ')';
+
+        return $message;
     }
 
     /**
      * Checks to see if a contact exists.
      *
-     * Queries zipcode + email to see if we find a matching
-     * contact.
+     * Queries store_name + zipcode + email_address to see if we find
+     * a matching contact.
      *
      * @since 1.x.x
      *
-     * @param type $var Description.
-     * @param type $var Optional. Description.
+     * @param array $args {
+     *      @type string $store_name Name of store associated with contact.
+     *      @type string $zipcode Zipcode.
+     * }
      * @return mixed Returns contact ID if exists. `false` if not exists.
      */
     private function contact_exists( $args ){
         global $wpdb;
 
+        $defaults = array(
+            'store_name' => null,
+            'zipcode' => null,
+            'email' => null,
+        );
+
+        $args = wp_parse_args( $args, $defaults );
         extract( $args );
 
-        if( ! isset( $zipcode ) || empty( $zipcode ) || ! isset( $email ) )
-            return false;
+        if( empty( $store_name ) || empty( $zipcode ) || empty( $email ) )
+            return 'ERROR - missing args for contact_exists';
 
-        if( ! is_email( $email ) )
-            return false;
-
-
-        $sql = 'SELECT FROM ' . $wpdb->prefix . 'dm_contacts' . ' WHERE zipcode="%s" AND email="%s" ORDER BY zipcode ASC';
-        $contacts = $wpdb->get_results( $wpdb->prepare( $sql, $zipcode, $email ) );
+        $sql = 'SELECT ID FROM ' . $wpdb->prefix . 'dm_contacts' . ' WHERE store_name="%s" AND zipcode="%s" AND email_address="%s" ORDER BY zipcode ASC';
+        $contacts = $wpdb->get_results( $wpdb->prepare( $sql, $store_name, $zipcode, $email ) );
         if( $contacts ){
             return $contacts[0]->ID;
+        } else {
+            return false;
         }
     }
 
@@ -159,6 +337,47 @@ class DMOrphanedDonations extends DonationManager {
 
     }
 
+    /**
+     * Opens a CSV file, populates an array for return
+     *
+     * @since 1.x.x
+     *
+     * @param string $csvfile Full filename of CSV file.
+     * @param int $csvID Post ID of CSV.
+     * @return array CSV returned as an array.
+     */
+    public function open_csv( $csvfile = '', $csvID = null ) {
+        if( empty( $csvfile ) )
+            return $csv['error'] = 'No CSV specified!';
+
+        if( false === ( $csv = get_transient( 'csv_' . $csvID ) ) ) {
+            $csv = array( 'row_count' => 0, 'column_count' => 0, 'columns' => array(), 'rows' => array() );
+            if ( !empty( $csvfile ) && file_exists( $csvfile ) ) {
+                if ( ( $handle = @fopen( $csvfile, 'r' ) ) !== false ) {
+                    $x = 0;
+                    while ( $row = fgetcsv( $handle, 2048, ',' ) ) {
+                        if ( $x == 0 ) {
+                            // trim spaces from column headings
+                            foreach( $row as $key => $heading ){
+                                $row[$key] = trim( $heading );
+                            }
+                            $csv['columns'] = $row;
+                        } else {
+                            array_walk( $row, array( $this, 'trim_csv_row' ) );
+                            $csv['rows'][] = $row;
+                            $csv['row_count']++;
+                        }
+                        $x++;
+                    }
+                    $csv['column_count'] = count( $csv['columns'] );
+                }
+            }
+            set_transient( 'csv_' . $csvID, $csv );
+        }
+
+        return $csv;
+    }
+
 	public function page_orphaned_donations_admin(){
         $active_tab = ( isset( $_GET['tab'] ) )? $_GET['tab'] : 'default';
 
@@ -191,4 +410,5 @@ class DMOrphanedDonations extends DonationManager {
 $DMOrphanedDonations = DMOrphanedDonations::get_instance();
 add_action( 'admin_menu', array( $DMOrphanedDonations, 'callback_orphaned_donations_admin' ) );
 add_action( 'admin_enqueue_scripts', array( $DMOrphanedDonations, 'admin_enqueue_scripts' ) );
+add_action( 'wp_ajax_orphaned_donations_ajax', array( $DMOrphanedDonations, 'callback_ajax' ) );
 ?>

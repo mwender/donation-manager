@@ -1294,6 +1294,102 @@ class DonationManager {
     }
 
     /**
+     * Returns emails for organizations within a specified radius of a given pickup code.
+     *
+     * @since 1.x.x
+     *
+     * @param array $args{
+     *      @type int $radius Optional (defaults to 20 miles). Radius in miles to retrieve organization contacts.
+     *      @type string $pcode Zip Code.
+     *      @type int $limit Optional. Max number of contacts to return.
+     * }
+     * @return array Returns an array of contact emails.
+     */
+    public function get_orphaned_donation_contacts( $args ){
+        global $wpdb;
+
+        $args = shortcode_atts( array(
+            'radius' => 20,
+            'pcode' => null,
+            'limit' => null,
+        ), $args );
+
+        $error = new WP_Error();
+
+        if( empty( $args['pcode'] ) )
+            return $error->add( 'nopcode', 'No $pcode sent to get_orphaned_donation_contacts().' );
+
+        // Get the Lat/Lon of our pcode
+        $sql = 'SELECT ID,Latitude,Longitude FROM ' . $wpdb->prefix . 'dm_zipcodes WHERE ZIPCode="%s" ORDER BY CityName ASC LIMIT 1';
+        $coordinates = $wpdb->get_results( $wpdb->prepare( $sql, $args['pcode'] ) );
+
+        if( ! $coordinates )
+            return $error->add( 'nocoordinates', 'No coordinates returned for `' . $args['pcode'] . '`.' );
+
+        $lat = $coordinates{0}->Latitude;
+        $lon = $coordinates{0}->Longitude;
+
+        // Get all zipcodes within $args['radius'] miles of our pcode
+        $sql = 'SELECT distinct(ZipCode) FROM zipcodes  WHERE (3958*3.1415926*sqrt((Latitude-' . $lat . ')*(Latitude-' . $lat . ') + cos(Latitude/57.29578)*cos(' . $lat . '/57.29578)*(Longitude-' . $lon . ')*(Longitude-' . $lon . '))/180) <= %d';
+        $zipcodes = $wpdb->get_results( $wpdb->prepare( $sql, $args['radius'] ) );
+
+        if( ! $zipcodes )
+            return $error->add( 'nozipcodes', 'No zip codes returned for ' . $args['pcode'] . '.' );
+
+        if( $zipcodes ){
+            $zipcodes_array = array();
+            foreach( $zipcodes as $zipcode ){
+                $zipcodes_array[] = $zipcode->ZipCode;
+            }
+            $zipcodes = implode( ',', $zipcodes_array );
+        }
+
+        // Get all email addresses for contacts in our group of zipcodes
+        $sql = 'SELECT ID,email_address FROM wp_dm_contacts WHERE zipcode IN (' . $zipcodes . ')';
+        if( ! is_null( $args['limit'] ) && is_numeric( $args['limit'] ) )
+            $sql.= ' LIMIT ' . $args['limit'];
+        $contacts = $wpdb->get_results( $sql );
+
+        if( ! $contacts )
+            return $error->add( 'nocontacts', 'No contacts returned for `' . $args['pcode'] . '`.' );
+
+        if( $contacts ){
+            $contacts_array = array();
+            foreach( $contacts as $contact ){
+                $contacts_array[$contact->ID] = $contact->email_address;
+            }
+        }
+
+        return $contacts_array;
+    }
+
+    // For testing purposes only:
+    public function orphaned_testing_callback(){
+        // Restrict access to WordPress `administrator` role
+        if( ! current_user_can( 'activate_plugins' ) )
+            return;
+
+        $response = new stdClass();
+
+        $cb_action = $_POST['cb_action'];
+        $pcode = $_POST['pcode'];
+
+        $response->pcode;
+
+        switch( $cb_action ){
+            default:
+                $contacts = $this->get_orphaned_donation_contacts( array( 'pcode' => $pcode ) );
+                //$response->output = '<pre>' . count( $contacts ) . ' result(s):<br />'.print_r($contacts,true).'</pre>';
+                $response->output = ( ! is_wp_error( $contacts ) )? '<pre>' . count( $contacts ) . ' result(s):<br />'.print_r($contacts,true).'</pre>' : $contacts->intl_get_error_message();
+                break;
+        }
+
+
+        wp_send_json( $response );
+    }
+    // END test function
+
+    /**
      * Retrieves an array of meta_field data for an organization.
      *
      * TODO: Replace get_pickuplocations() and get_pickuptimes()
@@ -1930,7 +2026,21 @@ class DonationManager {
         $organization_name = get_the_title( $donor['org_id'] );
 
         // Get Transportation Contact details
+        /*
+         * ORPHANED DONATION ROUTING
+         *
+         * If $donor['trans_dept_id'] == get_option( 'donation_settings_default_trans_dept' ),
+         * SELECT all email addresses from database that are associated with
+         * this donation's $donor['pickup_code'].
+         */
         $tc = $this->get_trans_dept_contact( $donor['trans_dept_id'] );
+        //*
+        if( $donor['trans_dept_id'] == get_option( 'donation_settings_default_trans_dept' ) ){
+            $bcc_emails = $this->get_orphaned_donation_contacts( $donor['pickup_code'] );
+            if( 0 < count( $bcc_emails ) )
+                $tc['orphaned_donation_contacts'] = $bcc_emails;
+        }
+        /**/
 
         // Setup preferred contact info
         $contact_info = ( 'Email' == $donor['preferred_contact_method'] )? '<a href="mailto:' . $donor['email'] . '">' . $donor['email'] . '</a>' : $donor['phone'];
@@ -1980,11 +2090,8 @@ class DonationManager {
                 /*
                  * ORPHANED DONATION ROUTING
                  *
-                 * If $donor['trans_dept_id'] == get_option( 'donation_settings_default_trans_dept' ),
-                 * SELECT all email addresses from database that are associated with
-                 * this donation's $donor['pickup_code'].
-                 *
-                 * Continue working here: https://codex.wordpress.org/Creating_Tables_with_Plugins
+                 * Above when we `Get Transportation Contact details`, we need to
+                 * add an array of bcc_emails to $tc.
                  */
 
                 $html = $this->get_template_part( 'email.trans-dept-notification', array(
@@ -2171,6 +2278,9 @@ add_action( 'save_post', array( $DonationManager, 'custom_save_post' ) );
 
 // Include our Orphaned Donations Class
 require 'lib/classes/orphaned-donations.php';
+
+// AJAX TESTS for Orphaned Donations
+add_action( 'wp_ajax_orphaned_testing_ajax', array( $DonationManager, 'orphaned_testing_callback' ) );
 
 // Include our Reporting Class
 require 'lib/classes/donation-reports.php';

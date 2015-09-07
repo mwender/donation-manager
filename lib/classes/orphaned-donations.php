@@ -378,6 +378,13 @@ class DMOrphanedDonations extends DonationManager {
         return $csv;
     }
 
+    /**
+     * Interface for Donations > Orphaned Donations page
+     *
+     * @since 1.x.x
+     *
+     * @return void
+     */
 	public function page_orphaned_donations_admin(){
         $active_tab = ( isset( $_GET['tab'] ) )? $_GET['tab'] : 'default';
 
@@ -388,11 +395,15 @@ class DMOrphanedDonations extends DonationManager {
             <h2 class="nav-tab-wrapper">
                 <a href="edit.php?post_type=donation&page=orphaned-donations" class="nav-tab<?php echo ( 'default' == $active_tab )? ' nav-tab-active' : ''; ?>">Donations</a>
                 <a href="edit.php?post_type=donation&page=orphaned-donations&tab=tools" class="nav-tab<?php echo ( 'tools' == $active_tab )? ' nav-tab-active' : ''; ?>">Tools</a>
+                <a href="edit.php?post_type=donation&page=orphaned-donations&tab=tests" class="nav-tab<?php echo ( 'tests' == $active_tab )? ' nav-tab-active' : ''; ?>">Tests</a>
             </h2>
 
             <div class="wrap">
             <?php
             switch( $active_tab ){
+                case 'tests':
+                    include_once( plugin_dir_path( __FILE__ ) . '../includes/orphaned-donations.tests.php' );
+                break;
                 case 'tools':
                     include_once( plugin_dir_path( __FILE__ ) . '../includes/orphaned-donations.tools.php' );
                 break;

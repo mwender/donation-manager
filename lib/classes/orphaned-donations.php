@@ -71,8 +71,8 @@ class DMOrphanedDonations extends DonationManager {
                 $files = get_posts( $args );
                 $x = 0;
                 foreach ( $files as $file ) {
-                    if(stristr( $file->post_title, 'all-donations' ))
-                            continue;
+                    if( stristr( $file->post_title, 'all-donations' ) )
+                        continue;
                     setup_postdata( $file );
                     $data['csv'][$x]['id'] = $file->ID;
                     $data['csv'][$x]['post_title'] = $file->post_title;

@@ -68,6 +68,33 @@ class DonationManager {
     }
 
     /**
+     * Records an orphaned donation record (i.e. analytics for orphaned donations)
+     *
+     * @since 1.x.x
+     *
+     * @param type $var Description.
+     * @param type $var Optional. Description.
+     * @return type Description. (@return void if a non-returning function)
+     */
+    public function add_orphaned_donation( $args ){
+        global $wpdb;
+
+        $args = shortcode_atts( array(
+            'contact_id' => null,
+            'donation_id' => null,
+            'timestamp' => current_time( 'mysql' ),
+        ), $args );
+
+        if( is_null( $args['contact_id'] ) || ! is_numeric( $args['contact_id'] ) )
+            return false;
+
+        if( is_null( $args['donation_id'] ) || ! is_numeric( $args['donation_id'] ) )
+            return false;
+
+        $wpdb->insert( $wpdb->prefix . 'dm_orphaned_donations', $args, array( '%d', '%d', '%s') );
+    }
+
+    /**
      * Hooks to `init`. Handles form submissions.
      *
      * The validation process typically sets $_SESSION['donor']['form'].
@@ -1330,7 +1357,7 @@ class DonationManager {
         $lon = $coordinates{0}->Longitude;
 
         // Get all zipcodes within $args['radius'] miles of our pcode
-        $sql = 'SELECT distinct(ZipCode) FROM zipcodes  WHERE (3958*3.1415926*sqrt((Latitude-' . $lat . ')*(Latitude-' . $lat . ') + cos(Latitude/57.29578)*cos(' . $lat . '/57.29578)*(Longitude-' . $lon . ')*(Longitude-' . $lon . '))/180) <= %d';
+        $sql = 'SELECT distinct(ZipCode) FROM ' . $wpdb->prefix . 'dm_zipcodes  WHERE (3958*3.1415926*sqrt((Latitude-' . $lat . ')*(Latitude-' . $lat . ') + cos(Latitude/57.29578)*cos(' . $lat . '/57.29578)*(Longitude-' . $lon . ')*(Longitude-' . $lon . '))/180) <= %d';
         $zipcodes = $wpdb->get_results( $wpdb->prepare( $sql, $args['radius'] ) );
 
         if( ! $zipcodes )
@@ -1345,7 +1372,7 @@ class DonationManager {
         }
 
         // Get all email addresses for contacts in our group of zipcodes
-        $sql = 'SELECT ID,email_address FROM wp_dm_contacts WHERE zipcode IN (' . $zipcodes . ')';
+        $sql = 'SELECT ID,email_address FROM ' . $wpdb->prefix . 'dm_contacts WHERE receive_emails=1 AND zipcode IN (' . $zipcodes . ')';
         if( ! is_null( $args['limit'] ) && is_numeric( $args['limit'] ) )
             $sql.= ' LIMIT ' . $args['limit'];
         $contacts = $wpdb->get_results( $sql );
@@ -1380,7 +1407,8 @@ class DonationManager {
             default:
                 $contacts = $this->get_orphaned_donation_contacts( array( 'pcode' => $pcode ) );
                 //$response->output = '<pre>' . count( $contacts ) . ' result(s):<br />'.print_r($contacts,true).'</pre>';
-                $response->output = ( ! is_wp_error( $contacts ) )? '<pre>' . count( $contacts ) . ' result(s):<br />'.print_r($contacts,true).'</pre>' : $contacts->intl_get_error_message();
+                $orphaned_donation_routing = get_option( 'donation_settings_orphaned_donation_routing' );
+                $response->output = ( ! is_wp_error( $contacts ) )? '<pre>$orphaned_donation_routing = ' . $orphaned_donation_routing . '<br />' . count( $contacts ) . ' result(s):<br />'.print_r($contacts,true).'</pre>' : $contacts->intl_get_error_message();
                 break;
         }
 
@@ -2024,23 +2052,29 @@ class DonationManager {
     public function send_email( $type = '' ){
         $donor = $_SESSION['donor'];
         $organization_name = get_the_title( $donor['org_id'] );
+        $donor_trans_dept_id = $donor['trans_dept_id'];
 
-        // Get Transportation Contact details
-        /*
-         * ORPHANED DONATION ROUTING
-         *
-         * If $donor['trans_dept_id'] == get_option( 'donation_settings_default_trans_dept' ),
-         * SELECT all email addresses from database that are associated with
-         * this donation's $donor['pickup_code'].
-         */
         $tc = $this->get_trans_dept_contact( $donor['trans_dept_id'] );
-        //*
-        if( $donor['trans_dept_id'] == get_option( 'donation_settings_default_trans_dept' ) ){
-            $bcc_emails = $this->get_orphaned_donation_contacts( $donor['pickup_code'] );
+
+        //* Is this an ORPHANED DONATION?
+        $orphaned_donation_routing = get_option( 'donation_settings_orphaned_donation_routing' );
+        $default_trans_dept = get_option( 'donation_settings_default_trans_dept' );
+        $default_trans_dept_id = $default_trans_dept[0];
+        if(
+            true == $orphaned_donation_routing
+            && $donor_trans_dept_id == $default_trans_dept_id
+        ){
+            $orphaned_donation = true;
+        } else {
+            $orphaned_donation = false;
+        }
+
+        //* Get ORPHANED DONATION Contacts, LIMIT to 50 inside a 20 mile radius
+        if( $orphaned_donation ){
+            $bcc_emails = $this->get_orphaned_donation_contacts( array( 'pcode' => $donor['pickup_code'], 'limit' => 50, 'radius' => 20 ) );
             if( 0 < count( $bcc_emails ) )
                 $tc['orphaned_donation_contacts'] = $bcc_emails;
         }
-        /**/
 
         // Setup preferred contact info
         $contact_info = ( 'Email' == $donor['preferred_contact_method'] )? '<a href="mailto:' . $donor['email'] . '">' . $donor['email'] . '</a>' : $donor['phone'];
@@ -2074,10 +2108,22 @@ class DonationManager {
 
                 $trans_contact = $tc['contact_name'] . ' (<a href="mailto:' . $tc['contact_email'] . '">' . $tc['contact_email'] . '</a>)<br>' . $organization_name . ', ' . $tc['contact_title'] . '<br>' . $tc['phone'];
 
+                $orphaned_donation_note = '';
+                if(
+                    $orphaned_donation
+                    && isset( $tc['orphaned_donation_contacts'] )
+                    && is_array( $tc['orphaned_donation_contacts'] )
+                    && 0 < count( $tc['orphaned_donation_contacts'] )
+                ){
+                    $orphaned_donation_note = $this->get_template_part( 'email.donor.orphaned-donation-note', array( 'total_notified' => count( $tc['orphaned_donation_contacts'] ) ) );
+                }
+
+
                 $html = $this->get_template_part( 'email.donor-confirmation', array(
                     'organization_name' => $organization_name,
                     'donationreceipt' => $donationreceipt,
                     'trans_contact' => $trans_contact,
+                    'orphaned_donation_note' => $orphaned_donation_note,
                 ));
                 $recipients = array( $donor['email'] );
                 $subject = 'Thank You for Donating to ' . $organization_name;
@@ -2087,19 +2133,6 @@ class DonationManager {
             break;
 
             case 'trans_dept_notification':
-                /*
-                 * ORPHANED DONATION ROUTING
-                 *
-                 * Above when we `Get Transportation Contact details`, we need to
-                 * add an array of bcc_emails to $tc.
-                 */
-
-                $html = $this->get_template_part( 'email.trans-dept-notification', array(
-                    'donor_name' => $donor['address']['name']['first'] . ' ' .$donor['address']['name']['last'],
-                    'contact_info' => str_replace( '<a href', '<a style="color: #6f6f6f; text-decoration: none;" href', $contact_info ),
-                    'donationreceipt' => $donationreceipt,
-                ));
-
                 $recipients = array( $tc['contact_email'] );
                 if( is_array( $tc['cc_emails'] ) ){
                     $cc_emails = $tc['cc_emails'];
@@ -2108,9 +2141,37 @@ class DonationManager {
                 } else if( is_email( $tc['cc_emails'] ) ){
                     $cc_emails = array( $tc['cc_emails'] );
                 }
+
+                $subject = 'Scheduling Request from ' . $donor['address']['name']['first'] . ' ' .$donor['address']['name']['last'];
+
+                //* Setup BCCs for ORPHANED DONATION Contacts and adjust the SUBJECT
+                $orphaned_donation_note = '';
+                if(
+                    $orphaned_donation
+                    && isset( $tc['orphaned_donation_contacts'] )
+                    && is_array( $tc['orphaned_donation_contacts'] )
+                    && 0 < count( $tc['orphaned_donation_contacts'] )
+                ){
+                    foreach( $tc['orphaned_donation_contacts'] as $contact_id => $contact_email ){
+                        $headers[] = 'Bcc: ' . $contact_email;
+                        //$recipients[] = $contact_email;
+                        $this->add_orphaned_donation( array( 'contact_id' => $contact_id, 'donation_id' => $donor['ID'] ) );
+                    }
+                    $subject = 'Large Item Donation Pick Up Requested by ' . $donor['address']['name']['first'] . ' ' .$donor['address']['name']['last'];
+
+                    $orphaned_donation_note = $this->get_template_part( 'email.trans-dept.orphaned-donation-note' );
+                }
+
+                $html = $this->get_template_part( 'email.trans-dept-notification', array(
+                    'donor_name' => $donor['address']['name']['first'] . ' ' .$donor['address']['name']['last'],
+                    'contact_info' => str_replace( '<a href', '<a style="color: #6f6f6f; text-decoration: none;" href', $contact_info ),
+                    'donationreceipt' => $donationreceipt,
+                    'orphaned_donation_note' => $orphaned_donation_note,
+                ));
+
                 if( is_array( $cc_emails ) )
                     $recipients = array_merge( $recipients, $cc_emails );
-                $subject = 'Scheduling Request from ' . $donor['address']['name']['first'] . ' ' .$donor['address']['name']['last'];
+
 
                 // Set Reply-To our donor
                 $headers[] = 'Reply-To: ' . $donor['address']['name']['first'] . ' ' .$donor['address']['name']['last'] . ' <' . $donor['email'] . '>';
@@ -2118,11 +2179,12 @@ class DonationManager {
 
         }
 
+        //* If this is an ORPHANED DONATION, give the trans contact a proper reply-to address:
+        add_filter( 'wp_mail_from', function( $email, $orphaned_donation ){
+            $email = ( $orphaned_donation )? 'contact@pickupmydonation.com' : 'noreply@pickupmydonation.com';
+            return $email;
+        }, 10, 2 );
 
-
-        add_filter( 'wp_mail_from', function( $email ){
-            return 'noreply@pickupmydonation.com';
-        });
         add_filter( 'wp_mail_from_name', function( $name ){
             return 'PickUpMyDonation';
         });

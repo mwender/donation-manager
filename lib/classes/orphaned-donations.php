@@ -1,6 +1,6 @@
 <?php
 class DMOrphanedDonations extends DonationManager {
-    const DBVER = '1.0.1';
+    const DBVER = '1.0.2';
 
     private static $instance = null;
 
@@ -119,10 +119,10 @@ class DMOrphanedDonations extends DonationManager {
                         'store_name' => $contact['store_name'],
                         'zipcode' => $contact['zipcode'],
                         'email' => $contact['email'],
+                        'receive_emails' => $contact['receive_emails'],
                         'csvID' => $id,
                         'offset' => $last_import,
                     );
-                    //$response->contacts[] = $args;
                     $status = $this->contact_update( $args );
                     $response->statuses[] = $status;
                 }
@@ -184,30 +184,32 @@ class DMOrphanedDonations extends DonationManager {
         );
 
         $args = wp_parse_args( $args, $defaults );
-        extract( $args );
+        //extract( $args );
 
-        if( empty( $store_name ) || empty( $zipcode ) || empty( $email ) )
+        if( empty( $args['store_name'] ) || empty( $args['zipcode'] ) || empty( $args['email'] ) )
             return false;
 
+        $receive_emails = ( true == $args['receive_emails'] || 1 == $args['receive_emails'] )? 1 : 0;
+
         $emails = array();
-        if( stristr( $email, ',' ) ){
-            $emails = explode( ',', $email );
+        if( stristr( $args['email'], ',' ) ){
+            $emails = explode( ',', $args['email'] );
             foreach( $emails as $email ){
-                $this->contact_update( array( 'store_name' => $store_name, 'zipcode' => $zipcode, 'email' => trim( $email ) ) );
+                $this->contact_update( array( 'store_name' => $args['store_name'], 'zipcode' => $args['zipcode'], 'email' => trim( $email ), 'receive_emails' => $receive_emails ) );
             }
             return;
         }
 
-        if( ! is_email( $email ) )
+        if( ! is_email( $args['email'] ) )
             return false;
 
         // Returns `false` for does not exist, or contact ID.
-        $contact = $this->contact_exists( array( 'store_name' => $store_name, 'zipcode' => $zipcode, 'email' => $email ) );
+        $contact = $this->contact_exists( array( 'store_name' => $args['store_name'], 'zipcode' => $args['zipcode'], 'email' => $args['email'] ) );
 
         if( false == $contact ){
-            $unsubscribe_hash = wp_hash( $email . current_time( 'timestamp' ) );
-            $sql = 'INSERT INTO ' . $wpdb->prefix . 'dm_contacts' . ' (store_name,zipcode,email_address,unsubscribe_hash) VALUES (%s,%s,%s,%s)';
-            $affected = $wpdb->query( $wpdb->prepare( $sql, $store_name, $zipcode, $email, $unsubscribe_hash ) );
+            $unsubscribe_hash = wp_hash( $args['email'] . current_time( 'timestamp' ) );
+            $sql = 'INSERT INTO ' . $wpdb->prefix . 'dm_contacts' . ' (store_name,zipcode,email_address,unsubscribe_hash,receive_emails) VALUES (%s,%s,%s,%s,%d)';
+            $affected = $wpdb->query( $wpdb->prepare( $sql, $args['store_name'], $args['zipcode'], $args['email'], $unsubscribe_hash, $receive_emails ) );
             if( false === $affected ){
                 $message = 'Error encountered while attempting to create contact';
             } else if( 0 === $affected ){
@@ -217,7 +219,6 @@ class DMOrphanedDonations extends DonationManager {
             }
         } elseif ( is_numeric( $contact ) ) {
             // The following logic requires a `receive_emails` column in our import CSV:
-            $receive_emails = ( 'true' == $receive_emails || 1 == $receive_emails )? 1 : 0;
             $sql = 'UPDATE ' . $wpdb->prefix . 'dm_contacts' . ' SET receive_emails="%d" WHERE ID=' . $contact;
             $affected = $wpdb->query( $wpdb->prepare( $sql, $receive_emails ) );
             if( false === $affected ){
@@ -229,7 +230,7 @@ class DMOrphanedDonations extends DonationManager {
             }
         }
 
-        $message.= ' (' . $store_name . ', ' . $zipcode . ', ' . $email . ')';
+        $message.= ' (' . $args['store_name'] . ', ' . $args['zipcode'] . ', ' . $args['email'] . ')';
 
         return $message;
     }
@@ -258,15 +259,15 @@ class DMOrphanedDonations extends DonationManager {
         );
 
         $args = wp_parse_args( $args, $defaults );
-        extract( $args );
+        //extract( $args );
 
-        if( empty( $store_name ) || empty( $zipcode ) || empty( $email ) )
+        if( empty( $args['store_name'] ) || empty( $args['zipcode'] ) || empty( $args['email'] ) )
             return 'ERROR - missing args for contact_exists';
 
         $sql = 'SELECT ID FROM ' . $wpdb->prefix . 'dm_contacts' . ' WHERE store_name="%s" AND zipcode="%s" AND email_address="%s" ORDER BY zipcode ASC';
-        $contacts = $wpdb->get_results( $wpdb->prepare( $sql, $store_name, $zipcode, $email ) );
+        $contacts = $wpdb->get_results( $wpdb->prepare( $sql, $args['store_name'], $args['zipcode'], $args['email'] ) );
         if( $contacts ){
-            return $contacts[0]->ID;
+            return $contacts{0}->ID;
         } else {
             return false;
         }
@@ -289,6 +290,7 @@ class DMOrphanedDonations extends DonationManager {
         $table_names = array();
         $table_names[] = $wpdb->prefix . 'dm_zipcodes';
         $table_names[] = $wpdb->prefix . 'dm_contacts';
+        $table_names[] = $wpdb->prefix . 'dm_orphaned_donations';
 
         $charset_collate = $wpdb->get_charset_collate();
 
@@ -330,6 +332,14 @@ class DMOrphanedDonations extends DonationManager {
             PRIMARY KEY  (ID)
         ) ' . $charset_collate. ';';
 
+        $sql[] = 'CREATE TABLE ' . $table_names[2] . ' (
+          ID bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+          donation_id bigint(20) unsigned DEFAULT NULL,
+          contact_id bigint(20) unsigned DEFAULT NULL,
+          timestamp datetime DEFAULT NULL,
+          PRIMARY KEY  (ID)
+        ) ' . $charset_collate . ';';
+
         require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
         dbDelta( $sql );
 
@@ -349,6 +359,8 @@ class DMOrphanedDonations extends DonationManager {
     public function open_csv( $csvfile = '', $csvID = null ) {
         if( empty( $csvfile ) )
             return $csv['error'] = 'No CSV specified!';
+        if( empty( $csvID ) )
+            return $csv['error'] = 'No csvID sent!';
 
         if( false === ( $csv = get_transient( 'csv_' . $csvID ) ) ) {
             $csv = array( 'row_count' => 0, 'column_count' => 0, 'columns' => array(), 'rows' => array() );
@@ -363,7 +375,7 @@ class DMOrphanedDonations extends DonationManager {
                             }
                             $csv['columns'] = $row;
                         } else {
-                            array_walk( $row, array( $this, 'trim_csv_row' ) );
+                            //array_walk( $row, array( $this, 'trim_csv_row' ) );
                             $csv['rows'][] = $row;
                             $csv['row_count']++;
                         }
@@ -415,6 +427,13 @@ class DMOrphanedDonations extends DonationManager {
             </div>
 
         </div><?php
+    }
+
+    /**
+     * Trim spaces from CSV column values
+     */
+    private function trim_csv_row( &$value, $key ){
+        $value = htmlentities( utf8_encode( trim( $value ) ), ENT_QUOTES, 'UTF-8' );
     }
 }
 

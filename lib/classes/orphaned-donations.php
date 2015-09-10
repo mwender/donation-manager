@@ -20,7 +20,7 @@ class DMOrphanedDonations extends DonationManager {
     /**
      * Enqueues scripts for our admin page
      *
-     * @since 1.x.x
+     * @since 1.2.0
      *
      * @param string $hook The admin page's hook.
      * @return void
@@ -37,7 +37,7 @@ class DMOrphanedDonations extends DonationManager {
     /**
      * Processes AJAX callbacks for the Orphaned Donations admin screens
      *
-     * @since 1.x.x
+     * @since 1.2.0
      *
      * @return string JSON Object.
      */
@@ -154,6 +154,13 @@ class DMOrphanedDonations extends DonationManager {
         wp_send_json( $response );
     }
 
+    /**
+     * Adds an Orphaned Donations submenu page
+     *
+     * @since 1.2.0
+     *
+     * @return void
+     */
     function callback_orphaned_donations_admin(){
         add_submenu_page( 'edit.php?post_type=donation', 'Orphaned Donations', 'Orphaned Donations', 'activate_plugins', 'orphaned-donations', array( $this, 'page_orphaned_donations_admin' ) );
     }
@@ -161,7 +168,7 @@ class DMOrphanedDonations extends DonationManager {
     /**
      * Updates/creates contacts in the orphaned donations contacts table.
      *
-     * @since 1.x.x
+     * @since 1.2.0
      *
      * @param array $args {
      *      @type string $store_name Name of store associated with contact.
@@ -241,7 +248,7 @@ class DMOrphanedDonations extends DonationManager {
      * Queries store_name + zipcode + email_address to see if we find
      * a matching contact.
      *
-     * @since 1.x.x
+     * @since 1.2.0
      *
      * @param array $args {
      *      @type string $store_name Name of store associated with contact.
@@ -350,7 +357,7 @@ class DMOrphanedDonations extends DonationManager {
     /**
      * Opens a CSV file, populates an array for return
      *
-     * @since 1.x.x
+     * @since 1.2.0
      *
      * @param string $csvfile Full filename of CSV file.
      * @param int $csvID Post ID of CSV.
@@ -393,7 +400,7 @@ class DMOrphanedDonations extends DonationManager {
     /**
      * Interface for Donations > Orphaned Donations page
      *
-     * @since 1.x.x
+     * @since 1.2.0
      *
      * @return void
      */

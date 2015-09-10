@@ -1559,7 +1559,7 @@ class DonationManager {
     /**
      * Returns first array value from $_SESSION[‘donor’][‘url_path’]
      *
-     * @since 1.x.x
+     * @since 1.?.?
      *
      * @return string First value from $_SESSION[‘donor’][‘url_path’]
      */
@@ -1723,9 +1723,9 @@ class DonationManager {
     }
 
     /**
-     * Returns HTML for transportation depatment ads.
+     * Returns HTML for transportation department ads.
      *
-     * @since 1.x.x
+     * @since 1.?.?
      *
      * @param int $id Transportation Department ID.
      * @return string HTML for banner ads.

@@ -1407,6 +1407,13 @@ class DonationManager {
             default:
                 $contacts = $this->get_orphaned_donation_contacts( array( 'pcode' => $pcode ) );
                 //$response->output = '<pre>' . count( $contacts ) . ' result(s):<br />'.print_r($contacts,true).'</pre>';
+                if( 0 < count( $contacts ) ){
+                    global $wpdb;
+                    foreach( $contacts as $ID => $email ){
+                        $name = $wpdb->get_var( 'SELECT store_name FROM ' . $wpdb->prefix . 'dm_contacts WHERE ID=' . $ID );
+                        $contacts[$ID] = array( 'name' => $name, 'email' => $email );
+                    }
+                }
                 $orphaned_donation_routing = get_option( 'donation_settings_orphaned_donation_routing' );
                 $response->output = ( ! is_wp_error( $contacts ) )? '<pre>$orphaned_donation_routing = ' . $orphaned_donation_routing . '<br />' . count( $contacts ) . ' result(s):<br />'.print_r($contacts,true).'</pre>' : $contacts->intl_get_error_message();
                 break;

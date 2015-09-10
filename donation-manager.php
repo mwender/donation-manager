@@ -1383,7 +1383,8 @@ class DonationManager {
         if( $contacts ){
             $contacts_array = array();
             foreach( $contacts as $contact ){
-                $contacts_array[$contact->ID] = $contact->email_address;
+                if( ! in_array( $contact->email_address,  $contacts_array ) )
+                    $contacts_array[$contact->ID] = $contact->email_address;
             }
         }
 

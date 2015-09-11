@@ -1,3 +1,4 @@
+<h3>Import a CSV</h3>
 		<div id="progress-bar" style="display: none;"></div>
 		<p id="import-percent"></p>
 

@@ -415,18 +415,18 @@ class DMOrphanedDonations extends DonationManager {
 
             <h2 class="nav-tab-wrapper">
                 <a href="edit.php?post_type=donation&page=orphaned-donations" class="nav-tab<?php echo ( 'default' == $active_tab )? ' nav-tab-active' : ''; ?>">Donations</a>
-                <a href="edit.php?post_type=donation&page=orphaned-donations&tab=tools" class="nav-tab<?php echo ( 'tools' == $active_tab )? ' nav-tab-active' : ''; ?>">Tools</a>
-                <a href="edit.php?post_type=donation&page=orphaned-donations&tab=tests" class="nav-tab<?php echo ( 'tests' == $active_tab )? ' nav-tab-active' : ''; ?>">Tests</a>
+                <a href="edit.php?post_type=donation&page=orphaned-donations&tab=import" class="nav-tab<?php echo ( 'import' == $active_tab )? ' nav-tab-active' : ''; ?>">Import</a>
+                <a href="edit.php?post_type=donation&page=orphaned-donations&tab=utilities" class="nav-tab<?php echo ( 'utilities' == $active_tab )? ' nav-tab-active' : ''; ?>">Utilities</a>
             </h2>
 
             <div class="wrap">
             <?php
             switch( $active_tab ){
-                case 'tests':
-                    include_once( plugin_dir_path( __FILE__ ) . '../includes/orphaned-donations.tests.php' );
+                case 'utilities':
+                    include_once( plugin_dir_path( __FILE__ ) . '../includes/orphaned-donations.utilities.php' );
                 break;
-                case 'tools':
-                    include_once( plugin_dir_path( __FILE__ ) . '../includes/orphaned-donations.tools.php' );
+                case 'import':
+                    include_once( plugin_dir_path( __FILE__ ) . '../includes/orphaned-donations.import.php' );
                 break;
                 default:
                     echo '<p>This is the default tab.</p>';
@@ -444,10 +444,86 @@ class DMOrphanedDonations extends DonationManager {
     private function trim_csv_row( &$value, $key ){
         $value = htmlentities( utf8_encode( trim( $value ) ), ENT_QUOTES, 'UTF-8' );
     }
+
+    public function utilities_callback(){
+        // Restrict access to WordPress `administrator` role
+        if( ! current_user_can( 'activate_plugins' ) )
+            return;
+
+        global $wpdb;
+
+        $response = new stdClass();
+
+        $cb_action = $_POST['cb_action'];
+        $pcode = $_POST['pcode'];
+
+        $response->pcode;
+
+        switch( $cb_action ){
+            case 'search_replace_email':
+                $search = $_POST['search'];
+                $replace = $_POST['replace'];
+
+                $errors = array();
+                if( empty( $search ) )
+                    $errors[] = '$search email is empty!';
+
+                if( ! empty( $search ) && ! is_email( $search ) )
+                    $errors[] = '$search is not a valid email!';
+
+                if( ! empty( $replace ) && ! is_email( $replace ) )
+                    $errors[] = '$replace is not a valid email!';
+
+                if( 0 < count( $errors ) )
+                    $response->output = '<pre>There were some errors in your request:' . "\n" . implode( "\n-", $errors ) . '</pre>';
+
+                if( ! empty( $replace ) ){
+                    $sql = 'UPDATE ' . $wpdb->prefix . 'dm_contacts SET email_address = replace(email_address,%s,%s) WHERE email_address=%s';
+                    $wpdb->query( $wpdb->prepare( $sql, $search, $replace, $search ) );
+                } else {
+                    $sql = 'SELECT ID,store_name,zipcode,receive_emails FROM ' . $wpdb->prefix . 'dm_contacts WHERE email_address="%s"';
+                    $wpdb->get_row( $wpdb->prepare( $sql, $search ) );
+                }
+
+                $response->output = '<pre>$search = '.$search.'<br />$replace = '.$replace.'<br />$wpdb->last_result = ' . print_r( $wpdb->last_result, true ) . '<br />$wpdb->num_rows = ' . $wpdb->num_rows . '</pre>';
+            break;
+            case 'unsubscribe_email':
+                $email = $_POST['email'];
+
+                if( ! is_email( $email ) || empty( $email ) )
+                    $response->output = '<pre>ERROR: Not a valid email!</pre>';
+
+                $sql = 'UPDATE ' . $wpdb->prefix . 'dm_contacts SET receive_emails=0 WHERE email_address="%s"';
+                $rows_affected = $wpdb->query( $wpdb->prepare( $sql, $email ) );
+                $response->output = '<pre>$email = ' . $email . '<br />' . $rows_affected . ' contacts unsubscribed.</pre>';
+            break;
+            default:
+                $posted_radius = $_POST['radius'];
+                $radius = ( is_numeric( $posted_radius ) )? $posted_radius : 20;
+                $contacts = $this->get_orphaned_donation_contacts( array( 'pcode' => $pcode, 'radius' => $radius ) );
+                //$response->output = '<pre>' . count( $contacts ) . ' result(s):<br />'.print_r($contacts,true).'</pre>';
+                if( 0 < count( $contacts ) ){
+
+                    foreach( $contacts as $ID => $email ){
+                        $name = $wpdb->get_var( 'SELECT store_name FROM ' . $wpdb->prefix . 'dm_contacts WHERE ID=' . $ID );
+                        $contacts[$ID] = array( 'name' => $name, 'email' => $email );
+                    }
+                }
+                $orphaned_donation_routing = get_option( 'donation_settings_orphaned_donation_routing' );
+                $response->output = ( ! is_wp_error( $contacts ) )? '<pre>$orphaned_donation_routing = ' . $orphaned_donation_routing . '<br />Results for `' . $pcode . '` within a ' . $radius . ' mile radius.<br />' . count( $contacts ) . ' result(s):<br />'.print_r($contacts,true).'</pre>' : $contacts->get_error_message();
+                break;
+        }
+
+
+        wp_send_json( $response );
+    }
 }
 
 $DMOrphanedDonations = DMOrphanedDonations::get_instance();
 add_action( 'admin_menu', array( $DMOrphanedDonations, 'callback_orphaned_donations_admin' ) );
 add_action( 'admin_enqueue_scripts', array( $DMOrphanedDonations, 'admin_enqueue_scripts' ) );
 add_action( 'wp_ajax_orphaned_donations_ajax', array( $DMOrphanedDonations, 'callback_ajax' ) );
+
+// AJAX TESTS for Orphaned Donations
+add_action( 'wp_ajax_orphaned_utilities_ajax', array( $DMOrphanedDonations, 'utilities_callback' ) );
 ?>

@@ -1391,40 +1391,6 @@ class DonationManager {
         return $contacts_array;
     }
 
-    // For testing purposes only:
-    public function orphaned_testing_callback(){
-        // Restrict access to WordPress `administrator` role
-        if( ! current_user_can( 'activate_plugins' ) )
-            return;
-
-        $response = new stdClass();
-
-        $cb_action = $_POST['cb_action'];
-        $pcode = $_POST['pcode'];
-
-        $response->pcode;
-
-        switch( $cb_action ){
-            default:
-                $contacts = $this->get_orphaned_donation_contacts( array( 'pcode' => $pcode ) );
-                //$response->output = '<pre>' . count( $contacts ) . ' result(s):<br />'.print_r($contacts,true).'</pre>';
-                if( 0 < count( $contacts ) ){
-                    global $wpdb;
-                    foreach( $contacts as $ID => $email ){
-                        $name = $wpdb->get_var( 'SELECT store_name FROM ' . $wpdb->prefix . 'dm_contacts WHERE ID=' . $ID );
-                        $contacts[$ID] = array( 'name' => $name, 'email' => $email );
-                    }
-                }
-                $orphaned_donation_routing = get_option( 'donation_settings_orphaned_donation_routing' );
-                $response->output = ( ! is_wp_error( $contacts ) )? '<pre>$orphaned_donation_routing = ' . $orphaned_donation_routing . '<br />' . count( $contacts ) . ' result(s):<br />'.print_r($contacts,true).'</pre>' : $contacts->intl_get_error_message();
-                break;
-        }
-
-
-        wp_send_json( $response );
-    }
-    // END test function
-
     /**
      * Retrieves an array of meta_field data for an organization.
      *
@@ -2348,9 +2314,6 @@ add_action( 'save_post', array( $DonationManager, 'custom_save_post' ) );
 
 // Include our Orphaned Donations Class
 require 'lib/classes/orphaned-donations.php';
-
-// AJAX TESTS for Orphaned Donations
-add_action( 'wp_ajax_orphaned_testing_ajax', array( $DonationManager, 'orphaned_testing_callback' ) );
 
 // Include our Reporting Class
 require 'lib/classes/donation-reports.php';

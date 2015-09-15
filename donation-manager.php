@@ -123,6 +123,7 @@ class DonationManager {
                 $_SESSION['donor']['pickup_code'] = $pickupcode;
                 $_SESSION['donor']['form'] = 'select-your-organization';
                 if( isset( $_REQUEST['pickupcode'] ) ){
+                    $_SESSION['donor']['rewrite_titles'] = false;
                     session_write_close();
                     header( 'Location: ' . $_REQUEST['nextpage'] . '?pcode=' . $pickupcode );
                     die();

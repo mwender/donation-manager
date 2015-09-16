@@ -478,15 +478,19 @@ class DMOrphanedDonations extends DonationManager {
                 if( 0 < count( $errors ) )
                     $response->output = '<pre>There were some errors in your request:' . "\n" . implode( "\n-", $errors ) . '</pre>';
 
+                $message = '';
                 if( ! empty( $replace ) ){
-                    $sql = 'UPDATE ' . $wpdb->prefix . 'dm_contacts SET email_address = replace(email_address,%s,%s) WHERE email_address=%s';
-                    $wpdb->query( $wpdb->prepare( $sql, $search, $replace, $search ) );
+                    $sql = 'UPDATE ' . $wpdb->prefix . 'dm_contacts SET email_address = replace(email_address,"%s","%s") WHERE email_address="%s"';
+                    $success = $wpdb->query( $wpdb->prepare( $sql, $search, $replace, $search ) );
+                    $message = '<br />';
+                    $message.= ( true == $success )? 'SUCCESS: Replaced ' : 'ERROR: Unable to replace ';
+                    $message.= '`' . $search . '` with `' . $replace . '`.';
                 } else {
                     $sql = 'SELECT ID,store_name,zipcode,receive_emails FROM ' . $wpdb->prefix . 'dm_contacts WHERE email_address="%s"';
                     $wpdb->get_row( $wpdb->prepare( $sql, $search ) );
                 }
 
-                $response->output = '<pre>$search = '.$search.'<br />$replace = '.$replace.'<br />$wpdb->last_result = ' . print_r( $wpdb->last_result, true ) . '<br />$wpdb->num_rows = ' . $wpdb->num_rows . '</pre>';
+                $response->output = '<pre>$search = '.$search.'<br />$replace = '.$replace.'<br />$wpdb->last_result = ' . print_r( $wpdb->last_result, true ) . '<br />$wpdb->num_rows = ' . $wpdb->num_rows . '<br />$wpdb->last_query = ' . $wpdb->last_query . $message . '</pre>';
             break;
             case 'unsubscribe_email':
                 $email = $_POST['email'];

@@ -2,6 +2,11 @@
 
 Donation Manager is a WordPress plugin which handles a multi-form donation process. This plugin requires the [PODS Plugin for WordPress](http://pods.io).
 
+__09/16/2015 - Version 1.2.1__
+
+- Admin form for adding orphaned donation contacts
+- Setting contact emails to lowercase
+
 __09/10/2015 - Version 1.2.0__
 
 - Orphaned Donation processing

@@ -193,7 +193,7 @@ class DMOrphanedDonations extends DonationManager {
         );
 
         $args = wp_parse_args( $args, $defaults );
-        //extract( $args );
+        $args['email'] = strtolower( $args['email'] );
 
         if( empty( $args['store_name'] ) || empty( $args['zipcode'] ) || empty( $args['email'] ) )
             return false;
@@ -255,6 +255,7 @@ class DMOrphanedDonations extends DonationManager {
      * @param array $args {
      *      @type string $store_name Name of store associated with contact.
      *      @type string $zipcode Zipcode.
+     *      @type string $email Contact email.
      * }
      * @return mixed Returns contact ID if exists. `false` if not exists.
      */
@@ -268,7 +269,7 @@ class DMOrphanedDonations extends DonationManager {
         );
 
         $args = wp_parse_args( $args, $defaults );
-        //extract( $args );
+        $args['email'] = strtolower( $args['email'] );
 
         if( empty( $args['store_name'] ) || empty( $args['zipcode'] ) || empty( $args['email'] ) )
             return 'ERROR - missing args for contact_exists';

@@ -2,7 +2,7 @@
 <form id="form-test-pcode">
 <table>
 	<tr>
-		<td><input name="test-pcode" id="test-pcode" value="" placeholder="test a pickup code" /></td>
+		<td><input name="test-pcode" id="test-pcode" value="" placeholder="test a pickup code" size="15" /></td>
 		<td><select name="test-radius" id="test-radius">
 	<option value="20">20 miles</option>
 	<option value="25">25 miles</option>
@@ -21,8 +21,8 @@
 <form id="form-search-replace-email">
 <table>
 	<tr>
-		<td><input name="search-email" id="search-email" value="" size="60" placeholder="search" /></td>
-		<td><input name="replace-email" id="replace-email" value="" size="60" placeholder="replace" /></td>
+		<td><input name="search-email" id="search-email" value="" size="30" placeholder="search" /></td>
+		<td><input name="replace-email" id="replace-email" value="" size="30" placeholder="replace" /></td>
 		<td><button class="button" id="search-replace-email" type="submit">Search and/or Replace</button></td>
 	</tr>
 	<tr>
@@ -37,7 +37,7 @@
 <form action="" id="form-unsubscribe">
 	<table>
 		<tr>
-			<td><input name="unsubscribe-email" id="unsubscribe-email" value="" size="60" placeholder="enter email to unsubscribe" /></td>
+			<td><input name="unsubscribe-email" id="unsubscribe-email" value="" size="30" placeholder="enter email to unsubscribe" /></td>
 			<td><button class="button" id="unsubscribe-email" type="submit">Unsubscribe</button></td>
 		</tr>
 	</table>

@@ -217,8 +217,25 @@ class DMOrphanedDonations extends DonationManager {
 
         if( false == $contact ){
             $unsubscribe_hash = wp_hash( $args['email'] . current_time( 'timestamp' ) );
-            $sql = 'INSERT INTO ' . $wpdb->prefix . 'dm_contacts' . ' (store_name,zipcode,email_address,unsubscribe_hash,receive_emails) VALUES (%s,%s,%s,%s,%d)';
-            $affected = $wpdb->query( $wpdb->prepare( $sql, $args['store_name'], $args['zipcode'], $args['email'], $unsubscribe_hash, $receive_emails ) );
+
+            $args['store_name'] = stripslashes_deep( $args['store_name'] );
+            $data = array(
+                'store_name' => $args['store_name'],
+                'zipcode' => $args['zipcode'],
+                'email_address' => $args['email'],
+                'unsubscribe_hash' => $unsubscribe_hash,
+                'receive_emails' => $receive_emails,
+            );
+            $format = array(
+                '%s',
+                '%s',
+                '%s',
+                '%s',
+                '%d',
+            );
+
+            $affeced = $wpdb->insert( $wpdb->prefix . 'dm_contacts', $data, $format );
+
             if( false === $affected ){
                 $message = 'Error encountered while attempting to create contact';
             } else if( 0 === $affected ){
@@ -461,6 +478,14 @@ class DMOrphanedDonations extends DonationManager {
         $response->pcode;
 
         switch( $cb_action ){
+            case 'add_contact':
+                $args['zipcode'] = $_POST['zipcode'];
+                $args['email'] = $_POST['email_address'];
+                $args['store_name'] = $_POST['store_name'];
+
+                $message = $this->contact_update( $args );
+                $response->output = '<pre>' . $message . '</pre>';
+            break;
             case 'search_replace_email':
                 $search = $_POST['search'];
                 $replace = $_POST['replace'];

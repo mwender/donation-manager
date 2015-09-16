@@ -17,6 +17,20 @@
 <div class="output" id="output-test-pcode"></div>
 <hr/>
 
+<h3>Add an Orphaned Contact</h3>
+<form action="" id="form-add-orphaned-contact">
+	<table>
+		<tr>
+			<td><input type="text" name="contact-email" id="contact-email" value="" size="30" placeholder="email"></td>
+			<td><input type="text" name="contact-zipcode" id="contact-zipcode" value="" size="15" placeholder="zipcode"></td>
+			<td><input type="text" name="contact-store-name" id="contact-store-name" value="" size="30" placeholder="store name"></td>
+			<td><button class="button" id="add-contact" type="submit">Add Contact</button></td>
+		</tr>
+	</table>
+</form>
+<div class="output" id="output-add-contact"></div>
+<hr/>
+
 <h3>Search/Replace an Email</h3>
 <form id="form-search-replace-email">
 <table>

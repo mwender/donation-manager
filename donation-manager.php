@@ -2154,11 +2154,9 @@ class DonationManager {
 
         }
 
-        //* If this is an ORPHANED DONATION, give the trans contact a proper reply-to address:
-        add_filter( 'wp_mail_from', function( $email, $orphaned_donation ){
-            $email = ( $orphaned_donation )? 'contact@pickupmydonation.com' : 'noreply@pickupmydonation.com';
-            return $email;
-        }, 10, 2 );
+        add_filter( 'wp_mail_from', function( $email ){
+            return 'contact@pickupmydonation.com';
+        } );
 
         add_filter( 'wp_mail_from_name', function( $name ){
             return 'PickUpMyDonation';

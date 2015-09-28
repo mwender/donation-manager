@@ -64,15 +64,15 @@ class DMShortcodes extends DonationManager {
 		), $atts );
 
 		$message = array();
-		if( ! isset( $_POST['mandrill_event'] ) )
-			return '<div class="alert alert-danger"><strong>ERROR:</strong> No <code>mandrill_event</code> received.</div>';
+		if( ! isset( $_POST['mandrill_events'] ) )
+			return '<div class="alert alert-danger"><strong>ERROR:</strong> No <code>mandrill_events</code> received.</div>';
 
-		$message[] = 'We received the following `mandrill_event`:';
-		$message[] = print_r( $_POST['mandrill_event'], true );
+		$message[] = 'We received the following `mandrill_events`:';
+		$message[] = print_r( $_POST['mandrill_events'], true );
 
 		wp_mail( 'webmaster@pickupmydonation.com', 'Mandrill Event', implode( "\n\n", $message ) );
 
-		return '<div class="alert alert-success">$mandrill_event = ' . print_r( $_POST['mandrill_event'], true ) . '</div>';
+		return '<div class="alert alert-success">$mandrill_events = ' . print_r( $_POST['mandrill_events'], true ) . '</div>';
     }
 
     function get_boilerplate( $atts ){

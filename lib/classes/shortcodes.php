@@ -237,6 +237,64 @@ Our mission is to connect you with organizations who will pick up your donation.
 
 		return implode( "\n", $html );
     }
+
+	/**
+	 * Callback for [unsubscribe-orphaned-contact]
+	 *
+	 * Unsubscribes an Orphaned Donation Contact and displays a status
+	 * message.
+	 *
+	 * - `show_affected` can be set to `false` to not show the
+	 * number of contacts affected in the database.
+	 *
+	 * - `notify_webmaster` == `true` sends an email to
+	 * webmaster@pickupmydonation.com
+	 *
+	 * @since 1.2.2
+	 *
+	 * @return string Unsubscribe status message.
+	 */
+    public function unsubscribe( $atts ){
+
+    	$atts = shortcode_atts( array(
+			'show_affected' => true,
+			'notify_webmaster' => true,
+		), $atts );
+
+		if( 'false' === $atts['show_affected'] )
+			$atts['show_affected'] = false;
+		settype( $atts['show_affected'], 'boolean' );
+
+		if( 'false' === $atts['notify_webmaster'] )
+			$atts['notify_webmaster'] = false;
+		settype( $atts['notify_webmaster'], 'boolean' );
+
+		$md_email = urldecode( $_GET['md_email'] );
+
+		if( empty( $md_email ) )
+			return '<div class="alert alert-danger"><strong>ERROR:</strong> Email address not set!</div>';
+
+		if ( ! is_email( $md_email ) )
+			return '<div class="alert alert-danger"><strong>ERROR:</strong> Not a valid email address (' . $md_email . ').</div>';
+
+		$rows_affected = DMOrphanedDonations::unsubscribe_email( $md_email );
+
+		$message = array();
+		$message[] = '<strong>SUCESS:</strong> The email address <code>' . $md_email . '</code> has been unsubscribed.';
+
+		if( true === $atts['show_affected'] )
+			$message[] = $rows_affected . ' contacts affected.';
+
+		$message[] = 'Thank you!';
+
+		$message = sprintf( '<div class="alert alert-success">%1$s</div>', implode( ' ', $message ) );
+
+		if( true === $atts['notify_webmaster'] && 0 < $rows_affected ){
+			wp_mail( 'webmaster@pickkupmydonation.com', 'Orphaned Donation Contact Unsubscribed', 'The following contact has unsubscribed:' . "\n\n" . $md_email . "\n\n" . $rows_affected . ' contacts updated.' );
+		}
+
+		return $message;
+    }
 }
 $DMShortcodes = DMShortcodes::get_instance();
 
@@ -245,4 +303,5 @@ add_shortcode( 'donate-now-button', array( $DMShortcodes, 'get_donate_now_button
 add_shortcode( 'list-pickup-codes', array( $DMShortcodes, 'get_pickup_codes' ) );
 add_shortcode( 'organization-description', array( $DMShortcodes, 'get_organization_description' ) );
 add_shortcode( 'organization-seo-page', array( $DMShortcodes, 'get_organization_seo_page' ) );
+add_shortcode( 'unsubscribe-orphaned-contact', array( $DMShortcodes, 'unsubscribe' ) );
 ?>

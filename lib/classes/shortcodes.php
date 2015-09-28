@@ -280,7 +280,7 @@ Our mission is to connect you with organizations who will pick up your donation.
 		$rows_affected = DMOrphanedDonations::unsubscribe_email( $md_email );
 
 		$message = array();
-		$message[] = '<strong>SUCESS:</strong> The email address <code>' . $md_email . '</code> has been unsubscribed.';
+		$message[] = '<strong>SUCCESS:</strong> The email address <code>' . $md_email . '</code> has been unsubscribed.';
 
 		if( true === $atts['show_affected'] )
 			$message[] = $rows_affected . ' contacts affected.';

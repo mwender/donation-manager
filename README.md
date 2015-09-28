@@ -2,6 +2,10 @@
 
 Donation Manager is a WordPress plugin which handles a multi-form donation process. This plugin requires the [PODS Plugin for WordPress](http://pods.io).
 
+__09/28/2015 - Version 1.2.3__
+
+- Automatically unsubscribing Mandrill hard bounces via a Mandrill webhook
+
 __09/28/2015 - Version 1.2.2__
 
 - Updating `wp_mail_from` to PMD contact email

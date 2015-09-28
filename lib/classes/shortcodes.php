@@ -67,12 +67,23 @@ class DMShortcodes extends DonationManager {
 		if( ! isset( $_POST['mandrill_events'] ) )
 			return '<div class="alert alert-danger"><strong>ERROR:</strong> No <code>mandrill_events</code> received.</div>';
 
+		$mandrill_events = json_decode( stripslashes( $_POST['mandrill_events'] ), true );
+		if( is_array( $mandrill_events ) ){
+			foreach( $mandrill_events as $event ){
+				switch( $event['event'] ){
+					case 'hard_bounce':
+						$rows_affected = DMOrphanedDonations::unsubscribe_email( $event['msg']['email'] );
+						$message[] = 'Unsubscribed: ' . $event['msg']['email'] . "\n" . $rows_affected . ' contacts affected.' . "\n" . 'bounce_description: ' . $event['msg']['bounce_description'] . "\n" . 'diag: ' . $event['msg']['diag'];
+					break;
+				}
+			}
+		}
+
 		$message[] = 'We received the following `mandrill_events`:';
-		$message[] = print_r( $_POST['mandrill_events'], true );
 
 		wp_mail( 'webmaster@pickupmydonation.com', 'Mandrill Event', implode( "\n\n", $message ) );
 
-		return '<div class="alert alert-success">$mandrill_events = ' . print_r( $_POST['mandrill_events'], true ) . '</div>';
+		return '<div class="alert alert-success">The event has been processed.</div>';
     }
 
     function get_boilerplate( $atts ){

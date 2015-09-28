@@ -63,9 +63,11 @@ class DMShortcodes extends DonationManager {
 			'foo' => 'bar',
 		), $atts );
 
-		$message = array();
 		if( ! isset( $_POST['mandrill_events'] ) )
 			return '<div class="alert alert-danger"><strong>ERROR:</strong> No <code>mandrill_events</code> received.</div>';
+
+		$message = array();
+		$message[] = 'We received the following `mandrill_events`:';
 
 		$mandrill_events = json_decode( stripslashes( $_POST['mandrill_events'] ), true );
 		if( is_array( $mandrill_events ) ){
@@ -79,7 +81,7 @@ class DMShortcodes extends DonationManager {
 			}
 		}
 
-		$message[] = 'We received the following `mandrill_events`:';
+
 
 		wp_mail( 'webmaster@pickupmydonation.com', 'Mandrill Event', implode( "\n\n", $message ) );
 

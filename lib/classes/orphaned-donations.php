@@ -463,6 +463,26 @@ class DMOrphanedDonations extends DonationManager {
         $value = htmlentities( utf8_encode( trim( $value ) ), ENT_QUOTES, 'UTF-8' );
     }
 
+    /**
+     * Unsubscribes an orphaned donation contact email
+     *
+     * @since 1.2.2
+     *
+     * @param string $email Contact email to unsubscribe.
+     * @return int/bool Returns number of rows affected or false on failure.
+     */
+    public function unsubscribe_email( $email = null ){
+        if( is_null( $email ) || ! is_email( $email ) )
+            return false;
+
+        global $wpdb;
+
+        $sql = 'UPDATE ' . $wpdb->prefix . 'dm_contacts SET receive_emails=0 WHERE email_address="%s"';
+        $rows_affected = $wpdb->query( $wpdb->prepare( $sql, $email ) );
+
+        return $rows_affected;
+    }
+
     public function utilities_callback(){
         // Restrict access to WordPress `administrator` role
         if( ! current_user_can( 'activate_plugins' ) )
@@ -523,8 +543,11 @@ class DMOrphanedDonations extends DonationManager {
                 if( ! is_email( $email ) || empty( $email ) )
                     $response->output = '<pre>ERROR: Not a valid email!</pre>';
 
+                $rows_affected = $this->unsubscribe_email( $email );
+                /*
                 $sql = 'UPDATE ' . $wpdb->prefix . 'dm_contacts SET receive_emails=0 WHERE email_address="%s"';
                 $rows_affected = $wpdb->query( $wpdb->prepare( $sql, $email ) );
+                /**/
                 $response->output = '<pre>$email = ' . $email . '<br />' . $rows_affected . ' contacts unsubscribed.</pre>';
             break;
             default:

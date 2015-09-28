@@ -50,6 +50,31 @@ class DMShortcodes extends DonationManager {
 		return $description;
     }
 
+	/**
+	 * Processes bounce webhook notifications from Mandrill
+	 *
+	 * @since 1.2.x
+	 *
+	 * @param array $atts Shortcode attributes.
+	 * @return string Shortcode output.
+	 */
+    public static function bounce_processing( $atts ){
+    	$atts = shortcode_atts( array(
+			'foo' => 'bar',
+		), $atts );
+
+		$message = array();
+		if( ! isset( $_POST['mandrill_event'] ) )
+			return '<div class="alert alert-danger"><strong>ERROR:</strong> No <code>mandrill_event</code> received.</div>';
+
+		$message[] = 'We received the following `mandrill_event`:';
+		$message[] = print_r( $_POST['mandrill_event'], true );
+
+		wp_mail( 'webmaster@pickupmydonation.com', 'Mandrill Event', implode( "\n\n", $message ) );
+
+		return '<div class="alert alert-success">$mandrill_event = ' . print_r( $_POST['mandrill_event'], true ) . '</div>';
+    }
+
     function get_boilerplate( $atts ){
      	extract( shortcode_atts( array(
     		'title' => null,
@@ -304,4 +329,5 @@ add_shortcode( 'list-pickup-codes', array( $DMShortcodes, 'get_pickup_codes' ) )
 add_shortcode( 'organization-description', array( $DMShortcodes, 'get_organization_description' ) );
 add_shortcode( 'organization-seo-page', array( $DMShortcodes, 'get_organization_seo_page' ) );
 add_shortcode( 'unsubscribe-orphaned-contact', array( $DMShortcodes, 'unsubscribe' ) );
+add_shortcode( 'bounced-orphaned-contact', array( $DMShortcodes, 'bounce_processing' ) );
 ?>

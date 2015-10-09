@@ -60,8 +60,12 @@ class DMShortcodes extends DonationManager {
 	 */
     public static function bounce_processing( $atts ){
     	$atts = shortcode_atts( array(
-			'foo' => 'bar',
+			'notify_webmaster' => true,
 		), $atts );
+
+		if( 'false' === $atts['notify_webmaster'] )
+			$atts['notify_webmaster'] = false;
+		settype( $atts['notify_webmaster'], 'boolean' );
 
 		if( ! isset( $_POST['mandrill_events'] ) )
 			return '<div class="alert alert-danger"><strong>ERROR:</strong> No <code>mandrill_events</code> received.</div>';
@@ -83,7 +87,8 @@ class DMShortcodes extends DonationManager {
 
 
 
-		wp_mail( 'webmaster@pickupmydonation.com', 'Mandrill Event', implode( "\n\n", $message ) );
+		if( true === $atts['notify_webmaster'] )
+			wp_mail( 'webmaster@pickupmydonation.com', 'Mandrill Event', implode( "\n\n", $message ) );
 
 		return '<div class="alert alert-success">The event has been processed.</div>';
     }

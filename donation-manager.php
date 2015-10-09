@@ -1889,7 +1889,7 @@ class DonationManager {
                 $this->send_email( 'invalid_link' );
             break;
             default:
-                $this->send_email( 'missing_org_transdept_notification' );
+                //$this->send_email( 'missing_org_transdept_notification' );
                 $pickup_code = ( 'Yes' == $_SESSION['donor']['different_pickup_address'] )? $_SESSION['donor']['pickup_address']['zip'] : $_SESSION['donor']['address']['zip'];
                 header( 'Location: ' . site_url( '/select-your-organization/?pcode=' . $pickup_code . '&message=no_org_transdept' ) );
                 die();
@@ -2062,6 +2062,9 @@ class DonationManager {
         switch( $type ){
 
             case 'invalid_link':
+                if( empty( $this->_get_referer() ) )
+                    return;
+
                  $html = $this->get_template_part( 'email.blank', array(
                     'content' => '<div style="text-align: left;"><p>The following page has an invalid link to our system:</p><pre>Referrering URL = ' . $this->_get_referer() . '</pre></div>',
                 ));

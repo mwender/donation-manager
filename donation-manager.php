@@ -4,7 +4,7 @@
 	Plugin URI: http://www.pickupmydonation.com
 	Description: Online donation manager built for ReNew Management, Inc and PickUpMyDonation.com. This plugin displays the donation form and handles donation submissions.
 	Author: Michael Wender
-	Version: 1.2.3
+	Version: 1.2.4
 	Author URI: http:://michaelwender.com
  */
 /*  Copyright 2014  Michael Wender  (email : michael@michaelwender.com)
@@ -1305,15 +1305,32 @@ class DonationManager {
         $organizations = array();
 
         if( $query->have_posts() ) {
+
+            // PRIORITY PICKUP SERVICE
+            // For organizations with meta `priority_pickup` == true,
+            // we will also include our default pick up provider (i.e.
+            // orphaned routing) in markets with just one pickup provider.
+            // This will give donors a choice between paying for pick up
+            // or using our orphaned routing process.
+            $priority_pickup = false;
+
             while( $query->have_posts() ) {
                 $query->the_post();
                 global $post;
                 setup_postdata( $post );
                 $org = get_post_meta( $post->ID, 'organization', true );
+                $priority_pickup = (bool) get_post_meta( $org['ID'], 'priority_pickup', true );
+
                 if( $org )
                     $organizations[] = array( 'id' => $org['ID'], 'name' => $org['post_title'], 'desc' => $org['post_content'], 'trans_dept_id' => $post->ID );
             }
             wp_reset_postdata();
+
+            if( 1 == count( $organizations ) && true == $priority_pickup ){
+                $org = $this->get_default_organization();
+                $default_org = array( 'id' => $org[0]['id'], 'name' => $org[0]['name'], 'desc' => $org[0]['desc'], 'trans_dept_id' => $org[0]['trans_dept_id'] );
+                array_unshift( $organizations, $default_org );
+            }
         } else {
             return false;
         }

@@ -6,6 +6,7 @@ __10/09/2015 - Version 1.2.4__
 
 - Adding `priority_pickup` option for organizations.
 - Added `notify_webmaster` option for `[bounced-orphan-contact]`.
+- Disabling two emails: 1) missing org_id , and 2) bad link
 
 __09/28/2015 - Version 1.2.3__
 

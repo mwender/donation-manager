@@ -5,6 +5,7 @@ Donation Manager is a WordPress plugin which handles a multi-form donation proce
 __10/09/2015 - Version 1.2.4__
 
 - Adding `priority_pickup` option for organizations.
+- Added `notify_webmaster` option for `[bounced-orphan-contact]`.
 
 __09/28/2015 - Version 1.2.3__
 

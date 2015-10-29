@@ -7,7 +7,7 @@
 	Version: 1.2.5
 	Author URI: http:://michaelwender.com
  */
-/*  Copyright 2014  Michael Wender  (email : michael@michaelwender.com)
+/*  Copyright 2014-15  Michael Wender  (email : michael@michaelwender.com)
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License, version 2, as
@@ -26,7 +26,7 @@ define( 'DONMAN_DIR', dirname( __FILE__ ) );
 require 'vendor/autoload.php';
 
 class DonationManager {
-    const VER = '1.2.1';
+    const VER = '1.2.5';
     public $html = '';
     public $donationreceipt = '';
 

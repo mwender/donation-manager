@@ -885,7 +885,14 @@ class DonationManager {
                     $this->add_html( $this->get_message( $_REQUEST['message'] ) );
 
                 foreach( $organizations as $org ) {
-                    $link = $nextpage . '?oid=' . $org['id'] . '&tid=' . $org['trans_dept_id'];
+                    if(
+                        isset( $org['alternate_donate_now_url'] )
+                        && filter_var( $org['alternate_donate_now_url'], FILTER_VALIDATE_URL )
+                    ){
+                        $link = $org['alternate_donate_now_url'];
+                    } else {
+                        $link = $nextpage . '?oid=' . $org['id'] . '&tid=' . $org['trans_dept_id'];
+                    }
                     $replace = array( $org['name'], $org['desc'], $link );
 
                     $ads = $this->get_trans_dept_ads( $org['trans_dept_id'] );
@@ -1194,7 +1201,8 @@ class DonationManager {
         if( is_array( $default_organization ) ) {
             $default_org_id = $default_organization[0];
             $default_org = get_post( $default_org_id );
-            $organization[] = array( 'id' => $default_org->ID, 'name' => $default_org->post_title, 'desc' => $default_org->post_content, 'trans_dept_id' => $default_trans_dept[0] );
+            $alternate_donate_now_url = get_post_meta( $default_org_id, 'alternate_donate_now_url', true );
+            $organization[] = array( 'id' => $default_org->ID, 'name' => $default_org->post_title, 'desc' => $default_org->post_content, 'trans_dept_id' => $default_trans_dept[0], 'alternate_donate_now_url' => $alternate_donate_now_url );
             return $organization;
         } else {
             return false;
@@ -1320,15 +1328,16 @@ class DonationManager {
                 setup_postdata( $post );
                 $org = get_post_meta( $post->ID, 'organization', true );
                 $priority_pickup = (bool) get_post_meta( $org['ID'], 'priority_pickup', true );
+                $alternate_donate_now_url = get_post_meta( $org['ID'], 'alternate_donate_now_url', true );
 
                 if( $org )
-                    $organizations[] = array( 'id' => $org['ID'], 'name' => $org['post_title'], 'desc' => $org['post_content'], 'trans_dept_id' => $post->ID );
+                    $organizations[] = array( 'id' => $org['ID'], 'name' => $org['post_title'], 'desc' => $org['post_content'], 'trans_dept_id' => $post->ID, 'alternate_donate_now_url' => $alternate_donate_now_url );
             }
             wp_reset_postdata();
 
             if( 1 == count( $organizations ) && true == $priority_pickup ){
                 $org = $this->get_default_organization();
-                $default_org = array( 'id' => $org[0]['id'], 'name' => $org[0]['name'], 'desc' => $org[0]['desc'], 'trans_dept_id' => $org[0]['trans_dept_id'] );
+                $default_org = array( 'id' => $org[0]['id'], 'name' => $org[0]['name'], 'desc' => $org[0]['desc'], 'trans_dept_id' => $org[0]['trans_dept_id'], 'alternate_donate_now_url' => $org['alternate_donate_now_url'] );
                 array_unshift( $organizations, $default_org );
             }
         } else {

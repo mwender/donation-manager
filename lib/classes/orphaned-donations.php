@@ -30,8 +30,27 @@ class DMOrphanedDonations extends DonationManager {
             return;
 
         wp_enqueue_style( 'dm-admin-css', plugins_url( '../css/admin.css', __FILE__ ), array( 'dashicons', 'thickbox' ), filemtime( plugin_dir_path( __FILE__ ) . '../css/admin.css' ) );
-        wp_enqueue_script( 'dm-orphaned-donations', plugins_url( '../js/orphaned-donations.js', __FILE__ ), array( 'jquery', 'media-upload', 'thickbox', 'jquery-ui-progressbar' ), filemtime( plugin_dir_path( __FILE__ ) . '../js/orphaned-donations.js' ), false );
-        wp_localize_script( 'dm-orphaned-donations', 'ajax_vars', array( 'ajax_url' => admin_url( 'admin-ajax.php' ) ) );
+
+        wp_enqueue_style( 'datatables', 'https://cdn.datatables.net/r/dt/dt-1.10.9,fh-3.0.0/datatables.min.css' );
+        wp_register_script( 'datatables', 'https://cdn.datatables.net/r/dt/dt-1.10.9,fh-3.0.0/datatables.min.js', array( 'jquery' ) );
+
+        wp_enqueue_script( 'dm-orphaned-donations', plugins_url( '../js/orphaned-donations.js', __FILE__ ), array( 'jquery', 'media-upload', 'thickbox', 'jquery-ui-progressbar', 'datatables' ), filemtime( plugin_dir_path( __FILE__ ) . '../js/orphaned-donations.js' ), false );
+
+
+        $month_options = array( '<option value="">All dates</option>' );
+        $start_month = '2015-09-01';
+
+        $option_month = current_time( 'Y-m' ) . '-01';
+        while( $option_month != $start_month ){
+            $month_options[] = '<option value="' . $option_month . '">' . date( 'M Y', strtotime( $option_month ) ) . '</option>';
+            $option_month = new DateTime( $option_month );
+            $option_month->sub( new DateInterval( 'P1M' ) );
+            $option_month = $option_month->format( 'Y-m-d' );
+        }
+        $month_options[] = '<option value="' . $start_month . '">' . date( 'M Y', strtotime( $start_month ) ) . '</option>';
+        $month_options = implode( '', $month_options );
+
+        wp_localize_script( 'dm-orphaned-donations', 'wpvars', array( 'ajax_url' => admin_url( 'admin-ajax.php' ), 'month_options' => $month_options ) );
     }
 
     /**
@@ -375,6 +394,67 @@ class DMOrphanedDonations extends DonationManager {
     }
 
     /**
+     * Returns orphaned donations SQL.
+     *
+     * @global object $wpdb WordPress database object.
+     *
+     * @access query_orphaned_donations()
+     * @since 1.2.6
+     *
+     * @param array $args{
+     *      Array of arguments.
+     *
+     *      @type string $orderby Column SQL result will be ordered by.
+     *      @type string $sort SQL sorting direction - ASC|| DESC.
+     *      @type int $limit Optional. Limit the results by this number.
+     *      @type int $offset Optional. Offset the query by this number.
+     *      @type date $start_date Optional. Start date for a date range.
+     * }
+     * @return string SQL for querying orphaned donations.
+     */
+    private function _get_orphaned_donations_query( $args ){
+        global $wpdb;
+
+        $args = wp_parse_args( $args, array(
+            'orderby' => 'total_donations',
+            'sort' => 'DESC',
+            'limit' => null,
+            'offset' => null,
+            'start_date' => null,
+            'end_date' => null,
+        ) );
+
+        // Since orderby, sort, and limit can be passed via
+        // AJAX, let's ensure these vars are clean:
+
+        $date_range = '';
+        if( ! empty( $args['start_date'] ) ){
+            $start_date_ts = strtotime( $args['start_date'] );
+            $num_of_days = date( 't', $start_date_ts );
+            $end_date = date( 'Y', $start_date_ts ) . '-' . date( 'm', $start_date_ts ) . '-' . $num_of_days;
+            $date_range = "\n\t\t" . 'AND timestamp >= \'' . $args['start_date'] . '\' AND timestamp <= \'' . $end_date . '\'';
+        }
+
+        $order_cols = array( 'store_name', 'zipcode', 'email_address', 'timestamp', 'total_donations' );
+        $orderby = ( 'total_donations' != $args['orderby'] && in_array( $args['orderby'],  $order_cols ) )? $args['orderby'] : 'total_donations';
+
+        $sort = ( 'DESC' != $args['sort'] )? 'ASC' : 'DESC';
+
+        $limit = ( is_numeric( $args['limit'] ) )? 'LIMIT ' . $args['limit'] : '';
+        if( is_numeric( $args['offset'] ) && 0 < $args['offset'] )
+            $limit.= ' OFFSET ' . $args['offset'];
+
+        $sql_format = 'SELECT store_name,zipcode,email_address,receive_emails,donation_id,timestamp,COUNT(*) AS total_donations
+        FROM ' . $wpdb->prefix . 'dm_contacts AS contacts, ' . $wpdb->prefix . 'dm_orphaned_donations AS donations
+        WHERE contacts.ID = donations.contact_id %s
+        GROUP BY store_name
+        ORDER BY %s %s
+        %s';
+
+        return sprintf( $sql_format, $date_range, $orderby, $sort, $limit );
+    }
+
+    /**
      * Opens a CSV file, populates an array for return
      *
      * @since 1.2.0
@@ -447,13 +527,111 @@ class DMOrphanedDonations extends DonationManager {
                     include_once( plugin_dir_path( __FILE__ ) . '../includes/orphaned-donations.import.php' );
                 break;
                 default:
-                    echo '<p>This is the default tab.</p>';
+                    include_once( plugin_dir_path( __FILE__ ) . '../includes/orphaned-donations.php' );
                 break;
             }
             ?>
             </div>
 
         </div><?php
+    }
+
+    /**
+     * Returns JSON formatted orphaned donation queries
+     *
+     * This method has been built to work with data sent
+     * by datatables.js. In particular, this function receives the
+     * following $_POST vars:
+     *
+     *  @type int $draw - Draw counter. This is used by DataTables to ensure that the Ajax returns from server-side
+     *      processing requests are drawn in sequence by DataTables.
+     *  @type int $start - Paging first record indicator, maps to $wp_query->$args->$offset.
+     *  @type int $length - Number of records for the table to display, maps to $wp_query->$args->$post_per_page.
+     *  @type int $auction - The WP taxonomy ID for the queried auction, maps to $wp_query->$args->$tax_query->$terms.
+     *  @type int $order[0]['column'] - The column which specifies $wp_query->$args->$orderby.
+     *  @type str $order[0]['dir'] - Sort by ASC|DESC, maps to $wp_query->$args->$order.
+     *  @type str $search['value'] - Search string, maps to $wp_query->$args->$s.
+     *
+     * For more info, see the [DataTables Server-side Processing docs]
+     * (http://datatables.net/manual/server-side).
+     *
+     * @since 1.2.6
+     *
+     * @return string JSON formatted orphaned donation query
+     */
+    public function query_orphaned_donations(){
+        global $wpdb;
+
+        $response = new stdClass(); // returned as JSON
+        $args = array(); // passed to WP_Query( $args )
+
+        $response->draw = $_POST['draw']; // $draw == 1 for the first request when the page is requested
+
+        $start_date = '';
+        if( isset( $_POST['month'] ) ){
+            $response->month = $_POST['month'];
+            $start_date = $response->month;
+        }
+
+        // Paging and offset
+        $response->offset = ( isset( $_POST['start'] ) && is_numeric( $_POST['start'] ) )? $_POST['start'] : 0;
+        $args['offset'] = $response->offset;
+
+        $response->limit = ( isset( $_POST['length'] ) )? (int) $_POST['length'] : 10;
+
+        // ORDER BY
+        $cols = array( 0 => 'store_name', 1 => 'email_address', 2 => 'total_donations' );
+        $order_key = ( isset( $_POST['order'][0]['column'] ) && array_key_exists( $_POST['order'][0]['column'], $cols ) )? $_POST['order'][0]['column'] : 2;
+        $response->orderby = $cols[$order_key];
+
+        // Sorting (ASC||DESC)
+        $response->sort = ( isset( $_POST['order'][0]['dir'] ) )? strtoupper( $_POST['order'][0]['dir'] ) : 'DESC';
+
+        // SQL: Count the total number of records
+        $count_sql = $this->_get_orphaned_donations_query( array( 'orderby' => $response->orderby, 'sort' => $response->sort, 'start_date' => $start_date ) );
+
+        $wpdb->get_results( $count_sql );
+        $response->recordsTotal = (int) $wpdb->num_rows;
+        $response->recordsFiltered = (int) $wpdb->num_rows;
+        $response->count_sql = $wpdb->last_query;
+
+        // Get the data
+        $data = array();
+
+        // SQL: Get the stores
+        $stores_sql = $this->_get_orphaned_donations_query( array( 'orderby' => $response->orderby, 'sort' => $response->sort, 'limit' => $response->limit, 'offset' => $response->offset, 'start_date' => $start_date ) );
+        $stores = $wpdb->get_results( $stores_sql );
+
+        $response->stores = $stores;
+        $response->stores_sql = $stores_sql;
+
+        if( 0 < count( $stores ) ){
+            $x = 0;
+            foreach( $stores as $store ){
+                $domain = '';
+                $generic_domains = array( 'gmail.com', 'hotmail.com', 'verizon.net', 'comcast.net', 'sbcglobal.net', 'yahoo.com', 'att.net', 'chilitech.net', 'aol.com', 'yahoo.co', 'earthlink.net' );
+                if( stristr( $store->email_address, '@') ){
+                    $email_array = explode( '@', $store->email_address );
+                    $domain = $email_array[1];
+                }
+                $website = ( ! empty( $domain ) && ! in_array( $domain, $generic_domains ) )? '<a href="http://' . $domain . '" target="_blank">' . $domain . '</a>' : '&nbsp;';
+
+                $subscribed = ( true == $store->receive_emails )? '<span style="color: #090">Yes</span>' : '<span style="color: #900">No</span>';
+                $data[$x] = array(
+                    'store_name' => $store->store_name,
+                    'zipcode' => $store->zipcode,
+                    'website' => $website,
+                    'email_address' => '<a href="mailto:' . $store->email_address . '">' . $store->email_address . '</a>',
+                    'receive_emails' => $subscribed,
+                    'total_donations' => $store->total_donations,
+                );
+                $x++;
+            }
+        }
+
+        $response->data = $data;
+
+        wp_send_json( $response );
     }
 
     /**
@@ -575,4 +753,5 @@ add_action( 'wp_ajax_orphaned_donations_ajax', array( $DMOrphanedDonations, 'cal
 
 // AJAX TESTS for Orphaned Donations
 add_action( 'wp_ajax_orphaned_utilities_ajax', array( $DMOrphanedDonations, 'utilities_callback' ) );
+add_action( 'wp_ajax_query_orphaned_donations', array( $DMOrphanedDonations, 'query_orphaned_donations' ) );
 ?>

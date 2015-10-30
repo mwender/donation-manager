@@ -422,6 +422,7 @@ class DMOrphanedDonations extends DonationManager {
             'offset' => null,
             'start_date' => null,
             'end_date' => null,
+            'search' => null,
         ) );
 
         // Since orderby, sort, and limit can be passed via
@@ -444,14 +445,18 @@ class DMOrphanedDonations extends DonationManager {
         if( is_numeric( $args['offset'] ) && 0 < $args['offset'] )
             $limit.= ' OFFSET ' . $args['offset'];
 
-        $sql_format = 'SELECT store_name,zipcode,email_address,receive_emails,donation_id,timestamp,COUNT(*) AS total_donations
+        if( ! empty( $args['search'] ) ){
+            $search = "\n\t\t" . 'AND email_address LIKE \'%' . esc_sql( $args['search'] ) . '%\'';
+        }
+
+        $sql_format = 'SELECT contacts.ID,store_name,zipcode,email_address,receive_emails,timestamp,COUNT(donation_id) AS total_donations
         FROM ' . $wpdb->prefix . 'dm_contacts AS contacts, ' . $wpdb->prefix . 'dm_orphaned_donations AS donations
-        WHERE contacts.ID = donations.contact_id %s
-        GROUP BY store_name
+        WHERE contacts.ID = donations.contact_id %s%s
+        GROUP BY contact_id
         ORDER BY %s %s
         %s';
 
-        return sprintf( $sql_format, $date_range, $orderby, $sort, $limit );
+        return sprintf( $sql_format, $date_range, $search, $orderby, $sort, $limit );
     }
 
     /**
@@ -550,7 +555,7 @@ class DMOrphanedDonations extends DonationManager {
      *  @type int $auction - The WP taxonomy ID for the queried auction, maps to $wp_query->$args->$tax_query->$terms.
      *  @type int $order[0]['column'] - The column which specifies $wp_query->$args->$orderby.
      *  @type str $order[0]['dir'] - Sort by ASC|DESC, maps to $wp_query->$args->$order.
-     *  @type str $search['value'] - Search string, maps to $wp_query->$args->$s.
+     *  @type str $search['value'] - Search string, maps to $response->search.
      *
      * For more info, see the [DataTables Server-side Processing docs]
      * (http://datatables.net/manual/server-side).
@@ -587,8 +592,13 @@ class DMOrphanedDonations extends DonationManager {
         // Sorting (ASC||DESC)
         $response->sort = ( isset( $_POST['order'][0]['dir'] ) )? strtoupper( $_POST['order'][0]['dir'] ) : 'DESC';
 
+        // Search
+        if( isset( $_POST['search']['value'] ) ){
+            $response->search = $_POST['search']['value'];
+        }
+
         // SQL: Count the total number of records
-        $count_sql = $this->_get_orphaned_donations_query( array( 'orderby' => $response->orderby, 'sort' => $response->sort, 'start_date' => $start_date ) );
+        $count_sql = $this->_get_orphaned_donations_query( array( 'orderby' => $response->orderby, 'sort' => $response->sort, 'start_date' => $start_date, 'search' => $response->search ) );
 
         $wpdb->get_results( $count_sql );
         $response->recordsTotal = (int) $wpdb->num_rows;
@@ -599,7 +609,7 @@ class DMOrphanedDonations extends DonationManager {
         $data = array();
 
         // SQL: Get the stores
-        $stores_sql = $this->_get_orphaned_donations_query( array( 'orderby' => $response->orderby, 'sort' => $response->sort, 'limit' => $response->limit, 'offset' => $response->offset, 'start_date' => $start_date ) );
+        $stores_sql = $this->_get_orphaned_donations_query( array( 'orderby' => $response->orderby, 'sort' => $response->sort, 'limit' => $response->limit, 'offset' => $response->offset, 'start_date' => $start_date, 'search' => $response->search ) );
         $stores = $wpdb->get_results( $stores_sql );
 
         $response->stores = $stores;
@@ -618,6 +628,7 @@ class DMOrphanedDonations extends DonationManager {
 
                 $subscribed = ( true == $store->receive_emails )? '<span style="color: #090">Yes</span>' : '<span style="color: #900">No</span>';
                 $data[$x] = array(
+                    'id' => $store->ID,
                     'store_name' => $store->store_name,
                     'zipcode' => $store->zipcode,
                     'website' => $website,

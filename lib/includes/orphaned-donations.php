@@ -1,5 +1,6 @@
 <table id="orphaned-donations" class="display">
 	<colgroup>
+		<col style="" />
 		<col style="width: 30%" />
 		<col style="width: 10%" />
 		<col style="width: 20%" />
@@ -9,6 +10,7 @@
 	</colgroup>
 	<thead>
 		<tr>
+			<th>ContactID</th>
 			<th>Organization</th>
 			<th>Zip Code</th>
 			<th>Website (<em>guessed from email</em>)</th>

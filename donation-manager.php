@@ -1335,6 +1335,9 @@ class DonationManager {
             }
             wp_reset_postdata();
 
+            // We have only 1 org for this pickup_code, and it is a fee-based
+            // priority pick up provider. So, we need to add our default
+            // pick up provider (i.e. PMD) to the beginning of the list.
             if( 1 == count( $organizations ) && true == $priority_pickup ){
                 $org = $this->get_default_organization();
                 $default_org = array( 'id' => $org[0]['id'], 'name' => $org[0]['name'], 'desc' => $org[0]['desc'], 'trans_dept_id' => $org[0]['trans_dept_id'], 'alternate_donate_now_url' => $org['alternate_donate_now_url'] );

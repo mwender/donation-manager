@@ -884,6 +884,7 @@ class DonationManager {
                 if( isset( $_REQUEST['message'] ) && ! empty( $_REQUEST['message'] ) )
                     $this->add_html( $this->get_message( $_REQUEST['message'] ) );
 
+                $priority_rows = array();
                 foreach( $organizations as $org ) {
                     if(
                         isset( $org['alternate_donate_now_url'] )
@@ -897,9 +898,16 @@ class DonationManager {
 
                     $ads = $this->get_trans_dept_ads( $org['trans_dept_id'] );
 
-                    $rows[] = str_replace( $search, $replace, $template );
-
+                    if( $org['priority_pickup'] ){
+                        $priority_rows[] = str_replace( $search, $replace, $template );
+                    } else {
+                        $rows[] = str_replace( $search, $replace, $template );
+                    }
                 }
+
+                if( 0 < count( $priority_rows ) )
+                    $rows = array_merge( $rows, $priority_rows );
+
                 $this->add_html( implode( "\n", $rows ) );
             break;
 
@@ -1331,7 +1339,7 @@ class DonationManager {
                 $alternate_donate_now_url = get_post_meta( $org['ID'], 'alternate_donate_now_url', true );
 
                 if( $org )
-                    $organizations[] = array( 'id' => $org['ID'], 'name' => $org['post_title'], 'desc' => $org['post_content'], 'trans_dept_id' => $post->ID, 'alternate_donate_now_url' => $alternate_donate_now_url );
+                    $organizations[] = array( 'id' => $org['ID'], 'name' => $org['post_title'], 'desc' => $org['post_content'], 'trans_dept_id' => $post->ID, 'alternate_donate_now_url' => $alternate_donate_now_url, 'priority_pickup' => $priority_pickup );
             }
             wp_reset_postdata();
 

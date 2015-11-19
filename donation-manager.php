@@ -2168,8 +2168,7 @@ class DonationManager {
                     && 0 < count( $tc['orphaned_donation_contacts'] )
                 ){
                     foreach( $tc['orphaned_donation_contacts'] as $contact_id => $contact_email ){
-                        $headers[] = 'Bcc: ' . $contact_email;
-                        //$recipients[] = $contact_email;
+                        $bcc_headers[] = 'Bcc: ' . $contact_email;
                         $this->add_orphaned_donation( array( 'contact_id' => $contact_id, 'donation_id' => $donor['ID'] ) );
                     }
                     $subject = 'Large Item Donation Pick Up Requested by ' . $donor['address']['name']['first'] . ' ' .$donor['address']['name']['last'];
@@ -2187,7 +2186,6 @@ class DonationManager {
                 if( is_array( $cc_emails ) )
                     $recipients = array_merge( $recipients, $cc_emails );
 
-
                 // Set Reply-To our donor
                 $headers[] = 'Reply-To: ' . $donor['address']['name']['first'] . ' ' .$donor['address']['name']['last'] . ' <' . $donor['email'] . '>';
             break;
@@ -2202,7 +2200,17 @@ class DonationManager {
             return 'PickUpMyDonation';
         });
         add_filter( 'wp_mail_content_type', array( $this, 'return_content_type' ) );
-        wp_mail( $recipients, $subject, $html, $headers );
+
+        if( true == $orphaned_donation && 'trans_dept_notification' == $type ){
+            // Send normal email to default contact
+            wp_mail( $recipients, $subject, $html, $headers );
+            // Add Orphaned BCC contacts to email sent to orphaned contacts
+            $orphaned_headers = array_merge( $headers, $bcc_headers );
+            wp_mail( 'noreply@pickupmydonation.com', $subject, $html, $orphaned_headers );
+        } else {
+            wp_mail( $recipients, $subject, $html, $headers );
+        }
+
         remove_filter( 'wp_mail_content_type', array( $this, 'return_content_type' ) );
     }
 

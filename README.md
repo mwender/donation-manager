@@ -5,6 +5,8 @@ Donation Manager is a WordPress plugin which handles a multi-form donation proce
 __12/07/2015 - Version 1.2.7__
 
 - Added "Preferred Donor Code" to donations.
+- Listing "Priorty Pick Up Providers" last.
+- Setting `to:noreply@pickupmydonation.com` for orphaned trans dept emails.
 
 __10/30/2015 - Version 1.2.6__
 

@@ -4,7 +4,7 @@
 	Plugin URI: http://www.pickupmydonation.com
 	Description: Online donation manager built for ReNew Management, Inc and PickUpMyDonation.com. This plugin displays the donation form and handles donation submissions.
 	Author: Michael Wender
-	Version: 1.2.6
+	Version: 1.2.7
 	Author URI: http:://michaelwender.com
  */
 /*  Copyright 2014-15  Michael Wender  (email : michael@michaelwender.com)
@@ -349,7 +349,8 @@ class DonationManager {
                 'State' => [ 'required', 'trim', 'max_length' => 80 ],
                 'ZIP' => [ 'required', 'trim', 'max_length' => 14 ],
                 'Contact Email' => [ 'required', 'email', 'trim', 'max_length' => 255 ],
-                'Contact Phone' => [ 'required', 'trim', 'max_length' => 30 ]
+                'Contact Phone' => [ 'required', 'trim', 'max_length' => 30 ],
+                'Preferred Donor Code' => [ 'max_length' => 30, 'regexp' => "/^([\w-_]+)$/" ],
             ]);
 
             $form->setValues( array(
@@ -361,6 +362,7 @@ class DonationManager {
                 'ZIP' => $_POST['donor']['address']['zip'],
                 'Contact Email' => $_POST['donor']['email'],
                 'Contact Phone' => $_POST['donor']['phone'],
+                'Preferred Donor Code' => $_POST['donor']['preferred_code'],
             ));
 
             if( 'Yes' ==  $_POST['donor']['different_pickup_address'] ){
@@ -388,6 +390,7 @@ class DonationManager {
                 $_SESSION['donor']['email'] = $_POST['donor']['email'];
                 $_SESSION['donor']['phone'] = $_POST['donor']['phone'];
                 $_SESSION['donor']['preferred_contact_method'] = $_POST['donor']['preferred_contact_method'];
+                $_SESSION['donor']['preferred_code'] = $_POST['donor']['preferred_code'];
 
                 /**
                  * SET $_SESSION['donor']['pickup_code'] FOR DONORS WHO BYPASSED EARLIER SCREENS
@@ -421,6 +424,12 @@ class DonationManager {
                         $error_msg[] = '<strong><em>' . $field . '</em></strong> can not exceed <em>' . $array['max_length'] . '</em> characters.';
                     if( true == $array['email'] )
                         $error_msg[] = '<strong><em>' . $field . '</em></strong> must be a valid email address.';
+
+                    // Preferred Donor Code:
+                    if( 'Preferred Donor Code' == $field ){
+                        $error_msg[] = '<strong><em>' . $field . '</em></strong> must contain only letters, numbers, dashes, and underscores.';
+
+                    }
                 }
                 if( 0 < count( $error_msg ) ){
                     $error_msg_html = '<div class="alert alert-danger"><p>Please correct the following errors:</p><ul><li>' .implode( '</li><li>', $error_msg ) . '</li></ul></div>';
@@ -710,6 +719,7 @@ class DonationManager {
                     'donor_pickup_zip' => $_POST['donor']['pickup_address']['zip'],
                     'donor_email' => $_POST['donor']['email'],
                     'donor_phone' => $_POST['donor']['phone'],
+                    'preferred_code' => $_POST['donor']['preferred_code'],
                 ) );
 
                 $this->add_html( $html );
@@ -1276,6 +1286,7 @@ class DonationManager {
             'screening_questions' => $screening_questions,
             'pickuplocation' =>  $donation['pickuplocation'],
             'pickup_code' => $donation['pickup_code'],
+            'preferred_code' => $donation['preferred_code'],
         ));
 
         return $donationreceipt;
@@ -1996,6 +2007,7 @@ class DonationManager {
             'pickuptime2' => 'pickuptime2',
             'pickupdate3' => 'pickupdate3',
             'pickuptime3' => 'pickuptime3',
+            'preferred_code' => 'preferred_code',
             'legacy_id' => 'legacy_id',
             'referer' => 'referer'
         );

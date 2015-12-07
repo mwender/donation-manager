@@ -174,10 +174,6 @@ class DMReports extends DonationManager {
 	/**
 	 * Handles writing, building, and downloading report files.
 	 *
-	 * @see Function/method/class relied on
-	 * @link URL short description.
-	 * @global type $varname short description.
-	 *
 	 * @since 1.0.0
 	 *
 	 * @return void
@@ -430,7 +426,7 @@ class DMReports extends DonationManager {
     	$donations = $this->get_donations( $orgID, $month );
 
     	if( is_array( $donations ) ){
-	    	$csv = '"Date/Time Modified","DonorName","DonorAddress","DonorCity","DonorState","DonorZip","DonorPhone","DonorEmail","DonationAddress","DonationCity","DonationState","DonationZip","DonationDescription","PickupDate1","PickupDate2","PickupDate3"' . "\n" . implode( "\n", $donations );
+	    	$csv = '"Date/Time Modified","DonorName","DonorAddress","DonorCity","DonorState","DonorZip","DonorPhone","DonorEmail","DonationAddress","DonationCity","DonationState","DonationZip","DonationDescription","PickupDate1","PickupDate2","PickupDate3","PreferredDonorCode"' . "\n" . implode( "\n", $donations );
     	} else {
     		$csv = 'No donations found for ' . $org->post_name . ' in ' . $month;
     	}
@@ -626,6 +622,7 @@ class DMReports extends DonationManager {
 	    			'PickupDate1' => $custom_fields['pickupdate1'][0],
 	    			'PickupDate2' => $custom_fields['pickupdate2'][0],
 	    			'PickupDate3' => $custom_fields['pickupdate3'][0],
+	    			'PreferredDonorCode' => $custom_fields['preferred_code'][0],
 				);
 
 				$donation_rows[] = '"' . implode( '","', $donation_row ) . '"';

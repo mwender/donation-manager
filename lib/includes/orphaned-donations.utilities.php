@@ -24,6 +24,10 @@
 			<td><input type="text" name="contact-email" id="contact-email" value="" size="30" placeholder="email"></td>
 			<td><input type="text" name="contact-zipcode" id="contact-zipcode" value="" size="15" placeholder="zipcode"></td>
 			<td><input type="text" name="contact-store-name" id="contact-store-name" value="" size="30" placeholder="store name"></td>
+			<td><select name="contact-for-profit" id="contact-for-profit">
+					<option value="0">Non Profit</option>
+					<option value="1">For Profit - $$$</option>
+				</select></td>
 			<td><button class="button" id="add-contact" type="submit">Add Contact</button></td>
 		</tr>
 	</table>

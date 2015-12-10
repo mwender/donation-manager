@@ -1,6 +1,6 @@
 <?php
 class DMOrphanedDonations extends DonationManager {
-    const DBVER = '1.0.2';
+    const DBVER = '1.0.3';
 
     private static $instance = null;
 
@@ -197,6 +197,7 @@ class DMOrphanedDonations extends DonationManager {
      *      @type string $email Contact's email address.
      *      @type string $unsubscribe_hash Hash used to check if we have permission to unsubscribe this. Optional.
      *      @type bool $receive_emails `true` or `false`. Optional.
+     *      @type bool $for_profit `true` or `false`. Defaults to `false`. Optional.
      * }
      * @return string Update status message.
      */
@@ -209,6 +210,7 @@ class DMOrphanedDonations extends DonationManager {
             'email' => null,
             'unsubscribe_hash' => null,
             'receive_emails' => true,
+            'for_profit' => false,
         );
 
         $args = wp_parse_args( $args, $defaults );
@@ -219,11 +221,13 @@ class DMOrphanedDonations extends DonationManager {
 
         $receive_emails = ( true == $args['receive_emails'] || 1 == $args['receive_emails'] )? 1 : 0;
 
+        $for_profit = ( true == $args['for_profit'] || 1 == $args['for_profit'] )? 1 : 0;
+
         $emails = array();
         if( stristr( $args['email'], ',' ) ){
             $emails = explode( ',', $args['email'] );
             foreach( $emails as $email ){
-                $this->contact_update( array( 'store_name' => $args['store_name'], 'zipcode' => $args['zipcode'], 'email' => trim( $email ), 'receive_emails' => $receive_emails ) );
+                $this->contact_update( array( 'store_name' => $args['store_name'], 'zipcode' => $args['zipcode'], 'email' => trim( $email ), 'receive_emails' => $receive_emails, 'for_profit' => $for_profit ) );
             }
             return;
         }
@@ -244,12 +248,14 @@ class DMOrphanedDonations extends DonationManager {
                 'email_address' => $args['email'],
                 'unsubscribe_hash' => $unsubscribe_hash,
                 'receive_emails' => $receive_emails,
+                'for_profit' => $for_profit,
             );
             $format = array(
                 '%s',
                 '%s',
                 '%s',
                 '%s',
+                '%d',
                 '%d',
             );
 
@@ -374,6 +380,7 @@ class DMOrphanedDonations extends DonationManager {
             zipcode bigint(10) unsigned NOT NULL,
             email_address varchar(100) NOT NULL DEFAULT \'\',
             receive_emails tinyint(1) unsigned NOT NULL DEFAULT \'1\',
+            for_profit tinyint(1) unsigned NOT NULL DEFAULT \'0\',
             unsubscribe_hash varchar(32) DEFAULT NULL,
             PRIMARY KEY  (ID)
         ) ' . $charset_collate. ';';
@@ -691,6 +698,7 @@ class DMOrphanedDonations extends DonationManager {
                 $args['zipcode'] = $_POST['zipcode'];
                 $args['email'] = $_POST['email_address'];
                 $args['store_name'] = $_POST['store_name'];
+                $args['for_profit'] = $_POST['for_profit'];
 
                 $message = $this->contact_update( $args );
                 $response->output = '<pre>' . $message . '</pre>';

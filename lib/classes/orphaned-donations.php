@@ -772,7 +772,8 @@ class DMOrphanedDonations extends DonationManager {
             default:
                 $posted_radius = $_POST['radius'];
                 $radius = ( is_numeric( $posted_radius ) )? $posted_radius : 20;
-                $contacts = $this->get_orphaned_donation_contacts( array( 'pcode' => $pcode, 'radius' => $radius ) );
+                $priority = $_POST['priority'];
+                $contacts = $this->get_orphaned_donation_contacts( array( 'pcode' => $pcode, 'radius' => $radius, 'priority' => $priority ) );
                 //$response->output = '<pre>' . count( $contacts ) . ' result(s):<br />'.print_r($contacts,true).'</pre>';
                 if( 0 < count( $contacts ) ){
 

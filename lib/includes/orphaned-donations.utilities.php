@@ -11,6 +11,10 @@
 	<option value="40">40 miles</option>
 	<option value="50">50 miles</option>
 </select></td>
+		<td><select name="test-priority" id="test-priority">
+				<option value="nonprofit">Non-profit</option>
+				<option value="priority">Priority</option>
+			</select></td>
 		<td><button class="button" id="test-pcode-button" type="submit">Test</button></form></td>
 	</tr>
 </table>

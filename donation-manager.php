@@ -2111,7 +2111,7 @@ class DonationManager {
         switch( $type ){
 
             case 'invalid_link':
-                if( empty( $this->_get_referer() ) )
+                if( ! $this->_get_referer() )
                     return;
 
                  $html = $this->get_template_part( 'email.blank', array(

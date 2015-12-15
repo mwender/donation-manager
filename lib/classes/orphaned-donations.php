@@ -434,10 +434,16 @@ class DMOrphanedDonations extends DonationManager {
             'start_date' => null,
             'end_date' => null,
             'search' => null,
+            'priority' => 'all',
         ) );
 
-        // Since orderby, sort, and limit can be passed via
+        // Since priority, orderby, sort, and limit can be passed via
         // AJAX, let's ensure these vars are clean:
+        $priority = '';
+        if( 'all' !== $args['priority'] ){
+            if( 0 === $args['priority'] || 1 === $args['priority'] )
+               $priority = "\n\t\t" . 'AND priority="' . $args['priority'] . '"';
+        }
 
         $date_range = '';
         if( ! empty( $args['start_date'] ) ){
@@ -462,12 +468,12 @@ class DMOrphanedDonations extends DonationManager {
 
         $sql_format = 'SELECT contacts.ID,store_name,zipcode,email_address,receive_emails,timestamp,COUNT(donation_id) AS total_donations
         FROM ' . $wpdb->prefix . 'dm_contacts AS contacts, ' . $wpdb->prefix . 'dm_orphaned_donations AS donations
-        WHERE contacts.ID = donations.contact_id %s%s
+        WHERE contacts.ID = donations.contact_id %s%s%s
         GROUP BY contact_id
         ORDER BY %s %s
         %s';
 
-        return sprintf( $sql_format, $date_range, $search, $orderby, $sort, $limit );
+        return sprintf( $sql_format, $priority, $date_range, $search, $orderby, $sort, $limit );
     }
 
     /**
@@ -589,6 +595,22 @@ class DMOrphanedDonations extends DonationManager {
             $start_date = $response->month;
         }
 
+        // Donation Priority
+        $priority = 'all';
+        if( isset( $_POST['priority'] ) ){
+            $priority = $_POST['priority'];
+            switch ( $priority ) {
+              case 'nonprofit':
+                $priority = 0;
+                break;
+
+              case 'priority':
+                $priority = 1;
+                break;
+            }
+        }
+        $response->priority = $priority;
+
         // Paging and offset
         $response->offset = ( isset( $_POST['start'] ) && is_numeric( $_POST['start'] ) )? $_POST['start'] : 0;
         $args['offset'] = $response->offset;
@@ -609,7 +631,7 @@ class DMOrphanedDonations extends DonationManager {
         }
 
         // SQL: Count the total number of records
-        $count_sql = $this->_get_orphaned_donations_query( array( 'orderby' => $response->orderby, 'sort' => $response->sort, 'start_date' => $start_date, 'search' => $response->search ) );
+        $count_sql = $this->_get_orphaned_donations_query( array( 'orderby' => $response->orderby, 'sort' => $response->sort, 'start_date' => $start_date, 'search' => $response->search, 'priority' => $priority ) );
 
         $wpdb->get_results( $count_sql );
         $response->recordsTotal = (int) $wpdb->num_rows;
@@ -620,7 +642,7 @@ class DMOrphanedDonations extends DonationManager {
         $data = array();
 
         // SQL: Get the stores
-        $stores_sql = $this->_get_orphaned_donations_query( array( 'orderby' => $response->orderby, 'sort' => $response->sort, 'limit' => $response->limit, 'offset' => $response->offset, 'start_date' => $start_date, 'search' => $response->search ) );
+        $stores_sql = $this->_get_orphaned_donations_query( array( 'orderby' => $response->orderby, 'sort' => $response->sort, 'limit' => $response->limit, 'offset' => $response->offset, 'start_date' => $start_date, 'search' => $response->search, 'priority' => $priority ) );
         $stores = $wpdb->get_results( $stores_sql );
 
         $response->stores = $stores;

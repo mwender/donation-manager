@@ -11,6 +11,10 @@
 	<option value="40">40 miles</option>
 	<option value="50">50 miles</option>
 </select></td>
+		<td><select name="test-priority" id="test-priority">
+				<option value="nonprofit">Non-profit</option>
+				<option value="priority">Priority</option>
+			</select></td>
 		<td><button class="button" id="test-pcode-button" type="submit">Test</button></form></td>
 	</tr>
 </table>
@@ -24,6 +28,10 @@
 			<td><input type="text" name="contact-email" id="contact-email" value="" size="30" placeholder="email"></td>
 			<td><input type="text" name="contact-zipcode" id="contact-zipcode" value="" size="15" placeholder="zipcode"></td>
 			<td><input type="text" name="contact-store-name" id="contact-store-name" value="" size="30" placeholder="store name"></td>
+			<td><select name="contact-priority" id="contact-priority">
+					<option value="0">Non-Profit</option>
+					<option value="1">Priority/For-Profit $$$</option>
+				</select></td>
 			<td><button class="button" id="add-contact" type="submit">Add Contact</button></td>
 		</tr>
 	</table>

@@ -545,14 +545,14 @@ class DMReports extends DonationManager {
 			// break if we find any problems
 			if( ! WP_Filesystem( $creds ) ){
 				$response->message = 'Unable to get filesystem credentials.';
-				break;
+				wp_send_json( $response );
 			}
 
 			global $wp_filesystem;
 
 			if( false === ( $csv = $wp_filesystem->get_contents( $filename ) ) ){
 				$response->message = 'Unable to open ' . basename( $filename );
-				break;
+				wp_send_json( $response );
 			}
 
 			header('Set-Cookie: fileDownload=true; path=/');

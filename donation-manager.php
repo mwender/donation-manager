@@ -178,6 +178,8 @@ class DonationManager {
                 $_SESSION['donor']['form'] = 'describe-your-donation';
                 $_SESSION['donor']['org_id'] = $_REQUEST['oid'];
                 $_SESSION['donor']['trans_dept_id'] = $_REQUEST['tid'];
+                if( isset( $_REQUEST['priority'] ) && 1 == $_REQUEST['priority'] )
+                    $_SESSION['donor']['priority'] = true;
             } else {
                 // Invalid org_id or trans_dept_id, redirect to site home page
                 $this->notify_admin( 'invalid_link' );
@@ -222,8 +224,8 @@ class DonationManager {
                 $_SESSION['donor']['form'] = 'no-pickup-message';
 
                 // Should we skip the screening questions?
-                $skip == false;
-                $pickup == false;
+                $skip = false;
+                $pickup = false;
                 $_SESSION['donor']['items'] = array();
                 foreach( $_POST['donor']['options'] as $option ) {
                     if( ! empty( $option['field_value'] ) ) {
@@ -242,6 +244,16 @@ class DonationManager {
                     }
                 }
                 $_SESSION['donor']['description'] = $_POST['donor']['description'];
+
+                /**
+                 * For Priority Pick Ups, we need to skip the screening questions
+                 * and also we by pass the "no pick up" message for any items
+                 * which are marking "No Pickup".
+                 */
+                if( isset( $_SESSION['donor']['priority'] ) && 1 == $_SESSION['donor']['priority'] ){
+                    $skip = true; // Bypasses screening questions
+                    $_SESSION['donor']['form'] = 'screening-questions'; // Bypasses no pick up message
+                }
 
                 /**
                  * When we skip questions, we actually request the "screening questions" page.
@@ -876,9 +888,26 @@ class DonationManager {
 
             case 'select-your-organization':
                 $pickup_code = $_REQUEST['pcode'];
+
                 $organizations = $this->get_organizations( $pickup_code );
-                if( false == $organizations )
+
+                //$show_priority_pickup = false;
+                if( false == $organizations ){
                     $organizations = $this->get_default_organization();
+                    //$show_priority_pickup = true;
+
+                    // Only provide the PRIORITY option for areas where there is
+                    // a priority provider in the contacts table.
+                    $contacts = $this->get_orphaned_donation_contacts( array( 'pcode' => $pickup_code, 'limit' => 1, 'priority' => 1 ) );
+
+                    if( 0 < count( $contacts ) ){
+                        $organizations[] = array(
+                            'name' => 'Priority Pick Up (Fee Based)',
+                            'desc' => '<div class="alert alert-info">Choosing <strong>PRIORITY</strong> Pick Up will send your request to all of the fee-based pick up providers in our database.  These providers will pick up "almost" <strong>ANYTHING</strong> you have for a fee, and their service provides <em>additional benefits</em> such as the removal of items from anywhere inside your property to be taken to a local non-profit, as well as the removal of junk and items local non-profits cannot accept.<br><br><em>In most cases your donation is still tax-deductible, and these organizations will respond in 24hrs or less. Check with whichever pick up provider you choose.</em></div>',
+                            'alternate_donate_now_url' => $nextpage . '?oid=' . $organizations[0]['id'] . '&tid=' . $organizations[0]['trans_dept_id'] . '&priority=1',
+                        );
+                    }
+                }
 
                 $template = $this->get_template_part( 'form1.select-your-organization.row' );
                 $search = array( '{name}', '{desc}', '{link}' );
@@ -1378,6 +1407,7 @@ class DonationManager {
      *      @type int $radius Optional (defaults to 20 miles). Radius in miles to retrieve organization contacts.
      *      @type string $pcode Zip Code.
      *      @type int $limit Optional. Max number of contacts to return.
+     *      @type bool $priority Optional. Query priority contacts.
      * }
      * @return array Returns an array of contact emails.
      */
@@ -1388,7 +1418,12 @@ class DonationManager {
             'radius' => 20,
             'pcode' => null,
             'limit' => null,
+            'priority' => 0,
         ), $args );
+
+        // Validate $args['priority'], ensuring it is only `0` or `1`.
+        if( ! in_array( $args['priority'], array( 0, 1 ) ) )
+            $args['priority'] = 0;
 
         $error = new WP_Error();
 
@@ -1421,7 +1456,7 @@ class DonationManager {
         }
 
         // Get all email addresses for contacts in our group of zipcodes
-        $sql = 'SELECT ID,email_address FROM ' . $wpdb->prefix . 'dm_contacts WHERE receive_emails=1 AND zipcode IN (' . $zipcodes . ')';
+        $sql = 'SELECT ID,email_address FROM ' . $wpdb->prefix . 'dm_contacts WHERE receive_emails=1 AND priority=' . $args['priority'] . ' AND zipcode IN (' . $zipcodes . ')';
         if( ! is_null( $args['limit'] ) && is_numeric( $args['limit'] ) )
             $sql.= ' LIMIT ' . $args['limit'];
         $contacts = $wpdb->get_results( $sql );
@@ -1863,6 +1898,33 @@ class DonationManager {
     }
 
     /**
+     * Checks if a donation is `orphaned`.
+     *
+     * In order for this function to return `true`, orphaned
+     * donation routing must be ON, and the donation must be
+     * using the default pick up provider.
+     *
+     * @access self::send_email()
+     * @since 1.3.0
+     *
+     * @param int $donor_trans_dept_id Trans dept ID associated with donation.
+     * @return bool Returns `true` for orphaned donations.
+     */
+    private function _is_orphaned_donation( $donor_trans_dept_id = 0 ){
+        $orphaned_donation_routing = get_option( 'donation_settings_orphaned_donation_routing' );
+        $default_trans_dept = get_option( 'donation_settings_default_trans_dept' );
+        $default_trans_dept_id = $default_trans_dept[0];
+        if(
+            true == $orphaned_donation_routing
+            && $donor_trans_dept_id == $default_trans_dept_id
+        ){
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    /**
      * Meta box for enhanced fields.
      *
      * Provides extended information for help in selecting the
@@ -2080,22 +2142,19 @@ class DonationManager {
 
         $tc = $this->get_trans_dept_contact( $donor['trans_dept_id'] );
 
-        //* Is this an ORPHANED DONATION?
-        $orphaned_donation_routing = get_option( 'donation_settings_orphaned_donation_routing' );
-        $default_trans_dept = get_option( 'donation_settings_default_trans_dept' );
-        $default_trans_dept_id = $default_trans_dept[0];
-        if(
-            true == $orphaned_donation_routing
-            && $donor_trans_dept_id == $default_trans_dept_id
-        ){
-            $orphaned_donation = true;
-        } else {
-            $orphaned_donation = false;
-        }
+        //* Is this an ORPHANED DONATION? `true` or `false`?
+        $orphaned_donation = $this->_is_orphaned_donation( $donor_trans_dept_id );
 
         //* Get ORPHANED DONATION Contacts, LIMIT to 50 inside a 20 mile radius
         if( $orphaned_donation ){
-            $bcc_emails = $this->get_orphaned_donation_contacts( array( 'pcode' => $donor['pickup_code'], 'limit' => 50, 'radius' => 20 ) );
+
+            // PRIORITY PICK UP?
+            // Is this donation routing to for-profit/priority pick up providers?
+            $priority = 0;
+            if( isset( $donor['priority'] ) && 1 == $donor['priority'] )
+                $priority = 1;
+
+            $bcc_emails = $this->get_orphaned_donation_contacts( array( 'pcode' => $donor['pickup_code'], 'limit' => 50, 'radius' => 20, 'priority' => $priority ) );
             if( 0 < count( $bcc_emails ) )
                 $tc['orphaned_donation_contacts'] = $bcc_emails;
         }
@@ -2142,7 +2201,8 @@ class DonationManager {
                     && is_array( $tc['orphaned_donation_contacts'] )
                     && 0 < count( $tc['orphaned_donation_contacts'] )
                 ){
-                    $orphaned_donation_note = $this->get_template_part( 'email.donor.orphaned-donation-note', array( 'total_notified' => count( $tc['orphaned_donation_contacts'] ) ) );
+                    $template = ( true == $priority )? 'email.donor.priority-donation-note' : 'email.donor.orphaned-donation-note';
+                    $orphaned_donation_note = $this->get_template_part( $template, array( 'total_notified' => count( $tc['orphaned_donation_contacts'] ) ) );
                 }
 
 
@@ -2185,7 +2245,9 @@ class DonationManager {
                     }
                     $subject = 'Large Item Donation Pick Up Requested by ' . $donor['address']['name']['first'] . ' ' .$donor['address']['name']['last'];
 
-                    $orphaned_donation_note = $this->get_template_part( 'email.trans-dept.orphaned-donation-note' );
+                    // Orphaned Donation Note - Non-profit/Priority
+                    $template = ( true == $priority )? 'email.trans-dept.priority-donation-note' : 'email.trans-dept.orphaned-donation-note';
+                    $orphaned_donation_note = $this->get_template_part( $template );
                 }
 
                 $html = $this->get_template_part( 'email.trans-dept-notification', array(

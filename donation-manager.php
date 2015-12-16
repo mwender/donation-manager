@@ -2243,7 +2243,12 @@ class DonationManager {
                         $bcc_headers[] = 'Bcc: ' . $contact_email;
                         $this->add_orphaned_donation( array( 'contact_id' => $contact_id, 'donation_id' => $donor['ID'] ) );
                     }
-                    $subject = 'Large Item Donation Pick Up Requested by ' . $donor['address']['name']['first'] . ' ' .$donor['address']['name']['last'];
+
+                    $subject = 'Large Item ';
+                    if( ! $priority )
+                        $subject.= 'Donation ';
+                    $subject.= 'Pick Up Requested by ';
+                    $subject.= $donor['address']['name']['first'] . ' ' .$donor['address']['name']['last'];
 
                     // Orphaned Donation Note - Non-profit/Priority
                     $template = ( true == $priority )? 'email.trans-dept.priority-donation-note' : 'email.trans-dept.orphaned-donation-note';

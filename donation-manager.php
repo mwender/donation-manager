@@ -2046,6 +2046,9 @@ class DonationManager {
             'post_status' => 'publish',
         );
 
+        if( isset( $donation['priority'] ) && true == $donation['priority'] )
+            $post['post_title'] = 'PRIORITY - ' . $post['post_title'];
+
         wp_update_post( $post );
 
         $post_meta = array(

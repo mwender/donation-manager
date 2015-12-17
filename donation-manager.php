@@ -902,15 +902,16 @@ class DonationManager {
 
                     if( 0 < count( $contacts ) ){
                         $organizations[] = array(
-                            'name' => 'Priority Pick Up (Fee Based)',
-                            'desc' => '<div class="alert alert-info">Choosing <strong>PRIORITY</strong> Pick Up will send your request to all of the fee-based pick up providers in our database.  These providers will pick up "almost" <strong>ANYTHING</strong> you have for a fee, and their service provides <em>additional benefits</em> such as the removal of items from anywhere inside your property to be taken to a local non-profit, as well as the removal of junk and items local non-profits cannot accept.<br><br><em>In most cases your donation is still tax-deductible, and these organizations will respond in 24hrs or less. Check with whichever pick up provider you choose.</em></div>',
+                            'name' => 'Priority Pick Up (<em>Fee Based - $</em>)',
+                            'desc' => '<div class="alert alert-info">Choosing <strong>PRIORITY</strong> Pick Up will send your request to all of the <em>fee-based</em> pick up providers in our database.  These providers will pick up "almost" <strong>ANYTHING</strong> you have for a fee, and their service provides <em>additional benefits</em> such as the removal of items from anywhere inside your property to be taken to a local non-profit, as well as the removal of junk and items local non-profits cannot accept.<br><br><em>In most cases your donation is still tax-deductible, and these organizations will respond in 24hrs or less. Check with whichever pick up provider you choose.</em></div>',
                             'alternate_donate_now_url' => $nextpage . '?oid=' . $organizations[0]['id'] . '&tid=' . $organizations[0]['trans_dept_id'] . '&priority=1',
+                            'button_text' => 'Pick Up Now!',
                         );
                     }
                 }
 
                 $template = $this->get_template_part( 'form1.select-your-organization.row' );
-                $search = array( '{name}', '{desc}', '{link}' );
+                $search = array( '{name}', '{desc}', '{link}', '{button_text}' );
 
                 if( ! $organizations ){
                     $this->add_html( '<div class="alert alert-warning"><strong>No default organization found!</strong><br />No default organization has been specified in the Donation Manager settings.</div>' );
@@ -925,6 +926,7 @@ class DonationManager {
 
                 $priority_rows = array();
                 foreach( $organizations as $org ) {
+                    // Setup button link
                     if(
                         isset( $org['alternate_donate_now_url'] )
                         && filter_var( $org['alternate_donate_now_url'], FILTER_VALIDATE_URL )
@@ -933,7 +935,11 @@ class DonationManager {
                     } else {
                         $link = $nextpage . '?oid=' . $org['id'] . '&tid=' . $org['trans_dept_id'];
                     }
-                    $replace = array( $org['name'], $org['desc'], $link );
+
+                    // Setup button text
+                    $button_text = ( isset( $org['button_text'] ) )? $org['button_text'] : 'Donate Now!';
+
+                    $replace = array( $org['name'], $org['desc'], $link, $button_text );
 
                     $ads = $this->get_trans_dept_ads( $org['trans_dept_id'] );
 

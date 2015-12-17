@@ -1462,7 +1462,7 @@ class DonationManager {
         }
 
         // Get all email addresses for contacts in our group of zipcodes
-        $sql = 'SELECT ID,email_address FROM ' . $wpdb->prefix . 'dm_contacts WHERE receive_emails=1 AND priority=' . $args['priority'] . ' AND zipcode IN (' . $zipcodes . ')';
+        $sql = 'SELECT ID,zipcode,email_address FROM ' . $wpdb->prefix . 'dm_contacts WHERE receive_emails=1 AND priority=' . $args['priority'] . ' AND zipcode IN (' . $zipcodes . ')';
         if( ! is_null( $args['limit'] ) && is_numeric( $args['limit'] ) )
             $sql.= ' LIMIT ' . $args['limit'];
         $contacts = $wpdb->get_results( $sql );
@@ -1473,8 +1473,19 @@ class DonationManager {
         if( $contacts ){
             $contacts_array = array();
             foreach( $contacts as $contact ){
-                if( ! in_array( $contact->email_address,  $contacts_array ) )
+                if( ! in_array( $contact->email_address,  $contacts_array ) ){
                     $contacts_array[$contact->ID] = $contact->email_address;
+                }
+
+                if( trim( $args['pcode'] ) == trim( $contact->zipcode ) ){
+                    // Give priority to the contact for this $args['pcode'],
+                    // otherwise we are setting the contact to the first
+                    // zipcode returned.
+                    $key = array_search( $contact->email_address, $contacts_array );
+                    unset( $contacts_array[$key] );
+                    $contacts_array[$contact->ID] = $contact->email_address;
+
+                }
             }
         }
 

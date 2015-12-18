@@ -1,0 +1,40 @@
+<h3>How to Import Pick Up Providers</h3>
+<p><strong>Step 1:</strong> Setup your CSV with the following columns:</p>
+
+<table class="widefat">
+	<thead>
+		<tr class="alternate">
+			<th>store_name</th>
+			<th>zipcode</th>
+			<th>email</th>
+			<th>receive_emails</th>
+			<th>priority</th>
+		</tr>
+	</thead>
+	<tbody>
+		<tr>
+			<td>Non-Profit Store</td>
+			<td>12345</td>
+			<td>nonprofit@example.org</td>
+			<td>1</td>
+			<td>0</td>
+		</tr>
+		<tr class="alternate">
+			<td>PRIORITY Pick Up Provider</td>
+			<td>98765</td>
+			<td>priority@example.com</td>
+			<td>1</td>
+			<td>1</td>
+		</tr>
+	</tbody>
+</table>
+
+<h5>Notes</h5>
+<ul>
+<li><code>receive_emails</code> (<code>0</code> or <code>1</code>) -  <code>0</code> = <code>false</code> (i.e. don't receive emails), <code>1</code> = <code>true</code> (i.e. receive emails). If this is your first time uploading all the contacts in your CSV, then <code>receive_emails</code> should be set to <code>1</code> for all rows in your CSV.</li>
+<li><code>priority</code> (<code>0</code> or <code>1</code>) - <code>0</code> for non-profits, <code>1</code> for priority pick up providers.</li>
+</ul>
+
+<p><strong>Step 2:</strong> Upload your CSV via the <em>Upload a CSV</em> dialog below. After your CSV has uploaded, click on the button labeled <em>Insert Into Post</em>. Your new CSV will appear in the list below.</p>
+
+<p><strong>Step 3:</strong> Click on the title of your uploaded CSV to preview the first five rows. If everything looks "ok", click on the button to import the file. <strong>IMPORANT:</strong> <em>Do not close your browser while the upload is working.</em> Once your import has finished, you may delete your CSV.</p>

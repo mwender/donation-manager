@@ -567,6 +567,7 @@ class DMOrphanedDonations extends DonationManager {
 
 						<h2 class="nav-tab-wrapper">
 								<a href="edit.php?post_type=donation&page=orphaned-donations" class="nav-tab<?php echo ( 'default' == $active_tab )? ' nav-tab-active' : ''; ?>">Donations</a>
+								<a href="edit.php?post_type=donation&page=orphaned-donations&tab=providers" class="nav-tab<?php echo ( 'providers' == $active_tab )? ' nav-tab-active' : ''; ?>">Providers</a>
 								<a href="edit.php?post_type=donation&page=orphaned-donations&tab=import" class="nav-tab<?php echo ( 'import' == $active_tab )? ' nav-tab-active' : ''; ?>">Import</a>
 								<a href="edit.php?post_type=donation&page=orphaned-donations&tab=utilities" class="nav-tab<?php echo ( 'utilities' == $active_tab )? ' nav-tab-active' : ''; ?>">Utilities</a>
 						</h2>
@@ -574,15 +575,18 @@ class DMOrphanedDonations extends DonationManager {
 						<div class="wrap">
 						<?php
 		switch ( $active_tab ) {
-		case 'utilities':
-			include_once plugin_dir_path( __FILE__ ) . '../includes/orphaned-donations.utilities.php';
-			break;
-		case 'import':
-			include_once plugin_dir_path( __FILE__ ) . '../includes/orphaned-donations.import.php';
-			break;
-		default:
-			include_once plugin_dir_path( __FILE__ ) . '../includes/orphaned-donations.php';
-			break;
+			case 'import':
+				include_once plugin_dir_path( __FILE__ ) . '../includes/orphaned-donations.import.php';
+				break;
+			case 'utilities':
+				include_once plugin_dir_path( __FILE__ ) . '../includes/orphaned-donations.utilities.php';
+				break;
+			case 'providers':
+				include_once plugin_dir_path( __FILE__ ) . '../includes/orphaned-donations.providers.php';
+				break;
+			default:
+				include_once plugin_dir_path( __FILE__ ) . '../includes/orphaned-donations.php';
+				break;
 		}
 ?>
 						</div>

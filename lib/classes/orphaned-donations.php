@@ -23,6 +23,7 @@ class DMOrphanedDonations extends DonationManager {
 		// AJAX TESTS for Orphaned Donations
 		add_action( 'wp_ajax_orphaned_utilities_ajax', array( $this, 'utilities_callback' ) );
 		add_action( 'wp_ajax_query_orphaned_donations', array( $this, 'query_orphaned_donations' ) );
+		add_action( 'wp_ajax_query_orphaned_donation_pickup_providers', array( $this, 'query_orphaned_donation_pickup_providers' ) );
 	}
 
 	/**
@@ -437,6 +438,57 @@ class DMOrphanedDonations extends DonationManager {
 	}
 
 	/**
+	 * Returns orphaned donation pickup providers SQL.
+	 */
+	private function _get_orphaned_donation_pickup_providers_query( $args ){
+		global $wpdb;
+
+		$args = wp_parse_args( $args, array(
+				'orderby' => 'store_name',
+				'sort' => 'DESC',
+				'limit' => null,
+				'offset' => null,
+				'search' => null,
+				'priority' => 'all',
+		));
+
+		// Since priority, orderby, sort, and limit can be passed via
+		// AJAX, let's ensure these vars are clean:
+		$priority = '';
+		if ( 'all' !== $args['priority'] ) {
+			if ( 0 === $args['priority'] || 1 === $args['priority'] )
+				$priority = "\n\t\t" . 'AND priority="' . $args['priority'] . '"';
+		}
+
+		$order_cols = array( 'store_name', 'email_address', 'zipcode' );
+		$orderby = ( 'total_donations' != $args['orderby'] && in_array( $args['orderby'],  $order_cols ) )? $args['orderby'] : 'store_name';
+
+		$sort = ( 'DESC' != $args['sort'] )? 'ASC' : 'DESC';
+
+		$limit = ( is_numeric( $args['limit'] ) )? 'LIMIT ' . $args['limit'] : '';
+		if ( is_numeric( $args['offset'] ) && 0 < $args['offset'] )
+			$limit.= ' OFFSET ' . $args['offset'];
+
+		if ( ! empty( $args['search'] ) ) {
+			$search = "\n\t\t" . 'AND email_address LIKE \'%' . esc_sql( $args['search'] ) . '%\'';
+		}
+
+		$sql_format = 'SELECT contacts.ID,store_name,zipcode,email_address,receive_emails,timestamp,COUNT(donation_id) AS total_donations
+				FROM ' . $wpdb->prefix . 'dm_contacts AS contacts, ' . $wpdb->prefix . 'dm_orphaned_donations AS donations
+				WHERE contacts.ID = donations.contact_id %s%s%s
+				GROUP BY contact_id
+				ORDER BY %s %s
+				%s';
+
+		$sql_format = 'SELECT ID,store_name,zipcode,email_address,receive_emails,priority
+				FROM ' . $wpdb->prefix . 'dm_contacts
+				ORDER BY %s %s
+				%s';
+
+		return sprintf( $sql_format, $orderby, $sort, $limit );
+	}
+
+	/**
 	 * Returns orphaned donations SQL.
 	 *
 	 * @global object $wpdb WordPress database object.
@@ -592,6 +644,82 @@ class DMOrphanedDonations extends DonationManager {
 						</div>
 
 				</div><?php
+	}
+
+	public function query_orphaned_donation_pickup_providers(){
+		global $wpdb;
+
+		$response = new stdClass(); // returned as JSON
+		$args = array(); // passed to WP_Query( $args )
+
+		$response->draw = $_POST['draw']; // $draw == 1 for the first request when the page is requested
+
+		// Paging and offset
+		$response->offset = ( isset( $_POST['start'] ) && is_numeric( $_POST['start'] ) )? $_POST['start'] : 0;
+		$args['offset'] = $response->offset;
+
+		$response->limit = ( isset( $_POST['length'] ) )? (int) $_POST['length'] : 10;
+
+		// ORDER BY
+		$cols = array( 1 => 'store_name', 2 => 'email_address', 3 => 'zipcode', 4 => 'priority' );
+		$order_key = ( isset( $_POST['order'][0]['column'] ) && array_key_exists( $_POST['order'][0]['column'], $cols ) )? $_POST['order'][0]['column'] : 0;
+		$response->orderby = $cols[$order_key];
+		$response->order_key = $order_key;
+
+		// Sorting (ASC||DESC)
+		$response->sort = ( isset( $_POST['order'][0]['dir'] ) )? strtoupper( $_POST['order'][0]['dir'] ) : 'DESC';
+
+		// Search
+		if ( isset( $_POST['search']['value'] ) ) {
+			$response->search = $_POST['search']['value'];
+		}
+
+		// SQL: Count the total number of records
+		$count_sql = $this->_get_orphaned_donation_pickup_providers_query( array( 'orderby' => $response->orderby, 'sort' => $response->sort, 'search' => $response->search, 'priority' => $priority ) );
+
+		$wpdb->get_results( $count_sql );
+		$response->recordsTotal = (int) $wpdb->num_rows;
+		$response->recordsFiltered = (int) $wpdb->num_rows;
+		$response->count_sql = $wpdb->last_query;
+
+		// Get the data
+		$data = array();
+
+		// SQL: Get the stores
+		$stores_sql = $this->_get_orphaned_donation_pickup_providers_query( array( 'orderby' => $response->orderby, 'sort' => $response->sort, 'limit' => $response->limit, 'offset' => $response->offset, 'search' => $response->search, 'priority' => $priority ) );
+		$stores = $wpdb->get_results( $stores_sql );
+
+		$response->stores = $stores;
+		$response->stores_sql = $stores_sql;
+
+		if ( 0 < count( $stores ) ) {
+			$x = 0;
+			foreach ( $stores as $store ) {
+				$domain = '';
+				$generic_domains = array( 'gmail.com', 'hotmail.com', 'verizon.net', 'comcast.net', 'sbcglobal.net', 'yahoo.com', 'att.net', 'chilitech.net', 'aol.com', 'yahoo.co', 'earthlink.net' );
+				if ( stristr( $store->email_address, '@' ) ) {
+					$email_array = explode( '@', $store->email_address );
+					$domain = $email_array[1];
+				}
+				$website = ( ! empty( $domain ) && ! in_array( $domain, $generic_domains ) )? '<a href="http://' . $domain . '" target="_blank">' . $domain . '</a>' : '&nbsp;';
+
+				$subscribed = ( true == $store->receive_emails )? '<span style="color: #090">Yes</span>' : '<span style="color: #900">No</span>';
+				$data[$x] = array(
+					'id' => $store->ID,
+					'store_name' => $store->store_name,
+					'zipcode' => $store->zipcode,
+					'website' => $website,
+					'email_address' => '<a href="mailto:' . $store->email_address . '">' . $store->email_address . '</a>',
+					'receive_emails' => $subscribed,
+					'priority' => $store->priority,
+				);
+				$x++;
+			}
+		}
+
+		$response->data = $data;
+
+		wp_send_json( $response );
 	}
 
 	/**

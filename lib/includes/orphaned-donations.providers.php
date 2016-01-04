@@ -1,4 +1,4 @@
-<table id="orphaned-donation-providers" class="display">
+<table id="orphaned-donation-pickup-providers" class="display">
 	<colgroup>
 		<col style="" />
 		<col style="width: 35%" />
@@ -9,6 +9,7 @@
 	</colgroup>
 	<thead>
 		<tr>
+			<th></th>
 			<th>Name</th>
 			<th>Email</th>
 			<th>Zip Code</th>

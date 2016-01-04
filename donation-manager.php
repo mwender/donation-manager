@@ -2460,6 +2460,7 @@ add_action( 'save_post', array( $DonationManager, 'custom_save_post' ) );
 
 // Include our Orphaned Donations Class
 require 'lib/classes/orphaned-donations.php';
+$DMOrphanedDonations = DMOrphanedDonations::get_instance();
 
 // Include our Reporting Class
 require 'lib/classes/donation-reports.php';

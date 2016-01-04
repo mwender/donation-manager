@@ -823,6 +823,4 @@ class DMOrphanedDonations extends DonationManager {
 		wp_send_json( $response );
 	}
 }
-
-$DMOrphanedDonations = DMOrphanedDonations::get_instance();
 ?>

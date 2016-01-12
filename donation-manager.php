@@ -941,7 +941,8 @@ class DonationManager {
 
                     $replace = array( $org['name'], $org['desc'], $link, $button_text );
 
-                    $ads = $this->get_trans_dept_ads( $org['trans_dept_id'] );
+                    if( ! empty( $org['trans_dept_id'] ) )
+                        $ads = $this->get_trans_dept_ads( $org['trans_dept_id'] );
 
                     if( $org['priority_pickup'] ){
                         $priority_rows[] = str_replace( $search, $replace, $template );

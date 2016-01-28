@@ -937,7 +937,13 @@ class DonationManager {
                     }
 
                     // Setup button text
-                    $button_text = ( isset( $org['button_text'] ) )? $org['button_text'] : 'Donate Now!';
+                    if( isset( $org['button_text'] ) ){
+                        $button_text = $org['button_text'];
+                    } else if ( $org['priority_pickup'] ){
+                        $button_text = 'Pick Up Now!';
+                    } else {
+                        $button_text = 'Donate Now!';
+                    }
 
                     $replace = array( $org['name'], $org['desc'], $link, $button_text );
 

@@ -829,12 +829,20 @@ class DonationManager {
                 $row_template = $this->get_template_part( 'form2.donation-option-row' );
                 $search = array( '{key}', '{name}', '{desc}', '{value}', '{checked}', '{pickup}', '{skip_questions}', '{term_id}' );
                 foreach( $donation_options as $key => $opt ) {
-                    $checked = ( trim( $_POST['donor']['options'][$key]['field_value'] ) == $opt['value'] )? ' checked="checked"' : '';
+                    $checked = '';
+                    if( isset( $_SESSION['donor']['items'][$opt['term_id']] ) )
+                        $checked = ' checked="checked"';
+                    if( trim( $_POST['donor']['options'][$key]['field_value'] ) == $opt['value'] )
+                        $checked = ' checked="checked"';
                     $replace = array( $key, $opt['name'], $opt['desc'], $opt['value'], $checked, $opt['pickup'], $opt['skip_questions'], $opt['term_id'] );
                     $checkboxes[] = str_replace( $search, $replace, $row_template );
                 }
 
-                $description = ( isset( $_POST['donor']['description'] ) )? esc_textarea( $_POST['donor']['description'] ) : '';
+                $description = '';
+                if( isset( $_SESSION['donor']['description'] ) )
+                    $description = esc_textarea( $_SESSION['donor']['description'] );
+                if( isset( $_POST['donor']['description'] ) )
+                    $description = esc_textarea( $_POST['donor']['description'] );
 
                 $html.= $this->get_template_part( 'form2.donation-options-form', array(
                     'step_one_note' => $step_one_note,

@@ -758,9 +758,14 @@ class DonationManager {
 
             case 'no-damaged-items-message':
                 $no_damaged_items_message = apply_filters( 'the_content', get_option( 'donation_settings_no_damaged_items_message' ) );
-                $search = array( '{organization}' );
+
                 $organization = get_the_title( $_SESSION['donor']['org_id'] );
-                $replace = array( $organization );
+
+                // Priority Donation Backlinks
+                $priority_html = $this->get_priority_pickup_links( $_SESSION['donor']['pickup_code'] );
+
+                $search = array( '{organization}', '{priority_pickup_option}' );
+                $replace = array( $organization, $priority_html );
                 $html.= str_replace( $search, $replace, $no_damaged_items_message );
 
                 $html.= DonationManager::get_stores_footer( $_SESSION['donor']['trans_dept_id'] );
@@ -769,9 +774,14 @@ class DonationManager {
 
             case 'no-pickup-message':
                 $no_pickup_message = apply_filters( 'the_content', get_option( 'donation_settings_no_pickup_message' ) );
-                $search = array( '{organization}' );
+
                 $organization = get_the_title( $_SESSION['donor']['org_id'] );
-                $replace = array( $organization );
+
+                // Priority Donation Backlinks
+                $priority_html = $this->get_priority_pickup_links( $_SESSION['donor']['pickup_code'] );
+
+                $search = array( '{organization}', '{priority_pickup_option}' );
+                $replace = array( $organization, $priority_html );
                 $html.= str_replace( $search, $replace, $no_pickup_message );
                 $html.= $this->get_stores_footer( $_SESSION['donor']['trans_dept_id'] );
                 $this->add_html( $html );
@@ -1364,6 +1374,61 @@ class DonationManager {
     }
 
     /**
+     * Returns priority organizations for a given $pickup_code.
+     */
+    public function get_priority_organizations( $pickup_code = null ){
+        if( is_null( $pickup_code ) )
+            return false;
+
+        $args = array(
+            'post_type' => 'trans_dept',
+            'tax_query' => array(
+                array(
+                    'taxonomy'  => 'pickup_code',
+                    'terms'     => $pickup_code,
+                    'field'     => 'slug'
+                )
+            )
+        );
+        $query = new WP_Query( $args );
+
+        if( $query->have_posts() ){
+            while( $query->have_posts() ) {
+                $query->the_post();
+                global $post;
+                setup_postdata( $post );
+                $org = get_post_meta( $post->ID, 'organization', true );
+                $priority_pickup = (bool) get_post_meta( $org['ID'], 'priority_pickup', true );
+                $alternate_donate_now_url = get_post_meta( $org['ID'], 'alternate_donate_now_url', true );
+
+                if( $org && $priority_pickup )
+                    $organizations[] = array( 'id' => $org['ID'], 'name' => $org['post_title'], 'desc' => $org['post_content'], 'trans_dept_id' => $post->ID, 'alternate_donate_now_url' => $alternate_donate_now_url, 'priority_pickup' => 1 );
+            }
+            wp_reset_postdata();
+        } else {
+            // No priority orgs for this zip, return PMD as priority so we can
+            // use the Priority Orphan DB
+            $default_org = $this->get_default_organization();
+            //$show_priority_pickup = true;
+
+            // Only provide the PRIORITY option for areas where there is
+            // a priority provider in the contacts table.
+            $contacts = $this->get_orphaned_donation_contacts( array( 'pcode' => $pickup_code, 'limit' => 1, 'priority' => 1 ) );
+
+            if( 0 < count( $contacts ) ){
+                $organizations[] = array(
+                    'name' => 'Priority Pick Up (<em>Fee Based - $</em>)',
+                    'desc' => '<div class="alert alert-info">Choosing <strong>PRIORITY</strong> Pick Up will send your request to all of the <em>fee-based</em> pick up providers in our database.  These providers will pick up "almost" <strong>ANYTHING</strong> you have for a fee, and their service provides <em>additional benefits</em> such as the removal of items from anywhere inside your property to be taken to a local non-profit, as well as the removal of junk and items local non-profits cannot accept.<br><br><em>In most cases your donation is still tax-deductible, and these organizations will respond in 24hrs or less. Check with whichever pick up provider you choose.</em></div>',
+                    'alternate_donate_now_url' => get_option( 'siteurl' ) . '/step-one/?oid=' . $default_org[0]['id'] . '&tid=' . $default_org[0]['trans_dept_id'] . '&priority=1',
+                    'button_text' => 'Pick Up Now!',
+                );
+            }
+        }
+
+        return $organizations;
+    }
+
+    /**
      * Retrieves all organizations for a given pickup code.
      */
     public function get_organizations( $pickup_code ) {
@@ -1555,6 +1620,40 @@ class DonationManager {
         ksort( $meta_array );
 
         return $meta_array;
+    }
+
+    /**
+     * Returns Priority Pick Up HTML.
+     */
+    private function get_priority_pickup_links( $pickup_code = null ){
+        if( is_null( $pickup_code ) )
+            return false;
+
+        // Priority Donation Backlinks
+        $priority_html = '';
+        $priority_orgs = $this->get_priority_organizations( $pickup_code );
+        if( is_array( $priority_orgs ) ){
+            $template = $this->get_template_part( 'form1.select-your-organization.row' );
+            $search = array( '{name}', '{desc}', '{link}', '{button_text}' );
+            foreach( $priority_orgs as $org ){
+                // Setup button link
+                if(
+                    isset( $org['alternate_donate_now_url'] )
+                    && filter_var( $org['alternate_donate_now_url'], FILTER_VALIDATE_URL )
+                ){
+                    $link = $org['alternate_donate_now_url'];
+                } else {
+                    $link = '/step-one/?oid=' . $org['id'] . '&tid=' . $org['trans_dept_id'] . '&priority=1';
+                }
+
+                $replace = array( $org['name'], $org['desc'], $link, 'Pick Up Now!' );
+
+                $rows[] = str_replace( $search, $replace, $template );
+            }
+            $priority_html = '<div class="alert alert-warning"><h3 style="margin-top: 0;">Priority Pick Up Option</h3><p style="margin-bottom: 20px;">Even though your items don\'t qualify for pick up, you can connect with our "fee based" priority pick up partner that will pick up items we can\'t use as well as any other items you would like to recycle or throw away:</p></div>' . implode( "\n", $rows );
+        }
+
+        return $priority_html;
     }
 
     /**

@@ -953,6 +953,8 @@ class DonationManager {
                     } else {
                         $link = $nextpage . '?oid=' . $org['id'] . '&tid=' . $org['trans_dept_id'];
                     }
+                    if( true == $org['priority_pickup'] && ! stristr( $link, '&priority=1') )
+                        $link.= '&priority=1';
 
                     // Setup button text
                     if( isset( $org['button_text'] ) ){

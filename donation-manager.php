@@ -909,23 +909,20 @@ class DonationManager {
 
                 $organizations = $this->get_organizations( $pickup_code );
 
-                //$show_priority_pickup = false;
                 if( false == $organizations ){
-                    $organizations = $this->get_default_organization();
-                    //$show_priority_pickup = true;
+                    // Default non-profit org
+                    $default_org = $this->get_default_organization();
+                    $organizations[] = $default_org[0];
+
+                    // Default priority org
+                    $default_priority_org = $this->get_default_organization( true );
 
                     // Only provide the PRIORITY option for areas where there is
                     // a priority provider in the contacts table.
                     $contacts = $this->get_orphaned_donation_contacts( array( 'pcode' => $pickup_code, 'limit' => 1, 'priority' => 1 ) );
 
-                    if( 0 < count( $contacts ) ){
-                        $organizations[] = array(
-                            'name' => 'Priority Pick Up (<em>Fee Based - $</em>)',
-                            'desc' => '<div class="alert alert-info">Choosing <strong>PRIORITY</strong> Pick Up will send your request to all of the <em>fee-based</em> pick up providers in our database.  These providers will pick up "almost" <strong>ANYTHING</strong> you have for a fee, and their service provides <em>additional benefits</em> such as the removal of items from anywhere inside your property to be taken to a local non-profit, as well as the removal of junk and items local non-profits cannot accept.<br><br><em>In most cases your donation is still tax-deductible, and these organizations will respond in 24hrs or less. Check with whichever pick up provider you choose.</em></div>',
-                            'alternate_donate_now_url' => $nextpage . '?oid=' . $organizations[0]['id'] . '&tid=' . $organizations[0]['trans_dept_id'] . '&priority=1',
-                            'button_text' => 'Pick Up Now!',
-                        );
-                    }
+                    if( 0 < count( $contacts ) )
+                        $organizations[] = $default_priority_org[0];
                 }
 
                 $template = $this->get_template_part( 'form1.select-your-organization.row' );
@@ -1273,7 +1270,7 @@ class DonationManager {
     /**
      * Retrieves the default organization as defined on the Donation Settings option screen.
      */
-    public function get_default_organization() {
+    public function get_default_organization( $priority = false ) {
         $default_organization = get_option( 'donation_settings_default_organization' );
         $default_trans_dept = get_option( 'donation_settings_default_trans_dept' );
         $organization = array();
@@ -1282,7 +1279,27 @@ class DonationManager {
             $default_org_id = $default_organization[0];
             $default_org = get_post( $default_org_id );
             $alternate_donate_now_url = get_post_meta( $default_org_id, 'alternate_donate_now_url', true );
-            $organization[] = array( 'id' => $default_org->ID, 'name' => $default_org->post_title, 'desc' => $default_org->post_content, 'trans_dept_id' => $default_trans_dept[0], 'alternate_donate_now_url' => $alternate_donate_now_url );
+
+            if( true == $priority ){
+                $organization[] = array(
+                    'id' => $default_org->ID,
+                    'name' => 'Priority Pick Up (<em>Fee Based - $</em>)',
+                    'desc' => '<div class="alert alert-info">Choosing <strong>PRIORITY</strong> Pick Up will send your request to all of the <em>fee-based</em> pick up providers in our database.  These providers will pick up "almost" <strong>ANYTHING</strong> you have for a fee, and their service provides <em>additional benefits</em> such as the removal of items from anywhere inside your property to be taken to a local non-profit, as well as the removal of junk and items local non-profits cannot accept.<br><br><em>In most cases your donation is still tax-deductible, and these organizations will respond in 24hrs or less. Check with whichever pick up provider you choose.</em></div>',
+                    'trans_dept_id' => $default_trans_dept[0],
+                    'alternate_donate_now_url' => site_url( '/step-one/?oid=' . $default_org->ID . '&tid=' . $default_trans_dept[0] . '&priority=1' ),
+                    'button_text' => 'Pick Up Now!',
+                );
+            } else {
+                $organization[] = array(
+                    'id' => $default_org->ID,
+                    'name' => $default_org->post_title,
+                    'desc' => $default_org->post_content,
+                    'trans_dept_id' => $default_trans_dept[0],
+                    'alternate_donate_now_url' => $alternate_donate_now_url,
+                    'button_text' => 'Donate Now!',
+                );
+            }
+
             return $organization;
         } else {
             return false;
@@ -1394,6 +1411,8 @@ class DonationManager {
         );
         $query = new WP_Query( $args );
 
+        $organizations = array();
+
         if( $query->have_posts() ){
             while( $query->have_posts() ) {
                 $query->the_post();
@@ -1407,24 +1426,21 @@ class DonationManager {
                     $organizations[] = array( 'id' => $org['ID'], 'name' => $org['post_title'], 'desc' => $org['post_content'], 'trans_dept_id' => $post->ID, 'alternate_donate_now_url' => $alternate_donate_now_url, 'priority_pickup' => 1 );
             }
             wp_reset_postdata();
+            if( 0 == count( $organizations ) ){
+                $default_org = $this->get_default_organization( true );
+                $organizations[] = $default_org[0];
+            }
         } else {
-            // No priority orgs for this zip, return PMD as priority so we can
+            // No orgs for this zip, return PMD as priority so we can
             // use the Priority Orphan DB
-            $default_org = $this->get_default_organization();
-            //$show_priority_pickup = true;
+            $default_org = $this->get_default_organization( true );
 
             // Only provide the PRIORITY option for areas where there is
             // a priority provider in the contacts table.
             $contacts = $this->get_orphaned_donation_contacts( array( 'pcode' => $pickup_code, 'limit' => 1, 'priority' => 1 ) );
 
-            if( 0 < count( $contacts ) ){
-                $organizations[] = array(
-                    'name' => 'Priority Pick Up (<em>Fee Based - $</em>)',
-                    'desc' => '<div class="alert alert-info">Choosing <strong>PRIORITY</strong> Pick Up will send your request to all of the <em>fee-based</em> pick up providers in our database.  These providers will pick up "almost" <strong>ANYTHING</strong> you have for a fee, and their service provides <em>additional benefits</em> such as the removal of items from anywhere inside your property to be taken to a local non-profit, as well as the removal of junk and items local non-profits cannot accept.<br><br><em>In most cases your donation is still tax-deductible, and these organizations will respond in 24hrs or less. Check with whichever pick up provider you choose.</em></div>',
-                    'alternate_donate_now_url' => get_option( 'siteurl' ) . '/step-one/?oid=' . $default_org[0]['id'] . '&tid=' . $default_org[0]['trans_dept_id'] . '&priority=1',
-                    'button_text' => 'Pick Up Now!',
-                );
-            }
+            if( 0 < count( $contacts ) )
+                $organizations[] = $default_org[0];
         }
 
         return $organizations;
@@ -1476,8 +1492,24 @@ class DonationManager {
             // pick up provider (i.e. PMD) to the beginning of the list.
             if( 1 == count( $organizations ) && true == $priority_pickup ){
                 $org = $this->get_default_organization();
-                $default_org = array( 'id' => $org[0]['id'], 'name' => $org[0]['name'], 'desc' => $org[0]['desc'], 'trans_dept_id' => $org[0]['trans_dept_id'], 'alternate_donate_now_url' => $org['alternate_donate_now_url'] );
+                $default_org = array(
+                    'id' => $org[0]['id'],
+                    'name' => $org[0]['name'],
+                    'desc' => $org[0]['desc'],
+                    'trans_dept_id' => $org[0]['trans_dept_id'],
+                    'alternate_donate_now_url' => $org['alternate_donate_now_url']
+                );
                 array_unshift( $organizations, $default_org );
+            } else if ( 1 == count( $organizations ) && false == $priority_pickup ){
+                // Add our default priority pick up option to the end of the array.
+                $org = $this->get_default_organization( true );
+                $organizations[] = array(
+                    'name'                      => $org[0]['name'],
+                    'desc'                      => $org[0]['desc'],
+                    'trans_dept_id'             => $org[0]['trans_dept_id'],
+                    'alternate_donate_now_url'  => $org[0]['alternate_donate_now_url'],
+                    'priority_pickup'           => true,
+                );
             }
         } else {
             return false;

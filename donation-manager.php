@@ -768,7 +768,7 @@ class DonationManager {
                 $replace = array( $organization, $priority_html );
                 $html.= str_replace( $search, $replace, $no_damaged_items_message );
 
-                $html.= DonationManager::get_stores_footer( $_SESSION['donor']['trans_dept_id'] );
+                $html.= DonationManager::get_stores_footer( $_SESSION['donor']['trans_dept_id'], false );
                 $this->add_html( $html );
             break;
 
@@ -980,7 +980,7 @@ class DonationManager {
                 if( 0 < count( $priority_rows ) )
                     $rows = array_merge( $rows, $priority_rows );
 
-                $this->add_html( implode( "\n", $rows ) );
+                $this->add_html( '<div class="select-your-organization">' . implode( "\n", $rows ) . '</div>' );
             break;
 
             case 'thank-you':
@@ -1648,11 +1648,11 @@ class DonationManager {
                     $link = '/step-one/?oid=' . $org['id'] . '&tid=' . $org['trans_dept_id'] . '&priority=1';
                 }
 
-                $replace = array( $org['name'], $org['desc'], $link, 'Pick Up Now!' );
+                $replace = array( $org['name'], '', $link, 'Pick Up Now!' );
 
                 $rows[] = str_replace( $search, $replace, $template );
             }
-            $priority_html = '<div class="alert alert-warning"><h3 style="margin-top: 0;">Priority Pick Up Option</h3><p style="margin-bottom: 20px;">Even though your items don\'t qualify for pick up, you can connect with our "fee based" priority pick up partner that will pick up items we can\'t use as well as any other items you would like to recycle or throw away:</p></div>' . implode( "\n", $rows );
+            $priority_html = '<div class="alert alert-warning"><h3 style="margin-top: 0;">Priority Pick Up Option</h3><p style="margin-bottom: 20px;">Even though your items don\'t qualify for pick up, you can connect with our "fee based" priority pick up partner that will pick up items we can\'t use as well as any other items you would like to recycle or throw away:</p>' . implode( "\n", $rows ) . '</div>';
         }
 
         return $priority_html;
@@ -1873,7 +1873,7 @@ class DonationManager {
     /**
      * Retrieves HTML for showing Trans Dept Contact and all Stores for Trans Dept.
      */
-    public function get_stores_footer( $trans_dept_id ) {
+    public function get_stores_footer( $trans_dept_id, $get_stores = true ) {
         $html = '';
         // Get our trans dept director
         $trans_dept_contact = $this->get_trans_dept_contact( $trans_dept_id );
@@ -1886,6 +1886,9 @@ class DonationManager {
                 $organization = get_the_title( $_SESSION['donor']['org_id'] );
             $replace = array( $trans_dept_contact['contact_name'], $trans_dept_contact['contact_email'], $organization, $trans_dept_contact['contact_title'], $trans_dept_contact['phone'] );
             $html.= str_replace( $search, $replace, $nopickup_contact_html );
+
+            if( false == $get_stores )
+                return $html;
 
             // Query the Transportation Department's stores
             $args = array(

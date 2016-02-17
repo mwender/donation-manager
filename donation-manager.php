@@ -823,9 +823,10 @@ class DonationManager {
                 $note = $pod->get_field( 'step_one_note' );
                 if( ! empty( $note ) )
                     $step_one_note = $note;
-
+                /*
                 if( true == $_SESSION['donor']['priority'] )
                     $step_one_note = '<div class="alert alert-success"><strong>PRIORITY PICK UP OPTION:</strong> You have choosen our priority pick up option. Your donation will be routed to our <em>fee-based</em> provider(s) in your area.</div>' . $step_one_note;
+                */
 
                 $donation_options = array();
                 foreach( $terms as $term ) {

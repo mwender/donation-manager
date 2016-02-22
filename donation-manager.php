@@ -1784,6 +1784,27 @@ class DonationManager {
     }
 
     /**
+     * Returns organization’s donation routing method.
+     *
+     * @access self::send_email()
+     * @since 1.4.0
+     *
+     * @param int $org_id Organization ID.
+     * @return string Organization's routing method. Defaults to `email`.
+     */
+    private function _get_donation_routing_method( $org_id = null ){
+        if( is_null( $org_id ) )
+            return false;
+
+        $donation_routing = get_post_meta( $org_id, 'donation_routing', true );
+
+        if( empty( $donation_routing ) )
+            $donation_routing = 'email';
+
+        return $donation_routing;
+    }
+
+    /**
      * Returns first array value from $_SESSION[‘donor’][‘url_path’]
      *
      * @since 1.?.?
@@ -2395,6 +2416,23 @@ class DonationManager {
             break;
 
             case 'trans_dept_notification':
+                // Donation Routing Method
+                if( ! $orphaned_donation ){
+                    $routing_method = $this->_get_donation_routing_method( $donor['org_id'] );
+                    if( 'email' == $routing_method )
+                        continue;
+
+                    switch( $routing_method ){
+                        case 'api-chhj':
+                            require_once 'lib/classes/donation-router.php';
+                            require_once 'lib/classes/donation-router.chhj.php';
+                            $CHHJDonationRouter = CHHJDonationRouter::get_instance();
+                            $CHHJDonationRouter->submit_donation( $donor );
+                            return;
+                        break;
+                    }
+                }
+
                 $recipients = array( $tc['contact_email'] );
                 if( is_array( $tc['cc_emails'] ) ){
                     $cc_emails = $tc['cc_emails'];

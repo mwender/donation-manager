@@ -2455,6 +2455,8 @@ class DonationManager {
         });
         add_filter( 'wp_mail_content_type', array( $this, 'return_content_type' ) );
 
+        $subject = html_entity_decode( $subject, ENT_COMPAT, 'UTF-8' );
+
         if( true == $orphaned_donation && 'trans_dept_notification' == $type ){
             // Send normal email to default contact
             wp_mail( $recipients, $subject, $html, $headers );

@@ -38,7 +38,7 @@ class CHHJDonationRouter extends DonationRouter{
             '- ' . $donation['pickupdate2'] . ', ' . $donation['pickuptime2'],
             '- ' . $donation['pickupdate3'] . ', ' . $donation['pickuptime3']
         );
-        $special_instructions = "# PREFERRED PICK UP DATES\n" . implode( "\n", $pickup_dates ) . $pickup_address;
+        $special_instructions = "\n\n# PREFERRED PICK UP DATES\n" . implode( "\n", $pickup_dates ) . $pickup_address;
 
     	$args = array(
     		'body' => array(
@@ -48,7 +48,7 @@ class CHHJDonationRouter extends DonationRouter{
     			'Client_Last_Name' => $donation['address']['name']['last'],
     			'Client_Address' => $donation['address']['address'],
     			'Client_City' => $donation['address']['city'],
-    			'Client_State' => $donation['address']['state'],
+    			'Client_Prov_State' => $donation['address']['state'],
     			'Client_Zip' => $donation['address']['zip'],
     			'Special_Instructions' => $special_instructions,
     			'Client_Email' => $donation['email'],

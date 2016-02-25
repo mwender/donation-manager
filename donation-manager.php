@@ -2419,8 +2419,6 @@ class DonationManager {
                 // Donation Routing Method
                 if( ! $orphaned_donation ){
                     $routing_method = $this->_get_donation_routing_method( $donor['org_id'] );
-                    if( 'email' == $routing_method )
-                        continue;
 
                     switch( $routing_method ){
                         case 'api-chhj':

@@ -977,6 +977,8 @@ class DonationManager {
                         $rows[] = str_replace( $search, $replace, $template );
                     }
                 }
+                if( ! is_array( $rows ) )
+                    $rows = array();
 
                 if( 0 < count( $priority_rows ) )
                     $rows = array_merge( $rows, $priority_rows );

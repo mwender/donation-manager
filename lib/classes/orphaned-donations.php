@@ -449,6 +449,7 @@ class DMOrphanedDonations extends DonationManager {
 				'limit' => null,
 				'offset' => null,
 				'search' => null,
+				'searchfield' => 'email',
 				'priority' => 'all',
 		));
 
@@ -470,22 +471,18 @@ class DMOrphanedDonations extends DonationManager {
 			$limit.= ' OFFSET ' . $args['offset'];
 
 		if ( ! empty( $args['search'] ) ) {
-			$search = "\n\t\t" . 'AND email_address LIKE \'%' . esc_sql( $args['search'] ) . '%\'';
+			$searchfields = array( 'store_name', 'zipcode', 'email_address' );
+			$searchfield = ( in_array( $args['searchfield'], $searchfields ) )? $args['searchfield'] : 'email_address';
+
+			$search = "\n\t\t" . 'WHERE ' . $searchfield . ' LIKE \'%' . esc_sql( $args['search'] ) . '%\'';
 		}
 
-		$sql_format = 'SELECT contacts.ID,store_name,zipcode,email_address,receive_emails,timestamp,COUNT(donation_id) AS total_donations
-				FROM ' . $wpdb->prefix . 'dm_contacts AS contacts, ' . $wpdb->prefix . 'dm_orphaned_donations AS donations
-				WHERE contacts.ID = donations.contact_id %s%s%s
-				GROUP BY contact_id
-				ORDER BY %s %s
-				%s';
-
 		$sql_format = 'SELECT ID,store_name,zipcode,email_address,receive_emails,priority
-				FROM ' . $wpdb->prefix . 'dm_contacts
-				ORDER BY %s %s
-				%s';
+				FROM ' . $wpdb->prefix . 'dm_contacts %4$s
+				ORDER BY %1$s %2$s
+				%3$s';
 
-		return sprintf( $sql_format, $orderby, $sort, $limit );
+		return sprintf( $sql_format, $orderby, $sort, $limit, $search );
 	}
 
 	/**
@@ -673,9 +670,12 @@ class DMOrphanedDonations extends DonationManager {
 		if ( isset( $_POST['search']['value'] ) ) {
 			$response->search = $_POST['search']['value'];
 		}
+		if( isset( $_POST['searchfield'] ) ){
+			$response->searchfield = $_POST['searchfield'];
+		}
 
 		// SQL: Count the total number of records
-		$count_sql = $this->_get_orphaned_donation_pickup_providers_query( array( 'orderby' => $response->orderby, 'sort' => $response->sort, 'search' => $response->search, 'priority' => $priority ) );
+		$count_sql = $this->_get_orphaned_donation_pickup_providers_query( array( 'orderby' => $response->orderby, 'sort' => $response->sort, 'search' => $response->search, 'priority' => $priority, 'searchfield' => $response->searchfield ) );
 
 		$wpdb->get_results( $count_sql );
 		$response->recordsTotal = (int) $wpdb->num_rows;
@@ -686,7 +686,7 @@ class DMOrphanedDonations extends DonationManager {
 		$data = array();
 
 		// SQL: Get the stores
-		$stores_sql = $this->_get_orphaned_donation_pickup_providers_query( array( 'orderby' => $response->orderby, 'sort' => $response->sort, 'limit' => $response->limit, 'offset' => $response->offset, 'search' => $response->search, 'priority' => $priority ) );
+		$stores_sql = $this->_get_orphaned_donation_pickup_providers_query( array( 'orderby' => $response->orderby, 'sort' => $response->sort, 'limit' => $response->limit, 'offset' => $response->offset, 'search' => $response->search, 'priority' => $priority, 'searchfield' => $response->searchfield ) );
 		$stores = $wpdb->get_results( $stores_sql );
 
 		$response->stores = $stores;

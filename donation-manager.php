@@ -2318,6 +2318,26 @@ class DonationManager {
     }
 
     /**
+     * Sends a donation directly to a third-party API.
+     *
+     * @since 1.4.1
+     *
+     * @param array $donation The donation array.
+     * @return void
+     */
+    public function send_api_post( $donation ){
+        switch( $donation['routing_method'] ){
+            case 'api-chhj':
+                require_once 'lib/classes/donation-router.php';
+                require_once 'lib/classes/donation-router.chhj.php';
+                $CHHJDonationRouter = CHHJDonationRouter::get_instance();
+                $CHHJDonationRouter->submit_donation( $donation );
+                return;
+            break;
+        }
+    }
+
+    /**
      * Sends donor confirmation and transportation dept emails.
      *
      * The FROM: address for all emails sent by this function is
@@ -2420,17 +2440,8 @@ class DonationManager {
             case 'trans_dept_notification':
                 // Donation Routing Method
                 if( ! $orphaned_donation ){
-                    $routing_method = $this->_get_donation_routing_method( $donor['org_id'] );
-
-                    switch( $routing_method ){
-                        case 'api-chhj':
-                            require_once 'lib/classes/donation-router.php';
-                            require_once 'lib/classes/donation-router.chhj.php';
-                            $CHHJDonationRouter = CHHJDonationRouter::get_instance();
-                            $CHHJDonationRouter->submit_donation( $donor );
-                            return;
-                        break;
-                    }
+                    $donor['routing_method'] = $this->_get_donation_routing_method( $donor['org_id'] );
+                    $this->send_api_post( $donor );
                 }
 
                 $recipients = array( $tc['contact_email'] );
@@ -2496,8 +2507,17 @@ class DonationManager {
         $subject = html_entity_decode( $subject, ENT_COMPAT, 'UTF-8' );
 
         if( true == $orphaned_donation && 'trans_dept_notification' == $type ){
-            // Send normal email to default contact
+
+            // Send normal email to default contact, any cc_emails for the
+            // trans dept are included in $recipients. So, we use this to
+            // add national pick up providers to the orphaned distribution.
             wp_mail( $recipients, $subject, $html, $headers );
+
+            // Send API post to CHHJ-API, College Hunks Hauling receives
+            // all orphans via this:
+            $donor['routing_method'] = 'api-chhj';
+            $this->send_api_post( $donor );
+
             // Add Orphaned BCC contacts to email sent to orphaned contacts
             $orphaned_headers = array_merge( $headers, $bcc_headers );
             wp_mail( 'noreply@pickupmydonation.com', $subject, $html, $orphaned_headers );

@@ -2442,6 +2442,7 @@ class DonationManager {
                 if( ! $orphaned_donation ){
                     $donor['routing_method'] = $this->_get_donation_routing_method( $donor['org_id'] );
                     $this->send_api_post( $donor );
+                    return;
                 }
 
                 $recipients = array( $tc['contact_email'] );

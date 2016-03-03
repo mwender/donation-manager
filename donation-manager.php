@@ -2332,7 +2332,7 @@ class DonationManager {
                 require_once 'lib/classes/donation-router.chhj.php';
                 $CHHJDonationRouter = CHHJDonationRouter::get_instance();
                 $CHHJDonationRouter->submit_donation( $donation );
-                return;
+                return true;
             break;
         }
     }
@@ -2442,7 +2442,8 @@ class DonationManager {
                 if( ! $orphaned_donation ){
                     $donor['routing_method'] = $this->_get_donation_routing_method( $donor['org_id'] );
                     $this->send_api_post( $donor );
-                    return;
+                    if( 'api-chhj' == $donor['routing_method'] )
+                        return;
                 }
 
                 $recipients = array( $tc['contact_email'] );

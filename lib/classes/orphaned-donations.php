@@ -942,8 +942,8 @@ class DMOrphanedDonations extends DonationManager {
 			if ( 0 < count( $contacts ) ) {
 
 				foreach ( $contacts as $ID => $email ) {
-					$contact_data = $wpdb->get_row( 'SELECT store_name,zipcode FROM ' . $wpdb->prefix . 'dm_contacts WHERE ID=' . $ID );
-					$contacts[$ID] = array( 'name' => $contact_data->store_name, 'email' => $email, 'zipcode' => $contact_data->zipcode  );
+					$contact_data = $wpdb->get_row( 'SELECT store_name,zipcode,priority FROM ' . $wpdb->prefix . 'dm_contacts WHERE ID=' . $ID );
+					$contacts[$ID] = array( 'name' => $contact_data->store_name, 'email' => $email, 'zipcode' => $contact_data->zipcode, 'priority' => $contact_data->priority  );
 				}
 			}
 			$orphaned_donation_routing = get_option( 'donation_settings_orphaned_donation_routing' );

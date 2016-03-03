@@ -2441,9 +2441,10 @@ class DonationManager {
                 // Donation Routing Method
                 if( ! $orphaned_donation ){
                     $donor['routing_method'] = $this->_get_donation_routing_method( $donor['org_id'] );
-                    $this->send_api_post( $donor );
-                    if( 'api-chhj' == $donor['routing_method'] )
-                        return;
+                    if( 'email' != $donor['routing_method'] ){
+                        $this->send_api_post( $donor );
+                        return; // Return from this function as we've already sent the trans dept notification.
+                    }
                 }
 
                 $recipients = array( $tc['contact_email'] );

@@ -586,6 +586,8 @@ class DMReports extends DonationManager {
 	    		'posts_per_page' => -1,
 				'orderby' => 'post_date',
 				'order' =>'ASC',
+				'no_found_rows' => true,
+				'cache_results' => false,
 			);
 
 	    	if( 'donations_all_donations' != $transient_name ){
@@ -598,6 +600,8 @@ class DMReports extends DonationManager {
 	    		$args['meta_key'] = 'organization';
 	    		$args['meta_value'] = $orgID;
 	    	}
+	    	if( true == $count_only )
+	    		$args['fields'] = 'ids';
 
 	    	$donations = get_posts( $args );
 	    	if( ! $donations )

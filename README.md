@@ -9,8 +9,8 @@ __03/??/2016 - Version 1.4.2__
 __03/03/2016 - Version 1.4.1__
 
 - Special Case: Routing all orphaned donations to College Hunks Hauling Junk
-- Including `priority` status in Utilities &gt; Test a Pickup Code report
-- Search for Orphaned Donations &gt; Providers tab
+- Including `priority` status in Utilities > Test a Pickup Code report
+- Search for Orphaned Donations > Providers tab
 
 __02/22/2016 - Version 1.4.0__
 

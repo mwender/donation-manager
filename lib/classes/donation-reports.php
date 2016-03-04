@@ -371,9 +371,13 @@ class DMReports extends DonationManager {
 	    			$org->ID = $id;
 	    			$org->title = $post->post_title;
 
+					/*
 					$donations = $this->get_donations( $id, $month );
 					$donation_count = ( $donations )? count( $donations ) : 0 ;
 					$org->count = $donation_count;
+					/**/
+					$donation_count = $this->get_donations( $id, $month, true );
+					$org->count = ( is_numeric( $donation_count ) )? $donation_count : '0' ;
 
 					$org->button = get_submit_button( $date->format( 'M Y' ), 'secondary small export-csv', 'export-csv-' . $id, false, array( 'aria-org-id' => $id ) );
     				set_transient( $transient_name, $org, 1 * HOUR_IN_SECONDS );
@@ -566,12 +570,15 @@ class DMReports extends DonationManager {
 		wp_send_json( $response );
     }
 
-    private function get_donations( $orgID = null, $month = null ){
+    private function get_donations( $orgID = null, $month = null, $count_only = false ){
     	// TODO: Rewrite to set $month to last month if `null`
     	if( is_null( $orgID ) || is_null( $month ) )
     		return;
 
     	$transient_name = 'donations_' . $orgID . '_' . $month;
+
+    	if( ! false === ( $donation_count = get_transient( $transient_name . '_count' ) ) && ( true == $count_only ) )
+    		return $donation_count;
 
     	if( false === ( $donation_rows = get_transient( $transient_name ) ) ){
 	    	$args = array(
@@ -595,6 +602,12 @@ class DMReports extends DonationManager {
 	    	$donations = get_posts( $args );
 	    	if( ! $donations )
 	    		return false;
+
+	    	if( true == $count_only ){
+	    		$donation_count = count( $donations );
+	    		set_transient( $transient_name . '_count', $donation_count, 1 * HOUR_IN_SECONDS );
+	    		return $donation_count;
+	    	}
 
 	    	$donation_rows = array();
 	    	foreach( $donations as $donation ){

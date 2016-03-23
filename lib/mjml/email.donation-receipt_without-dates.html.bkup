@@ -1,0 +1,59 @@
+            <table cellspacing="0" cellpadding="0" bgcolor="#ffffff"  class="force-full-width">
+              <tr>
+                <td style="background-color:#ffffff; width: 600px;">
+                  <div class="mobile-br">&nbsp;</div>
+                  <table cellspacing="0" cellpadding="5" bgcolor="#ffffff" width="94%" align="center">
+                    <tbody>
+                      <tr>
+                        <td colspan="2" style="font-size: 14px; color: #6f6f6f;">Donation ID: {id}</td>
+                      </tr>
+                      <tr>
+                        <td width="50%" style="font-size: 14px; font-weight: bold; background-color: #7fc0e3; color: #fff; border-bottom: 1px solid #dfdfdf; padding: 7px 7px;">Donor Information:</td>
+                        <td width="50%" style="font-size: 14px; font-weight: bold; background-color: #7fc0e3; color: #fff; border-bottom: 1px solid #dfdfdf; padding: 7px 7px;">Pick Up Address:</td>
+                      </tr>
+                      <tr>
+                        <td valign="top" style="font-size: 14px; color: #6f6f6f;">{donor_info}</td>
+                        <td valign="top" style="font-size: 14px; color: #6f6f6f;">{pickupaddress}</td>
+                      </tr>
+                      <tr>
+                        <td style="font-size: 14px; font-weight: bold; background-color: #7fc0e3; color: #fff; border-bottom: 1px solid #dfdfdf; padding: 7px 7px;">Preferred Method of Contact:</td>
+                        <td style="font-size: 14px; background-color: #dfeff8; color: #6f6f6f;">{preferred_contact_method}</td>
+                      </tr>
+                      <tr>
+                        <td colspan="2" style="font-size: 14px; font-weight: bold; background-color: #7fc0e3; color: #fff; border-bottom: 1px solid #dfdfdf; padding: 7px 7px;">Items:</td>
+                      </tr>
+                      <tr>
+                        <td colspan="2" style="font-size: 14px; color: #6f6f6f;">{items}</td>
+                      </tr>
+                      <tr>
+                        <td colspan="2" style="font-size: 14px; font-weight: bold; background-color: #7fc0e3; color: #fff; border-bottom: 1px solid #dfdfdf; padding: 7px 7px;">Customer Description:</td>
+                      </tr>
+                      <tr>
+                        <td colspan="2" style="font-size: 14px; color: #6f6f6f;">{description}</td>
+                      </tr>
+                      <tr>
+                        <td colspan="2" style="font-size: 14px; font-weight: bold; background-color: #7fc0e3; color: #fff; border-bottom: 1px solid #dfdfdf; padding: 7px 7px;">Screening Questions:</td>
+                      </tr>
+                      <tr>
+                        <td colspan="2" style="font-size: 14px; color: #6f6f6f;">{screening_questions}</td>
+                      </tr>
+                      <tr>
+                        <td style="font-size: 14px; font-weight: bold; background-color: #7fc0e3; color: #fff; border-bottom: 1px solid #dfdfdf; padding: 7px 7px;">Pick Up Location:</td>
+                        <td style="font-size: 14px; font-weight: bold; background-color: #7fc0e3; color: #fff; border-bottom: 1px solid #dfdfdf; padding: 7px 7px;">Pick Up Code:</td>
+                      </tr>
+                      <tr>
+                        <td valign="top" style="font-size: 14px; color: #6f6f6f;">{pickuplocation}</td>
+                        <td valign="top" style="font-size: 14px; color: #6f6f6f;">{pickup_code}</td>
+                      </tr>
+                      <tr>
+                        <td colspan="2" style="font-size: 14px; font-weight: bold; background-color: #7fc0e3; color: #fff; border-bottom: 1px solid #dfdfdf; padding: 7px 7px;">Preferred Donor Code:</td>
+                      </tr>
+                      <tr>
+                        <td colspan="2" style="font-size: 14px; color: #6f6f6f;">{preferred_code}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                  <br>
+                </td>
+              </tr>
+            </table>

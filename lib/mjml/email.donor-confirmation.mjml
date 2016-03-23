@@ -57,8 +57,8 @@
             </mj-text>
         </mj-column>
     </mj-section>
-    <mj-section background-color="#fff" padding="0 0 0 20px">
-        <mj-column>
+    <mj-section background-color="#fff" padding="20px">
+        <mj-column background-color="#e6e7e9">
             <mj-text>{donationreceipt}</mj-text>
         </mj-column>
     </mj-section>

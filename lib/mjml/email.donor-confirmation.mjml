@@ -1,0 +1,105 @@
+<mj-body background-color="#eeebeb">
+    <mj-section padding="0">
+    	<mj-column>
+            <mj-text padding="0">{orphaned_donation_note}</mj-text>
+    		<mj-text color="#6f6f6f" font-size="28px" line-height="32px" font-weight="600" align="center" padding-bottom="0" padding-top="20px">{organization_name}</mj-text>
+    	</mj-column>
+    </mj-section>
+    <mj-section padding-bottom="0">
+        <mj-column>
+            <mj-divider border-width="8px" border-color="#0082C8" padding="0"></mj-divider>
+        </mj-column>
+    </mj-section>
+    <mj-section padding-bottom="0" padding-top="0">
+        <mj-column>
+            <mj-image src="https://www.pickupmydonation.com/wp-content/plugins/donation-manager/lib/images/email-header.png" width="600" padding="0"></mj-image>
+        </mj-column>
+    </mj-section>
+    <mj-section background-color="#ffffff" padding-bottom="0">
+        <mj-column>
+            <mj-text color="#0082C8" font-weight="600" align="center" font-size="24px" line-height="28px" padding="0 25px">
+                Next, we'll call to confirm your pick up date.
+            </mj-text>
+        </mj-column>
+    </mj-section>
+    <mj-section background-color="#ffffff" padding="20px">
+        <mj-column vertical-align="top" background-color="#e6e7e9">
+            <mj-text align="center" font-size="54px" line-height="54px" padding="10px 0 0 0" font-weight="600" color="#b8b8b8">
+                1
+            </mj-text>
+            <mj-text align="center" font-weight="600" color="#b8b8b8" line-height="18px">
+                Donation Request Received
+            </mj-text>
+        </mj-column>
+        <mj-column vertical-align="top" background-color="#fde0c9">
+             <mj-text align="center" font-size="54px" line-height="54px" padding="10px 0 0 0" font-weight="600" color="#F68428">
+                2
+            </mj-text>
+            <mj-text align="center" font-weight="600" color="#F68428" line-height="18px">
+                Confirm Pick Up Date/Time
+            </mj-text>
+        </mj-column>
+        <mj-column vertical-align="top" background-color="#bfe0f1">
+             <mj-text align="center" font-size="54px" line-height="54px" padding="10px 0 0 0" font-weight="600" color="#7fc0e3">
+                3
+            </mj-text>
+            <mj-text align="center" font-weight="600" color="#7fc0e3" line-height="18px">
+                Donation<br>Complete
+            </mj-text>
+        </mj-column>
+    </mj-section>
+    <mj-section background-color="#ffffff" padding-bottom="0">
+        <mj-column>
+            <mj-text color="#6f6f6f" font-weight="600" padding="0 25px" font-size="20px" line-height="24px">
+                We must contact you to finalize your pickup!
+            </mj-text>
+            <mj-text>
+                The date(s) and time(s) you selected for your donation are only <em>preferred</em> pickup times. You will not be on our pickup schedule until our schedulers are able to contact you directly.
+            </mj-text>
+            <mj-text>
+                If you have any questions throughout the process please do not hesitate to contact:
+            </mj-text>
+            <mj-text align="center">
+                {trans_contact}
+            </mj-text>
+        </mj-column>
+    </mj-section>
+    <mj-section background-color="#fff" padding="20px 20px 0 20px">
+        <mj-column background-color="#fde0c9">
+        	<mj-text>
+        		<strong>IMPORTANT:</strong> If donations are left unattended during pick up, copies of this ticket MUST be attached to all items or containers of items in order for them to be picked up.
+        	</mj-text>
+        </mj-column>
+    </mj-section>
+    <mj-section background-color="#fff" padding="0 20px">
+        <mj-column>
+            <mj-text>
+                <em><strong>Please note:</strong> The organization incurs a great deal of cost to dispose of unsellable merchandise. We reserve the right to refuse any items that create a liability for our organization. Thank you for your understanding.</em>
+            </mj-text>
+        </mj-column>
+    </mj-section>
+    <mj-section background-color="#fff" padding="0 0 0 20px">
+        <mj-column>
+            <mj-text>{donationreceipt}</mj-text>
+        </mj-column>
+    </mj-section>
+    <mj-section background-color="#363636">
+        <mj-column>
+            <mj-social
+                mode="horizontal"
+                display="twitter:url facebook:url"
+                facebook-href="https://www.facebook.com/PickUpMyDonationcom"
+                facebook-content=""
+                facebook-icon-color="transparent"
+                twitter-href="https://twitter.com/pickupdonations"
+                twitter-content=""
+                twitter-icon-color="transparent"
+                icon-size="30px"
+                base-url="https://www.pickupmydonation.com/wp-content/plugins/donation-manager/lib/images/"
+            />
+            <mj-text align="center" color="#fff">
+                    &copy; 2012 &ndash; 2016 PickUpMyDonation.com. All rights reserved.
+            </mj-text>
+        </mj-column>
+    </mj-section>
+</mj-body>

@@ -17,35 +17,14 @@
     </mj-section>
     <mj-section background-color="#ffffff" padding-bottom="0">
         <mj-column>
-            <mj-text color="#0082C8" font-weight="600" align="center" font-size="24px" line-height="28px" padding="0 25px">
+            <mj-text color="#0082C8" font-weight="600" align="center" font-size="24px" line-height="28px" padding="0 25px 20px 25px">
                 Next, we'll call to confirm your pick up date.
             </mj-text>
         </mj-column>
     </mj-section>
-    <mj-section background-color="#ffffff" padding="20px">
-        <mj-column vertical-align="top" background-color="#e6e7e9">
-            <mj-text align="center" font-size="54px" line-height="54px" padding="10px 0 0 0" font-weight="600" color="#b8b8b8">
-                1
-            </mj-text>
-            <mj-text align="center" font-weight="600" color="#b8b8b8" line-height="18px">
-                Donation Request Received
-            </mj-text>
-        </mj-column>
-        <mj-column vertical-align="top" background-color="#fde0c9">
-             <mj-text align="center" font-size="54px" line-height="54px" padding="10px 0 0 0" font-weight="600" color="#F68428">
-                2
-            </mj-text>
-            <mj-text align="center" font-weight="600" color="#F68428" line-height="18px">
-                Confirm Pick Up Date/Time
-            </mj-text>
-        </mj-column>
-        <mj-column vertical-align="top" background-color="#bfe0f1">
-             <mj-text align="center" font-size="54px" line-height="54px" padding="10px 0 0 0" font-weight="600" color="#7fc0e3">
-                3
-            </mj-text>
-            <mj-text align="center" font-weight="600" color="#7fc0e3" line-height="18px">
-                Donation<br>Complete
-            </mj-text>
+    <mj-section padding-bottom="0" padding-top="0">
+        <mj-column>
+            <mj-image src="https://www.pickupmydonation.com/wp-content/plugins/donation-manager/lib/images/three-steps.png" width="600" padding="0"></mj-image>
         </mj-column>
     </mj-section>
     <mj-section background-color="#ffffff" padding-bottom="0">

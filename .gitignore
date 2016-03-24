@@ -5,3 +5,4 @@ node_modules/
 mailtrap.php
 *.sublime-*
 zipcodes.sql
+lib/mjml/*.bkup

@@ -12,7 +12,7 @@
     </mj-section>
     <mj-section padding-bottom="0" padding-top="0">
         <mj-column>
-            <mj-image src="https://www.pickupmydonation.com/wp-content/plugins/donation-manager/lib/images/email-header.png" width="600" padding="0"></mj-image>
+            <mj-image src="https://www.pickupmydonation.com/wp-content/plugins/donation-manager/lib/images/email-header.png" padding="0"></mj-image>
         </mj-column>
     </mj-section>
     <mj-section background-color="#ffffff" padding-bottom="0">
@@ -24,7 +24,7 @@
     </mj-section>
     <mj-section padding-bottom="0" padding-top="0">
         <mj-column>
-            <mj-image src="https://www.pickupmydonation.com/wp-content/plugins/donation-manager/lib/images/three-steps.png" width="600" padding="0"></mj-image>
+            <mj-image src="https://www.pickupmydonation.com/wp-content/plugins/donation-manager/lib/images/three-steps.png" padding="0"></mj-image>
         </mj-column>
     </mj-section>
     <mj-section background-color="#ffffff" padding-bottom="0">

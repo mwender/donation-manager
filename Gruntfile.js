@@ -35,7 +35,10 @@ module.exports = function(grunt) {
           nospawn: true
         }
       },
-    },
+      html: {
+        files: 'lib/html/*.html'
+      }
+    }
   });
 
   grunt.loadNpmTasks('grunt-contrib-less');

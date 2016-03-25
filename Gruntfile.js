@@ -1,4 +1,6 @@
 module.exports = function(grunt) {
+  require('load-grunt-tasks')(grunt);
+
   grunt.initConfig({
     less: {
       development: {
@@ -36,14 +38,32 @@ module.exports = function(grunt) {
         }
       },
       html: {
-        files: 'lib/html/*.html'
+        files: ['lib/html/*.html']
+      },
+      mjml: {
+        files: ['lib/mjml/*.mjml'],
+        tasks: ['mjml']
+      }
+    },
+    mjml: {
+      options: {},
+      your_target: {
+        files: [{
+          expand: true,
+          cwd: 'lib/mjml/',
+          src: ['**/*.mjml'],
+          dest: 'lib/html/',
+          ext: '.html',
+          extDot: 'last'
+        }]
       }
     }
   });
 
-  grunt.loadNpmTasks('grunt-contrib-less');
-  grunt.loadNpmTasks('grunt-contrib-watch');
+  //grunt.loadNpmTasks('grunt-contrib-less');
+  //grunt.loadNpmTasks('grunt-contrib-watch');
   grunt.registerTask('default', ['watch']);
+  //grunt.registerTask('mjml', ['mjml']);
   grunt.registerTask('builddev', ['less:development']);
   grunt.registerTask('build', ['less:production']);
 };

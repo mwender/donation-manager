@@ -60,10 +60,7 @@ module.exports = function(grunt) {
     }
   });
 
-  //grunt.loadNpmTasks('grunt-contrib-less');
-  //grunt.loadNpmTasks('grunt-contrib-watch');
   grunt.registerTask('default', ['watch']);
-  //grunt.registerTask('mjml', ['mjml']);
   grunt.registerTask('builddev', ['less:development']);
   grunt.registerTask('build', ['less:production']);
 };

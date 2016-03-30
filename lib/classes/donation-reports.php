@@ -356,6 +356,11 @@ class DMReports extends DonationManager {
     		break;
 
     		case 'get_org_report':
+    			/**
+    			 * This report needs to be optimized. It's very expensive
+    			 * with regards to server resources.
+    			 */
+
     			if( ! is_numeric( $_POST['id'] ) || empty( $_POST['id'] ) )
     				return;
     			$id = $_POST['id'];

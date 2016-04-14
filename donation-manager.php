@@ -690,6 +690,7 @@ class DonationManager {
 
             case 'contact-details':
                 $contact_details_form_html = DonationManager::get_template_part( 'form4.contact-details-form' );
+
                 $checked_yes = '';
                 $checked_no = '';
                 if( isset( $_POST['donor']['different_pickup_address'] ) ) {
@@ -699,8 +700,17 @@ class DonationManager {
                         $checked_no = ' checked="checked"';
                     }
                 } else {
-                    $checked_no = ' checked="checked"';
+                    if ( $_SESSION['donor']['different_pickup_address'] ){
+                         if( 'Yes' == $_SESSION['donor']['different_pickup_address'] ) {
+                            $checked_yes = ' checked="checked"';
+                        } else {
+                            $checked_no = ' checked="checked"';
+                        }
+                    } else {
+                        $checked_no = ' checked="checked"';
+                    }
                 }
+
                 $checked_phone = '';
                 $checked_email = '';
                 if( isset( $_POST['donor']['preferred_contact_method'] ) ) {
@@ -710,7 +720,77 @@ class DonationManager {
                         $checked_email = ' checked="checked"';
                     }
                 } else {
-                    $checked_email = ' checked="checked"';
+                    if( $_SESSION['donor']['preferred_contact_method'] ){
+                        if( 'Phone' == $_SESSION['donor']['preferred_contact_method'] ) {
+                            $checked_phone = ' checked="checked"';
+                        } else {
+                            $checked_email = ' checked="checked"';
+                        }
+                    } else {
+                        $checked_email = ' checked="checked"';
+                    }
+                }
+
+                if( $_POST['donor']['address']['name']['first'] ){
+                    $first_name = $_POST['donor']['address']['name']['first'];
+                } else if( $_SESSION['donor']['address']['name']['first'] ) {
+                    $first_name = $_SESSION['donor']['address']['name']['first'];
+                }
+                if( $_POST['donor']['address']['name']['last'] ){
+                    $last_name = $_POST['donor']['address']['name']['last'];
+                } else if( $_SESSION['donor']['address']['name']['last'] ) {
+                    $last_name = $_SESSION['donor']['address']['name']['last'];
+                }
+                if( $_POST['donor']['address']['address'] ){
+                    $address = $_POST['donor']['address']['address'];
+                } else if( $_SESSION['donor']['address']['address'] ) {
+                    $address = $_SESSION['donor']['address']['address'];
+                }
+                if( $_POST['donor']['address']['city'] ){
+                    $city = $_POST['donor']['address']['city'];
+                } else if( $_SESSION['donor']['address']['city'] ) {
+                    $city = $_SESSION['donor']['address']['city'];
+                }
+                if( ! $_POST['donor']['address']['state'] && $_SESSION['donor']['address']['state'] ){
+                    $_POST['donor']['address']['state'] = $_SESSION['donor']['address']['state'];
+                }
+                if( $_POST['donor']['address']['zip'] ){
+                    $zip = $_POST['donor']['address']['zip'];
+                } else if( $_SESSION['donor']['address']['zip'] ) {
+                    $zip = $_SESSION['donor']['address']['zip'];
+                }
+                if( $_POST['donor']['pickup_address']['address'] ){
+                    $pickup_address = $_POST['donor']['pickup_address']['address'];
+                } else if( $_SESSION['donor']['pickup_address']['address'] ) {
+                    $pickup_address = $_SESSION['donor']['pickup_address']['address'];
+                }
+                if( $_POST['donor']['pickup_address']['city'] ){
+                    $pickup_address_city = $_POST['donor']['pickup_address']['city'];
+                } else if( $_SESSION['donor']['pickup_address']['city'] ) {
+                    $pickup_address_city = $_SESSION['donor']['pickup_address']['city'];
+                }
+                if( ! $_POST['donor']['pickup_address']['state'] && $_SESSION['donor']['pickup_address']['state'] ){
+                    $_POST['donor']['pickup_address']['state'] = $_SESSION['donor']['pickup_address']['state'];
+                }
+                if( $_POST['donor']['pickup_address']['zip'] ){
+                    $pickup_address_zip = $_POST['donor']['pickup_address']['zip'];
+                } else if( $_SESSION['donor']['pickup_address']['zip'] ) {
+                    $pickup_address_zip = $_SESSION['donor']['pickup_address']['zip'];
+                }
+                if( $_POST['donor']['email'] ){
+                    $donor_email = $_POST['donor']['email'];
+                } else if( $_SESSION['donor']['email'] ) {
+                    $donor_email = $_SESSION['donor']['email'];
+                }
+                if( $_POST['donor']['phone'] ){
+                    $donor_phone = $_POST['donor']['phone'];
+                } else if( $_SESSION['donor']['phone'] ) {
+                    $donor_phone = $_SESSION['donor']['phone'];
+                }
+                if( $_POST['donor']['preferred_code'] ){
+                    $donor_preferred_code = $_POST['donor']['preferred_code'];
+                } else if( $_SESSION['donor']['preferred_code'] ) {
+                    $donor_preferred_code = $_SESSION['donor']['preferred_code'];
                 }
 
                 $html = $this->get_template_part( 'form4.contact-details-form', array(
@@ -721,17 +801,17 @@ class DonationManager {
                     'checked_no' => $checked_no,
                     'checked_phone' => $checked_phone,
                     'checked_email' => $checked_email,
-                    'donor_name_first' => $_POST['donor']['address']['name']['first'],
-                    'donor_name_last' => $_POST['donor']['address']['name']['last'],
-                    'donor_address' => $_POST['donor']['address']['address'],
-                    'donor_city' => $_POST['donor']['address']['city'],
-                    'donor_zip' => $_POST['donor']['address']['zip'],
-                    'donor_pickup_address' => $_POST['donor']['pickup_address']['address'],
-                    'donor_pickup_city' => $_POST['donor']['pickup_address']['city'],
-                    'donor_pickup_zip' => $_POST['donor']['pickup_address']['zip'],
-                    'donor_email' => $_POST['donor']['email'],
-                    'donor_phone' => $_POST['donor']['phone'],
-                    'preferred_code' => $_POST['donor']['preferred_code'],
+                    'donor_name_first' => $first_name,
+                    'donor_name_last' => $last_name,
+                    'donor_address' => $address,
+                    'donor_city' => $city,
+                    'donor_zip' => $zip,
+                    'donor_pickup_address' => $pickup_address,
+                    'donor_pickup_city' => $pickup_address_city,
+                    'donor_pickup_zip' => $pickup_address_zip,
+                    'donor_email' => $donor_email,
+                    'donor_phone' => $donor_phone,
+                    'preferred_code' => $donor_preferred_code,
                 ) );
 
                 $this->add_html( $html );
@@ -895,6 +975,9 @@ class DonationManager {
                 $pickupdate2 = ( isset( $_POST['donor']['pickupdate2'] ) && preg_match( '/(([0-9]{2})\/([0-9]{2})\/([0-9]{4}))/', $_POST['donor']['pickupdate2'] ) )? $_POST['donor']['pickupdate2'] : '';
                 $pickupdate3 = ( isset( $_POST['donor']['pickupdate3'] ) && preg_match( '/(([0-9]{2})\/([0-9]{2})\/([0-9]{4}))/', $_POST['donor']['pickupdate3'] ) )? $_POST['donor']['pickupdate3'] : '';
 
+                // Priority Donation Backlinks
+                $priority_html = ( false == $_SESSION['donor']['priority'] )? '<div class="row priority-note"><div class="col-md-12"><div class="alert alert-info" style="text-align: center;"><strong>Priority Pick Up Option:</strong> <em>Need expedited service?</em> <a href="#" class="show-priority">Click for details &rarr;</a></div></div></div><div class="row priority-row"><div class="col-md-12"><div class="priority-close"><a href="#" class="close-priority-row btn btn-default btn-xs">Close</a></div>' . $this->get_priority_pickup_links( $_SESSION['donor']['pickup_code'], 'We work as hard as we can to serve all of our donors in a timely fashion. If you need expedited service or you don\'t see a time that works in our calendar, click below to request a pick up from our <em>Fee Based</em> priority pick up provider, and they will deliver your donation to us:' ) . '</div></div>' : '' ;
+
                 $html = $this->get_template_part( 'form5.select-preferred-pickup-dates', array(
                         'nextpage' => $nextpage,
                         'pickupdatevalue1' => $pickupdate1,
@@ -904,6 +987,7 @@ class DonationManager {
                         'pickuptimes2' => implode( "\n", $times[2] ),
                         'pickuptimes3' => implode( "\n", $times[3] ),
                         'pickuplocations' => implode( "\n", $locations ),
+                        'priority_pickup_option' => $priority_html,
                     ));
                 $this->add_html( $html );
             break;
@@ -1665,7 +1749,7 @@ class DonationManager {
     /**
      * Returns Priority Pick Up HTML.
      */
-    private function get_priority_pickup_links( $pickup_code = null ){
+    private function get_priority_pickup_links( $pickup_code = null, $note = null ){
         if( is_null( $pickup_code ) )
             return false;
 
@@ -1690,7 +1774,11 @@ class DonationManager {
 
                 $rows[] = str_replace( $search, $replace, $template );
             }
-            $priority_html = '<div class="alert alert-warning"><h3 style="margin-top: 0;">Priority Pick Up Option</h3><p style="margin-bottom: 20px;">Even though your items don\'t qualify for pick up, you can connect with our "fee based" priority pick up partner that will pick up items we can\'t use as well as any other items you would like to recycle or throw away:</p>' . implode( "\n", $rows ) . '</div>';
+
+            if( is_null( $note ) )
+                $note = 'Even though your items don\'t qualify for pick up, you can connect with our "fee based" priority pick up partner that will pick up items we can\'t use as well as any other items you would like to recycle or throw away:';
+
+            $priority_html = '<div class="alert alert-warning"><h3 style="margin-top: 0;">Priority Pick Up Option</h3><p style="margin-bottom: 20px;">' . $note . '</p>' . implode( "\n", $rows ) . '</div>';
         }
 
         return $priority_html;

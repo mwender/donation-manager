@@ -100,11 +100,11 @@ class DMReports extends DonationManager {
 	<div class="wrap"><?php
 	switch ( $active_tab ) {
 		case 'donors':
-			include_once plugin_dir_path( __FILE__ ) . '../includes/donation-reports.donors.php';
+			include_once plugin_dir_path( __FILE__ ) . '../views/donation-reports.donors.php';
 		break;
 
 		default:
-			include_once plugin_dir_path( __FILE__ ) . '../includes/donation-reports.php';
+			include_once plugin_dir_path( __FILE__ ) . '../views/donation-reports.php';
 		break;
 	}
 	?></div><!-- .wrap -->

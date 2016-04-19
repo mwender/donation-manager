@@ -625,16 +625,16 @@ class DMOrphanedDonations extends DonationManager {
 						<?php
 		switch ( $active_tab ) {
 			case 'import':
-				include_once plugin_dir_path( __FILE__ ) . '../includes/orphaned-donations.import.php';
+				include_once plugin_dir_path( __FILE__ ) . '../views/orphaned-donations.import.php';
 				break;
 			case 'utilities':
-				include_once plugin_dir_path( __FILE__ ) . '../includes/orphaned-donations.utilities.php';
+				include_once plugin_dir_path( __FILE__ ) . '../views/orphaned-donations.utilities.php';
 				break;
 			case 'providers':
-				include_once plugin_dir_path( __FILE__ ) . '../includes/orphaned-donations.providers.php';
+				include_once plugin_dir_path( __FILE__ ) . '../views/orphaned-donations.providers.php';
 				break;
 			default:
-				include_once plugin_dir_path( __FILE__ ) . '../includes/orphaned-donations.php';
+				include_once plugin_dir_path( __FILE__ ) . '../views/orphaned-donations.php';
 				break;
 		}
 ?>

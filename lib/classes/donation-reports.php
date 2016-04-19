@@ -62,13 +62,26 @@ class DMReports extends DonationManager {
 	 *
 	 * @return void
 	 */
-    public function admin_enqueue_scripts(){
+    public function admin_enqueue_scripts( $hook ){
+    	if( 'donation_page_donation_reports' != $hook )
+    		return;
+    	$active_tab = ( isset( $_GET['tab'] ) )? $_GET['tab'] : 'default';
+
     	wp_enqueue_style( 'dm-admin-css', plugins_url( '../css/admin.css', __FILE__ ), false, filemtime( plugin_dir_path( __FILE__ ) . '../css/admin.css' ) );
-    	wp_register_script( 'dm-admin-js', plugins_url( '../js/admin.js', __FILE__ ), array( 'jquery' ), filemtime( plugin_dir_path( __FILE__ ) . '../js/admin.js' ) );
-    	wp_enqueue_script( 'dm-admin-js' );
-    	wp_localize_script( 'dm-admin-js', 'ajax_object', array( 'ajax_url' => admin_url( 'admin-ajax.php' ), 'site_url' => site_url( '/download/' ), 'permalink_url' => admin_url( 'options-permalink.php' ) ) );
-    	wp_enqueue_script( 'jquery-file-download', plugins_url( '../components/vendor/jquery-file-download/src/Scripts/jquery.fileDownload.js', __FILE__ ), array( 'jquery', 'jquery-ui-dialog', 'jquery-ui-progressbar' ) );
-    	wp_enqueue_style( 'wp-jquery-ui-dialog' );
+
+    	switch ( $active_tab ) {
+    		case 'donors':
+			break;
+
+    		default:
+		    	wp_register_script( 'dm-reports-orgs-js', plugins_url( '../js/reports.orgs.js', __FILE__ ), array( 'jquery' ), filemtime( plugin_dir_path( __FILE__ ) . '../js/reports.orgs.js' ) );
+		    	wp_enqueue_script( 'dm-reports-orgs-js' );
+		    	wp_localize_script( 'dm-reports-orgs-js', 'ajax_object', array( 'ajax_url' => admin_url( 'admin-ajax.php' ), 'site_url' => site_url( '/download/' ), 'permalink_url' => admin_url( 'options-permalink.php' ) ) );
+		    	wp_enqueue_script( 'jquery-file-download', plugins_url( '../components/vendor/jquery-file-download/src/Scripts/jquery.fileDownload.js', __FILE__ ), array( 'jquery', 'jquery-ui-dialog', 'jquery-ui-progressbar' ) );
+		    	wp_enqueue_style( 'wp-jquery-ui-dialog' );
+			break;
+    	}
+
     }
 
 	/**
@@ -80,10 +93,7 @@ class DMReports extends DonationManager {
 	 */
     public function admin_menu(){
 		$donation_reports_hook = add_submenu_page( 'edit.php?post_type=donation', 'Donation Reports', 'Donation Reports', 'activate_plugins', 'donation_reports', array( $this, 'callback_donation_reports_page' ) );
-
-		add_action( 'admin_print_styles-' . $donation_reports_hook, array( $this, 'admin_enqueue_scripts' ) );
-
-
+		add_action( 'admin_enqueue_scripts', array( $this, 'admin_enqueue_scripts' ) );
     }
 
     public function callback_donation_reports_page(){
@@ -194,7 +204,7 @@ class DMReports extends DonationManager {
     		case 'create_file':
     			/**
     			 * Creates the `all_donations` CSV and returns response.status = continue
-    			 * for admin.js. Then, admin.js calls `build_file` until all donations
+    			 * for reports.orgs.js. Then, reports.orgs.js calls `build_file` until all donations
     			 * have been written to the CSV and response.status = end.
     			 */
     			$upload_dir = wp_upload_dir();

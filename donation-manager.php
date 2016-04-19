@@ -1293,7 +1293,6 @@ class DonationManager {
 
     public function enqueue_admin_scripts(){
         wp_register_script( 'dm-admin-js', plugins_url( 'lib/js/admin.js', __FILE__ ), array( 'jquery' ), filemtime( plugin_dir_path( __FILE__ ) . 'lib/js/admin.js' ) );
-        wp_localize_script( 'dm-admin-js', 'ajax_object', array( 'ajax_url' => admin_url( 'admin-ajax.php' ), 'site_url' => site_url( '/download/' ), 'permalink_url' => admin_url( 'options-permalink.php' ) ) );
         wp_enqueue_script( 'dm-admin-js' );
     }
 

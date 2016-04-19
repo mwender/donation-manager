@@ -13,6 +13,7 @@ class DMReports extends DonationManager {
     }
 
     private function __construct() {
+    	add_action( 'admin_menu', array( $this, 'admin_menu' ) );
     }
 
 	/**
@@ -66,15 +67,18 @@ class DMReports extends DonationManager {
     }
 
 	/**
-	 * Adds page to admin menu.
+	 * Adds page to  Donations submenu.
 	 *
 	 * @since 1.0.0
 	 *
 	 * @return void
 	 */
     public function admin_menu(){
-    	$page = add_menu_page( 'Donation Reports', 'Donation Reports', 'moderate_comments', 'donation_reports', array( $this, 'callback_donation_reports_page' ), 'dashicons-analytics' );
-    	add_action( 'admin_print_styles-' . $page, array( $this, 'admin_enqueue_scripts' ) );
+		$donation_reports_hook = add_submenu_page( 'edit.php?post_type=donation', 'Donation Reports', 'Donation Reports', 'activate_plugins', 'donation_reports', array( $this, 'callback_donation_reports_page' ) );
+
+		add_action( 'admin_print_styles-' . $donation_reports_hook, array( $this, 'admin_enqueue_scripts' ) );
+
+
     }
 
     public function callback_donation_reports_page(){
@@ -715,7 +719,7 @@ class DMReports extends DonationManager {
 }
 
 $DMReports = DMReports::get_instance();
-add_action( 'admin_menu', array( $DMReports, 'admin_menu' ) );
+
 //add_action( 'wp_ajax_export-csv', array( $DMReports, 'callback_export_csv' ) );
 add_action( 'wp_ajax_donation-report', array( $DMReports, 'callback_donation_report' ) );
 add_action( 'template_redirect', array( $DMReports, 'download_report' ) );

@@ -14,6 +14,11 @@ class DMReports extends DonationManager {
 
     private function __construct() {
     	add_action( 'admin_menu', array( $this, 'admin_menu' ) );
+    	add_action( 'wp_ajax_donation-report', array( $this, 'callback_donation_report' ) );
+		add_action( 'template_redirect', array( $this, 'download_report' ) );
+		add_action( 'template_redirect', array( $this, 'get_attachment' ) );
+		add_action( 'init', array( $this, 'add_rewrite_rules' ) );
+		add_action( 'init', array( $this, 'add_rewrite_tags' ) );
     }
 
 	/**
@@ -720,12 +725,6 @@ class DMReports extends DonationManager {
 
 $DMReports = DMReports::get_instance();
 
-//add_action( 'wp_ajax_export-csv', array( $DMReports, 'callback_export_csv' ) );
-add_action( 'wp_ajax_donation-report', array( $DMReports, 'callback_donation_report' ) );
-add_action( 'template_redirect', array( $DMReports, 'download_report' ) );
-add_action( 'template_redirect', array( $DMReports, 'get_attachment' ) );
-add_action( 'init', array( $DMReports, 'add_rewrite_rules' ) );
-add_action( 'init', array( $DMReports, 'add_rewrite_tags' ) );
 register_activation_hook( __FILE__, array( $DMReports, 'flush_rewrites' ) );
 register_deactivation_hook( __FILE__, array( $DMReports, 'flush_rewrites' ) );
 ?>

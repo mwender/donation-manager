@@ -2770,6 +2770,9 @@ $DMOrphanedDonations = DMOrphanedDonations::get_instance();
 
 // Include our Reporting Class
 require 'lib/classes/donation-reports.php';
+$DMReports = DMReports::get_instance();
+register_activation_hook( __FILE__, array( $DMReports, 'flush_rewrites' ) );
+register_deactivation_hook( __FILE__, array( $DMReports, 'flush_rewrites' ) );
 
 // Include Shortcodes Class
 require 'lib/classes/shortcodes.php';

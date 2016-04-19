@@ -2778,9 +2778,6 @@ register_deactivation_hook( __FILE__, array( $DMReports, 'flush_rewrites' ) );
 require 'lib/classes/shortcodes.php';
 $DMShortcodes = DMShortcodes::get_instance();
 
-// Include our PMD1.0 Importer Class
-//require 'dmimporter.php';
-
 $mailtrap = dirname( __FILE__ ) . '/mailtrap.php';
 if( file_exists( $mailtrap ) )
     require( $mailtrap );

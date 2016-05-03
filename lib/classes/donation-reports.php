@@ -71,6 +71,12 @@ class DMReports extends DonationManager {
 
     	switch ( $active_tab ) {
     		case 'donors':
+				wp_enqueue_style( 'datatables', 'https://cdn.datatables.net/r/dt/dt-1.10.9,fh-3.0.0/datatables.min.css' );
+				wp_register_script( 'datatables', 'https://cdn.datatables.net/r/dt/dt-1.10.9,fh-3.0.0/datatables.min.js', array( 'jquery' ) );
+
+		    	wp_register_script( 'dm-reports-donors-js', plugins_url( '../js/reports.donors.js', __FILE__ ), array( 'jquery', 'datatables' ), filemtime( plugin_dir_path( __FILE__ ) . '../js/reports.donors.js' ) );
+		    	wp_enqueue_script( 'dm-reports-donors-js' );
+		    	wp_localize_script( 'dm-reports-donors-js', 'ajax_object', array( 'ajax_url' => admin_url( 'admin-ajax.php' ) ) );
 			break;
 
     		default:

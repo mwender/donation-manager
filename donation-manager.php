@@ -1014,7 +1014,7 @@ class DonationManager {
                 }
 
                 $template = $this->get_template_part( 'form1.select-your-organization.row' );
-                $search = array( '{name}', '{desc}', '{link}', '{button_text}' );
+                $search = array( '{name}', '{desc}', '{link}', '{button_text}', '{css_classes}' );
 
                 if( ! $organizations ){
                     $this->add_html( '<div class="alert alert-warning"><strong>No default organization found!</strong><br />No default organization has been specified in the Donation Manager settings.</div>' );
@@ -1041,16 +1041,20 @@ class DonationManager {
                     if( true == $org['priority_pickup'] && ! stristr( $link, '&priority=1') )
                         $link.= '&priority=1';
 
+                    $css_classes = array();
                     // Setup button text
                     if( isset( $org['button_text'] ) ){
                         $button_text = $org['button_text'];
                     } else if ( $org['priority_pickup'] ){
-                        $button_text = 'Pick Up Now!';
+                        $button_text = 'Priority Pick Up';
+                        $css_classes[] = 'priority';
                     } else {
-                        $button_text = 'Donate Now!';
+                        $button_text = 'Free Pick Up';
                     }
 
-                    $replace = array( $org['name'], $org['desc'], $link, $button_text );
+                    $css_classes = ( 0 < count( $css_classes ) ) ? ' ' . implode( ' ', $css_classes ) : '';
+
+                    $replace = array( $org['name'], $org['desc'], $link, $button_text, $css_classes );
 
                     if( ! empty( $org['trans_dept_id'] ) )
                         $ads = $this->get_trans_dept_ads( $org['trans_dept_id'] );

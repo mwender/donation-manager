@@ -23,6 +23,8 @@
     Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 define( 'DONMAN_DIR', dirname( __FILE__ ) );
+define( 'NON_PROFIT_BUTTON_TEXT', 'Free Pick Up' );
+define( 'PRIORITY_BUTTON_TEXT', 'Priority Pick Up' );
 require 'vendor/autoload.php';
 
 class DonationManager {
@@ -1042,14 +1044,16 @@ class DonationManager {
                         $link.= '&priority=1';
 
                     $css_classes = array();
+                    if( true == $org['priority_pickup'] )
+                        $css_classes[] = 'priority';
+
                     // Setup button text
                     if( isset( $org['button_text'] ) ){
                         $button_text = $org['button_text'];
                     } else if ( $org['priority_pickup'] ){
-                        $button_text = 'Priority Pick Up';
-                        $css_classes[] = 'priority';
+                        $button_text = PRIORITY_BUTTON_TEXT;
                     } else {
-                        $button_text = 'Free Pick Up';
+                        $button_text = NON_PROFIT_BUTTON_TEXT;
                     }
 
                     $css_classes = ( 0 < count( $css_classes ) ) ? ' ' . implode( ' ', $css_classes ) : '';
@@ -1381,7 +1385,8 @@ class DonationManager {
                     'desc' => '<div class="alert alert-info">Choosing <strong>PRIORITY</strong> Pick Up will send your request to all of the <em>fee-based</em> pick up providers in our database.  These providers will pick up "almost" <strong>ANYTHING</strong> you have for a fee, and their service provides <em>additional benefits</em> such as the removal of items from anywhere inside your property to be taken to a local non-profit, as well as the removal of junk and items local non-profits cannot accept.<br><br><em>In most cases your donation is still tax-deductible, and these organizations will respond in 24hrs or less. Check with whichever pick up provider you choose.</em></div>',
                     'trans_dept_id' => $default_trans_dept[0],
                     'alternate_donate_now_url' => site_url( '/step-one/?oid=' . $default_org->ID . '&tid=' . $default_trans_dept[0] . '&priority=1' ),
-                    'button_text' => 'Pick Up Now!',
+                    'button_text' => PRIORITY_BUTTON_TEXT,
+                    'priority_pickup' => 1,
                 );
             } else {
                 $organization[] = array(
@@ -1390,7 +1395,8 @@ class DonationManager {
                     'desc' => $default_org->post_content,
                     'trans_dept_id' => $default_trans_dept[0],
                     'alternate_donate_now_url' => $alternate_donate_now_url,
-                    'button_text' => 'Donate Now!',
+                    'button_text' => NON_PROFIT_BUTTON_TEXT,
+                    'priority_pickup' => 0,
                 );
             }
 
@@ -1762,7 +1768,7 @@ class DonationManager {
         $priority_orgs = $this->get_priority_organizations( $pickup_code );
         if( is_array( $priority_orgs ) ){
             $template = $this->get_template_part( 'form1.select-your-organization.row' );
-            $search = array( '{name}', '{desc}', '{link}', '{button_text}' );
+            $search = array( '{name}', '{desc}', '{link}', '{button_text}', '{css_classes}' );
             foreach( $priority_orgs as $org ){
                 // Setup button link
                 if(
@@ -1774,7 +1780,7 @@ class DonationManager {
                     $link = '/step-one/?oid=' . $org['id'] . '&tid=' . $org['trans_dept_id'] . '&priority=1';
                 }
 
-                $replace = array( $org['name'], '', $link, 'Pick Up Now!' );
+                $replace = array( $org['name'], '', $link, PRIORITY_BUTTON_TEXT, ' priority' );
 
                 $rows[] = str_replace( $search, $replace, $template );
             }

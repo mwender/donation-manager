@@ -995,6 +995,7 @@ class DonationManager {
             break;
 
             case 'select-your-organization':
+                $ads = array();
                 $pickup_code = $_REQUEST['pcode'];
 
                 $organizations = $this->get_organizations( $pickup_code );
@@ -1030,6 +1031,7 @@ class DonationManager {
                     $this->add_html( $this->get_message( $_REQUEST['message'] ) );
 
                 $priority_rows = array();
+                $priority_ads = array();
                 foreach( $organizations as $org ) {
                     // Setup button link
                     if(
@@ -1060,13 +1062,16 @@ class DonationManager {
 
                     $replace = array( $org['name'], $org['desc'], $link, $button_text, $css_classes );
 
-                    if( ! empty( $org['trans_dept_id'] ) )
-                        $ads = $this->get_trans_dept_ads( $org['trans_dept_id'] );
-
                     if( $org['priority_pickup'] ){
                         $priority_rows[] = str_replace( $search, $replace, $template );
                     } else {
                         $rows[] = str_replace( $search, $replace, $template );
+                    }
+
+                    if( ! empty( $org['trans_dept_id'] ) && $org['priority_pickup'] ){
+                        $priority_ads[] = $this->get_trans_dept_ads( $org['trans_dept_id'] );
+                    } else if ( ! empty( $org['trans_dept_id'] ) ){
+                        $ads[] = $this->get_trans_dept_ads( $org['trans_dept_id'] );
                     }
                 }
                 if( ! is_array( $rows ) )
@@ -1074,6 +1079,9 @@ class DonationManager {
 
                 if( 0 < count( $priority_rows ) )
                     $rows = array_merge( $rows, $priority_rows );
+
+                if( 0 < count( $priority_ads ) )
+                    $ads = array_unique( array_merge( $ads, $priority_ads ) ); // merge non-profit and priority ads, ensuring unique array values
 
                 $this->add_html( '<div class="select-your-organization">' . implode( "\n", $rows ) . '</div>' );
             break;
@@ -1093,11 +1101,8 @@ class DonationManager {
             break;
         }
 
-        if( isset( $_SESSION['donor']['trans_dept_id'] ) )
-            $ads = $this->get_trans_dept_ads( $_SESSION['donor']['trans_dept_id'] );
-
-        if( $ads )
-            $this->add_html( $ads );
+        if( is_array( $ads ) && 0 < count( $ads ) )
+            $this->add_html( implode( "\n", $ads ) );
 
         if( current_user_can( 'activate_plugins') && 'on' == $_COOKIE['dmdebug'] )
             $this->add_html( '<br /><div class="alert alert-info"><strong>NOTE:</strong> This note and the following array output is only visible to logged in PMD Admins.</div><pre>$_SESSION[\'donor\'] = ' . print_r( $_SESSION['donor'], true ) . '</pre>' );

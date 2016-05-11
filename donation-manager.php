@@ -180,8 +180,7 @@ class DonationManager {
                 $_SESSION['donor']['form'] = 'describe-your-donation';
                 $_SESSION['donor']['org_id'] = $_REQUEST['oid'];
                 $_SESSION['donor']['trans_dept_id'] = $_REQUEST['tid'];
-                if( isset( $_REQUEST['priority'] ) && 1 == $_REQUEST['priority'] )
-                    $_SESSION['donor']['priority'] = true;
+                $_SESSION['donor']['priority'] = ( isset( $_REQUEST['priority'] ) && 1 == $_REQUEST['priority'] ) ? 1 : 0 ;
             } else {
                 // Invalid org_id or trans_dept_id, redirect to site home page
                 $this->notify_admin( 'invalid_link' );
@@ -905,10 +904,9 @@ class DonationManager {
                 $note = $pod->get_field( 'step_one_note' );
                 if( ! empty( $note ) )
                     $step_one_note = $note;
-                /*
+
                 if( true == $_SESSION['donor']['priority'] )
-                    $step_one_note = '<div class="alert alert-success"><strong>PRIORITY PICK UP OPTION:</strong> You have choosen our priority pick up option. Your donation will be routed to our <em>fee-based</em> provider(s) in your area.</div>' . $step_one_note;
-                */
+                    $step_one_note = '<div class="alert alert-info">You have selected our <strong>Expedited Pick Up Service</strong>.  Your request will be sent to our <strong>Fee Based</strong> pick up partners (<em>fee to be determined by the pick up provider</em>) who will in most cases be able to handle your request within 24 hours, bring quality donations to a local non-profit, and help you dispose of unwanted and/or unsellable items.  <br/><br/>If you reached this page in error, <a href="' . site_url() . '/select-your-organization/?pcode=' . $_SESSION['donor']['pickup_code'] . '&priority=0">CLICK HERE</a> and select <em>Free Pick Up</em>.</div>' . $step_one_note;
 
                 $donation_options = array();
                 foreach( $terms as $term ) {
@@ -1034,6 +1032,8 @@ class DonationManager {
                 $priority_ads = array();
                 foreach( $organizations as $org ) {
                     // Setup button link
+                    $link = '';
+
                     if(
                         isset( $org['alternate_donate_now_url'] )
                         && filter_var( $org['alternate_donate_now_url'], FILTER_VALIDATE_URL )
@@ -1042,8 +1042,12 @@ class DonationManager {
                     } else {
                         $link = $nextpage . '?oid=' . $org['id'] . '&tid=' . $org['trans_dept_id'];
                     }
-                    if( true == $org['priority_pickup'] && ! stristr( $link, '&priority=1') )
+
+                    if( true == $org['priority_pickup'] && ! stristr( $link, '&priority=1') ){
                         $link.= '&priority=1';
+                    } else if(  false == $org['priority_pickup'] && ! stristr( $link, '&priority=0' ) ) {
+                        $link.= '&priority=0';
+                    }
 
                     $css_classes = array();
                     if( true == $org['priority_pickup'] )

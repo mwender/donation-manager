@@ -1386,7 +1386,7 @@ class DonationManager {
             if( true == $priority ){
                 $organization[] = array(
                     'id' => $default_org->ID,
-                    'name' => 'Priority Pick Up (<em>Fee Based - $</em>)',
+                    'name' => 'Expedited Pick Up Service',
                     'desc' => '<div class="alert alert-info">Choosing <strong>PRIORITY</strong> Pick Up will send your request to all of the <em>fee-based</em> pick up providers in our database.  These providers will pick up "almost" <strong>ANYTHING</strong> you have for a fee, and their service provides <em>additional benefits</em> such as the removal of items from anywhere inside your property to be taken to a local non-profit, as well as the removal of junk and items local non-profits cannot accept.<br><br><em>In most cases your donation is still tax-deductible, and these organizations will respond in 24hrs or less. Check with whichever pick up provider you choose.</em></div>',
                     'trans_dept_id' => $default_trans_dept[0],
                     'alternate_donate_now_url' => site_url( '/step-one/?oid=' . $default_org->ID . '&tid=' . $default_trans_dept[0] . '&priority=1' ),

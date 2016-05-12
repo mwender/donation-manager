@@ -516,6 +516,7 @@ class DMOrphanedDonations extends DonationManager {
 				'end_date' => null,
 				'search' => null,
 				'priority' => 'all',
+				'filterby' => 'email_address',
 			) );
 
 		// Since priority, orderby, sort, and limit can be passed via
@@ -543,8 +544,11 @@ class DMOrphanedDonations extends DonationManager {
 		if ( is_numeric( $args['offset'] ) && 0 < $args['offset'] )
 			$limit.= ' OFFSET ' . $args['offset'];
 
+		$filterby_cols = array( 'email_address', 'store_name', 'zipcode' );
+		$filterby = ( in_array( $args['filterby'], $filterby_cols ) )? $args['filterby'] : 'email_address' ;
+
 		if ( ! empty( $args['search'] ) ) {
-			$search = "\n\t\t" . 'AND email_address LIKE \'%' . esc_sql( $args['search'] ) . '%\'';
+			$search = "\n\t\t" . 'AND ' . $filterby . ' LIKE \'%' . esc_sql( $args['search'] ) . '%\'';
 		}
 
 		$sql_format = 'SELECT contacts.ID,store_name,zipcode,email_address,receive_emails,timestamp,COUNT(donation_id) AS total_donations
@@ -794,8 +798,12 @@ class DMOrphanedDonations extends DonationManager {
 			$response->search = $_POST['search']['value'];
 		}
 
+		// Filterby
+		if( isset( $_POST['filterby'] ) )
+			$response->filterby = $_POST['filterby'];
+
 		// SQL: Count the total number of records
-		$count_sql = $this->_get_orphaned_donations_query( array( 'orderby' => $response->orderby, 'sort' => $response->sort, 'start_date' => $start_date, 'search' => $response->search, 'priority' => $priority ) );
+		$count_sql = $this->_get_orphaned_donations_query( array( 'orderby' => $response->orderby, 'sort' => $response->sort, 'start_date' => $start_date, 'search' => $response->search, 'priority' => $priority, 'filterby' => $response->filterby ) );
 
 		$wpdb->get_results( $count_sql );
 		$response->recordsTotal = (int) $wpdb->num_rows;
@@ -806,7 +814,7 @@ class DMOrphanedDonations extends DonationManager {
 		$data = array();
 
 		// SQL: Get the stores
-		$stores_sql = $this->_get_orphaned_donations_query( array( 'orderby' => $response->orderby, 'sort' => $response->sort, 'limit' => $response->limit, 'offset' => $response->offset, 'start_date' => $start_date, 'search' => $response->search, 'priority' => $priority ) );
+		$stores_sql = $this->_get_orphaned_donations_query( array( 'orderby' => $response->orderby, 'sort' => $response->sort, 'limit' => $response->limit, 'offset' => $response->offset, 'start_date' => $start_date, 'search' => $response->search, 'priority' => $priority, 'filterby' => $response->filterby ) );
 		$stores = $wpdb->get_results( $stores_sql );
 
 		$response->stores = $stores;

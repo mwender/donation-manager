@@ -4,6 +4,7 @@ Donation Manager is a WordPress plugin which handles a multi-form donation proce
 
 __04/??/2016 - Version 1.4.3__
 
+- New Report: `Donations > Donation Reports > Orphaned Donors`.
 - Refacotring: `$DMReports->callback_donation_report()` to load external fns file.
 - Refactoring: Moving report JS into `lib/js/reports.orgs.js`.
 - Refactoring: Renaming `lib/includes` to `lib/views`.

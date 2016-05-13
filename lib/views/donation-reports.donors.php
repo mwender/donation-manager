@@ -1,4 +1,4 @@
-<h3>Donors by Zip Code</h3>
+<h3>Orphaned Donors by Zip Code</h3>
 <table id="table-donor-report" class="display">
 	<colgroup>
 		<col style="" />

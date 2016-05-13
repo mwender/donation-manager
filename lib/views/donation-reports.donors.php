@@ -1,6 +1,3 @@
-
-<form id="form-donor-report" action="#" style="float: right;"><input type="text" class="regular-text" placeholder="Enter a zip code" tabindex="9" style="width: 10em;" id="query-zip" /><?php submit_button( 'Search', 'secondary', 'search', false, array( 'tabindex' => 10) ); ?></form>
-<pre id="response-body"></pre>
 <h3>Donors by Zip Code</h3>
 <table id="table-donor-report" class="display">
 	<colgroup>

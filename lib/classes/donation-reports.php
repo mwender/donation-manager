@@ -111,7 +111,7 @@ class DMReports extends DonationManager {
 
 	<h2 class="nav-tab-wrapper">
 		<a href="edit.php?post_type=donation&page=donation_reports" class="nav-tab<?php echo ( 'default' == $active_tab )? ' nav-tab-active' : ''; ?>">Organizations</a>
-		<a href="edit.php?post_type=donation&page=donation_reports&tab=donors" class="nav-tab<?php echo ( 'donors' == $active_tab )? ' nav-tab-active' : ''; ?>">Donors</a>
+		<a href="edit.php?post_type=donation&page=donation_reports&tab=donors" class="nav-tab<?php echo ( 'donors' == $active_tab )? ' nav-tab-active' : ''; ?>">Orphaned Donors</a>
 	</h2>
 	<div class="wrap"><?php
 	switch ( $active_tab ) {

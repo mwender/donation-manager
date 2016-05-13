@@ -13,6 +13,12 @@ class DMReports extends DonationManager {
     }
 
     private function __construct() {
+    	add_action( 'admin_menu', array( $this, 'admin_menu' ) );
+    	add_action( 'wp_ajax_donation-report', array( $this, 'callback_donation_report' ) );
+		add_action( 'template_redirect', array( $this, 'download_report' ) );
+		add_action( 'template_redirect', array( $this, 'get_attachment' ) );
+		add_action( 'init', array( $this, 'add_rewrite_rules' ) );
+		add_action( 'init', array( $this, 'add_rewrite_tags' ) );
     }
 
 	/**
@@ -56,116 +62,68 @@ class DMReports extends DonationManager {
 	 *
 	 * @return void
 	 */
-    public function admin_enqueue_scripts(){
+    public function admin_enqueue_scripts( $hook ){
+    	if( 'donation_page_donation_reports' != $hook )
+    		return;
+    	$active_tab = ( isset( $_GET['tab'] ) )? $_GET['tab'] : 'default';
+
     	wp_enqueue_style( 'dm-admin-css', plugins_url( '../css/admin.css', __FILE__ ), false, filemtime( plugin_dir_path( __FILE__ ) . '../css/admin.css' ) );
-    	wp_register_script( 'dm-admin-js', plugins_url( '../js/admin.js', __FILE__ ), array( 'jquery' ), filemtime( plugin_dir_path( __FILE__ ) . '../js/admin.js' ) );
-    	wp_enqueue_script( 'dm-admin-js' );
-    	wp_localize_script( 'dm-admin-js', 'ajax_object', array( 'ajax_url' => admin_url( 'admin-ajax.php' ), 'site_url' => site_url( '/download/' ), 'permalink_url' => admin_url( 'options-permalink.php' ) ) );
-    	wp_enqueue_script( 'jquery-file-download', plugins_url( '../components/vendor/jquery-file-download/src/Scripts/jquery.fileDownload.js', __FILE__ ), array( 'jquery', 'jquery-ui-dialog', 'jquery-ui-progressbar' ) );
-    	wp_enqueue_style( 'wp-jquery-ui-dialog' );
+
+    	switch ( $active_tab ) {
+    		case 'donors':
+				wp_enqueue_style( 'datatables', 'https://cdn.datatables.net/r/dt/dt-1.10.9,fh-3.0.0/datatables.min.css' );
+				wp_register_script( 'datatables', 'https://cdn.datatables.net/r/dt/dt-1.10.9,fh-3.0.0/datatables.min.js', array( 'jquery' ) );
+
+		    	wp_register_script( 'dm-reports-donors-js', plugins_url( '../js/reports.donors.js', __FILE__ ), array( 'jquery', 'datatables' ), filemtime( plugin_dir_path( __FILE__ ) . '../js/reports.donors.js' ) );
+		    	wp_enqueue_script( 'dm-reports-donors-js' );
+		    	wp_localize_script( 'dm-reports-donors-js', 'ajax_object', array( 'ajax_url' => admin_url( 'admin-ajax.php' ) ) );
+			break;
+
+    		default:
+		    	wp_register_script( 'dm-reports-orgs-js', plugins_url( '../js/reports.orgs.js', __FILE__ ), array( 'jquery' ), filemtime( plugin_dir_path( __FILE__ ) . '../js/reports.orgs.js' ) );
+		    	wp_enqueue_script( 'dm-reports-orgs-js' );
+		    	wp_localize_script( 'dm-reports-orgs-js', 'ajax_object', array( 'ajax_url' => admin_url( 'admin-ajax.php' ), 'site_url' => site_url( '/download/' ), 'permalink_url' => admin_url( 'options-permalink.php' ) ) );
+		    	wp_enqueue_script( 'jquery-file-download', plugins_url( '../components/vendor/jquery-file-download/src/Scripts/jquery.fileDownload.js', __FILE__ ), array( 'jquery', 'jquery-ui-dialog', 'jquery-ui-progressbar' ) );
+		    	wp_enqueue_style( 'wp-jquery-ui-dialog' );
+			break;
+    	}
+
     }
 
 	/**
-	 * Adds page to admin menu.
+	 * Adds page to  Donations submenu.
 	 *
 	 * @since 1.0.0
 	 *
 	 * @return void
 	 */
     public function admin_menu(){
-    	$page = add_menu_page( 'Donation Reports', 'Donation Reports', 'moderate_comments', 'donation_reports', array( $this, 'callback_donation_reports_page' ), 'dashicons-analytics' );
-    	add_action( 'admin_print_styles-' . $page, array( $this, 'admin_enqueue_scripts' ) );
+		$donation_reports_hook = add_submenu_page( 'edit.php?post_type=donation', 'Donation Reports', 'Donation Reports', 'activate_plugins', 'donation_reports', array( $this, 'callback_donation_reports_page' ) );
+		add_action( 'admin_enqueue_scripts', array( $this, 'admin_enqueue_scripts' ) );
     }
 
     public function callback_donation_reports_page(){
+    	$active_tab = ( isset( $_GET['tab'] ) )? $_GET['tab'] : 'default';
     	?>
 <div class="wrap">
 
-	<div id="icon-options-general" class="icon32"></div>
 	<h2>Donation Reports</h2>
 
-	<div id="poststuff">
+	<h2 class="nav-tab-wrapper">
+		<a href="edit.php?post_type=donation&page=donation_reports" class="nav-tab<?php echo ( 'default' == $active_tab )? ' nav-tab-active' : ''; ?>">Organizations</a>
+		<a href="edit.php?post_type=donation&page=donation_reports&tab=donors" class="nav-tab<?php echo ( 'donors' == $active_tab )? ' nav-tab-active' : ''; ?>">Orphaned Donors</a>
+	</h2>
+	<div class="wrap"><?php
+	switch ( $active_tab ) {
+		case 'donors':
+			include_once plugin_dir_path( __FILE__ ) . '../views/donation-reports.donors.php';
+		break;
 
-		<div id="post-body" class="metabox-holder columns-2">
-
-			<!-- main content -->
-			<div id="post-body-content">
-
-				<div class="meta-box-sortables ui-sortable">
-
-					<div class="postbox">
-
-						<h3><span>Donations by Organization</span></h3>
-						<div class="inside">
-						<?php
-						$date = new DateTime( current_time( 'Y-m-d' ) );
-						$month = $date->format( 'Y-m' );
-						?>
-							<p><label>Month:</label>
-							<select name="report-month" id="report-month">
-								<?php echo implode( '', $this->get_select_month_options( $month ) ); ?>
-							</select>
-							</p>
-							<table class="widefat report" id="donation-display">
-								<colgroup><col style="width: 5%;" /><col style="width: 5%;" /><col style="width: 60%;" /><col style="width: 20%;" /><col style="width: 10%;" /></colgroup>
-								<thead>
-									<tr>
-										<th>#</th>
-										<th>ID</th>
-										<th>Organization</th>
-										<th style="text-align: right" id="heading-date"></th>
-										<th style="white-space: nowrap">Export CSV</th>
-									</tr>
-								</thead>
-								<tbody>
-									<tr>
-										<td colspan="5" style="text-align: center; padding: 50px; background: #fff;"><a href="#" class="button" id="load-report" style="">Load Report</a></td>
-									</tr>
-								</tbody>
-							</table>
-						</div> <!-- .inside -->
-
-					</div> <!-- .postbox -->
-
-				</div> <!-- .meta-box-sortables .ui-sortable -->
-
-			</div> <!-- post-body-content -->
-
-			<!-- sidebar -->
-			<div id="postbox-container-1" class="postbox-container">
-
-				<div class="meta-box-sortables">
-
-					<div class="postbox">
-
-						<h3><span>Combined Donations</span></h3>
-						<div class="inside">
-							<p>Download reports for all organizations as a CSV.</p>
-							<p><select name="all-donations-report-month" id="all-donations-report-month">
-								<?php
-								echo '<option value="alldonations">All donations</option>';
-								echo implode( '', $this->get_select_month_options( $last_month ) ); ?>
-							</select></p>
-							<?php submit_button( 'Download', 'secondary', 'export-all-donations', false  ) ?>
-							<div class="ui-overlay">
-								<div class="ui-widget-overlay" id="donation-download-overlay" style="display: none;"></div>
-								<div id="donation-download-modal" title="Building file..." style="display: none;">
-									<p><strong>IMPORTANT:</strong> DO NOT close this window or your browser. Once your file is built, we'll initiate the download for you.</p>
-									<div id="donation-download-progress"></div>
-								</div>
-							</div>
-						</div> <!-- .inside -->
-
-					</div> <!-- .postbox -->
-
-				</div> <!-- .meta-box-sortables -->
-
-			</div> <!-- #postbox-container-1 .postbox-container -->
-
-		</div> <!-- #post-body .metabox-holder .columns-2 -->
-
-		<br class="clear">
-	</div> <!-- #poststuff -->
+		default:
+			include_once plugin_dir_path( __FILE__ ) . '../views/donation-reports.php';
+		break;
+	}
+	?></div><!-- .wrap -->
 
 </div> <!-- .wrap -->
     	<?php
@@ -176,222 +134,33 @@ class DMReports extends DonationManager {
 	 *
 	 * @since 1.0.0
 	 *
+	 * @param string $_POST['context'] Controls the logic loaded by this method.
+	 * @param string $_POST['switch'] Used inside the logic `context` to determine which code to run.
 	 * @return void
 	 */
     public function callback_donation_report(){
-    	$switch = $_POST['switch'];
 
     	$response = new stdClass();
     	$response->message = '';
 		$response->status = 'end';
-
 		$access_type = get_filesystem_method();
 		$response->access_type = $access_type;
 
-    	switch( $switch ){
-    		case 'build_file':
-    			$attach_id = $_POST['attach_id'];
-    			$response->attach_id = $attach_id;
-    			$filename = get_attached_file( $attach_id );
+		$context = ( $_POST['context'] )? $_POST['context'] : 'organizations';
+		$response->context = $context;
+    	$file = plugin_dir_path( __FILE__ ) . '../fns/callback-donation-report.' . $context . '.php';
 
+		$switch = $_POST['switch'];
+		$response->switch = $switch;
 
-    			if( 'direct' != $access_type ){
-    				$response->message = 'Unable to write to file system.';
-    				break;
-    			}
-
-    			$creds = request_filesystem_credentials( site_url() . '/wp-admin/', '', false, false, array() );
-				// break if we find any problems
-				if( ! WP_Filesystem( $creds ) ){
-					$response->message = 'Unable to get filesystem credentials.';
-					break;
-				}
-
-				global $wp_filesystem;
-
-				// Open the file we're building so we can append more rows below
-				if( false === ( $csv = $wp_filesystem->get_contents( $filename ) ) ){
-					$response->message = 'Unable to open ' . basename( $filename );
-					break;
-				}
-
-				// Get _offset and donations
-				$offset = get_post_meta( $attach_id, '_offset', true );
-				$month = get_post_meta( $attach_id, '_month', true );
-				$donations_per_page = 1000;
-				$donations = $this->get_all_donations( $offset, $donations_per_page, $month );
-
-				// Update _offset and write donations to file
-				update_post_meta( $attach_id, '_offset', $donations['offset'], $offset );
-				$csv.= "\n" . implode( "\n", $donations['rows'] );
-
-				if( ! $wp_filesystem->put_contents( $filename, $csv, FS_CHMOD_FILE ) ){
-					$response->message = 'Unable to write donations to file!';
-				} else {
-					$response->message = 'Successfully wrote donations to file.';
-				}
-
-				// Continue?
-				/*
-				$count_donations = wp_count_posts( 'donation' );
-				$published_donations = $count_donations->publish;
-				*/
-				$published_donations = $donations['found_posts'];
-				$response->published_donations = $published_donations;
-				$response->progress_percent = number_format( ( $donations['offset'] / $published_donations ) * 100 );
-
-				$response->offset = $donations['offset'];
-
-				if( $published_donations > $donations['offset'] ){
-					$response->status = 'continue';
-				} else {
-					$response->status = 'end';
-					$response->fileurl = site_url( '/getattachment/' . $attach_id );
-				}
-    		break;
-    		case 'create_file':
-    			/**
-    			 * Creates the `all_donations` CSV and returns response.status = continue
-    			 * for admin.js. Then, admin.js calls `build_file` until all donations
-    			 * have been written to the CSV and response.status = end.
-    			 */
-    			$upload_dir = wp_upload_dir();
-    			$response->upload_dir = $upload_dir;
-    			$reports_dir = trailingslashit( $upload_dir['basedir'] . '/reports' . $upload_dir['subdir'] );
-    			$response->reports_dir = $reports_dir;
-
-    			if( 'direct' === $access_type ){
-    				$creds = request_filesystem_credentials( site_url() . '/wp-admin/', '', false, false, array() );
-
-    				// break if we find any problems
-    				if( ! WP_Filesystem( $creds ) ){
-    					$response->message = 'Unable to get filesystem credentials.';
-    					break;
-    				}
-
-    				global $wp_filesystem;
-
-    				// Create the directory for the report
-
-    				// Check/Create /uploads/reports/
-					if( ! $wp_filesystem->is_dir( $upload_dir['basedir'] . '/reports' ) )
-						$wp_filesystem->mkdir( $upload_dir['basedir'] . '/reports' );
-
-					// Check/Create /uploads/reports/ subdirs
-    				if( ! $wp_filesystem->is_dir( $reports_dir ) ){
-    					$subdirs = explode( '/', $upload_dir['subdir'] );
-    					$chk_dir = $upload_dir['basedir'] . '/reports/';
-    					foreach( $subdirs as $dir ){
-    						$chk_dir.= $dir . '/';
-    						if( ! $wp_filesystem->is_dir( $chk_dir ) )
-    							$wp_filesystem->mkdir( $chk_dir );
-    					}
-    				}
-
-    				if( ! $wp_filesystem->is_dir( $reports_dir ) ){
-    					$response->message = 'Unable to create reports directory (' . $reports_dir . ').';
-    					break;
-    				}
-
-    				// Create the CSV file
-    				$csv_columns = '"Date/Time Modified","DonorName","DonorAddress","DonorCity","DonorState","DonorZip","DonorPhone","DonorEmail","DonationAddress","DonationCity","DonationState","DonationZip","DonationDescription","PickupDate1","PickupDate2","PickupDate3","Organization","Referer"';
-
-    				$month = ( isset( $_POST['month'] ) && preg_match( '/[0-9]{4}-[0-9]{2}/', $_POST['month'] ) )? $_POST['month'] : '';
-    				$filename = 'all-donations';
-    				if( ! empty( $month ) )
-    					$filename.= '_' . $month;
-    				$filename.= '_' . date( 'Y-m-d_Hi', current_time( 'timestamp' ) ) . '.csv';
-    				$filetype = wp_check_filetype( $filename, null );
-
-    				$filepath = trailingslashit( $reports_dir ) . $filename;
-    				if( ! $wp_filesystem->put_contents( $filepath, $csv_columns, FS_CHMOD_FILE ) ){
-    					$response->message = '$wp_filesystem->put_contents( ' . $filepath . ') Error saving file!';
-    				} else {
-    					$response->message = 'CSV file `' . $filename .  '` created at:' . "\n" . $reports_dir;
-    				}
-
-    				$attachment = array(
-    					'guid' => trailingslashit( $upload_dir['baseurl'] . '/reports' . $upload_dir['subdir'] ) . $filename,
-    					'post_mime_type' => $filetype['type'],
-						'post_title'     => preg_replace( '/\.[^.]+$/', '', basename( $filename ) ),
-						'post_content'   => '',
-						'post_status'    => 'inherit'
-					);
-					$attach_id = wp_insert_attachment( $attachment, $filepath );
-
-					// Make sure that this file is included, as wp_generate_attachment_metadata() depends on it.
-					require_once( ABSPATH . 'wp-admin/includes/image.php' );
-
-					// Generate the metadata for the attachment, and update the database record.
-					$attach_data = wp_generate_attachment_metadata( $attach_id, $filename );
-					wp_update_attachment_metadata( $attach_id, $attach_data );
-
-					// Set offset meta value
-					update_post_meta( $attach_id, '_offset', 0 );
-
-					// Store `month`
-					if( isset( $month ) )
-						update_post_meta( $attach_id, '_month', $month );
-
-					$response->attach_id = $attach_id;
-
-					$get_attached_file_response = get_attached_file( $attach_id );
-					$response->path_to_file = $get_attached_file_response;
-					$response->status = 'continue';
-    			}
-    		break;
-
-    		case 'get_orgs':
-    			if( false === ( $organizations = get_transient( 'get_orgs' ) ) ){
-	    			$orgs = $this->get_rows( 'organization' );
-	    			$organizations = array();
-	    			if( $orgs ){
-	    				foreach( $orgs as $post ){
-	    					$organizations[] = $post->ID;
-	    				}
-	    			}
-	    			set_transient( 'get_orgs', $organizations, 6 * HOUR_IN_SECONDS );
-    			}
-    			$response->orgs = $organizations;
-    		break;
-
-    		case 'get_org_report':
-    			/**
-    			 * This report needs to be optimized. It's very expensive
-    			 * with regards to server resources.
-    			 */
-
-    			if( ! is_numeric( $_POST['id'] ) || empty( $_POST['id'] ) )
-    				return;
-    			$id = $_POST['id'];
-    			$response->id = $id;
-    			$month = ( $_POST['month'] )? $_POST['month'] : current_time( 'Y-m' );
-    			$date = new DateTime( $month );
-
-    			$transient_name = 'org_' . $id . '_donation_report_' . $month;
-
-    			if( false === ( $org = get_transient( $transient_name ) ) ){
-	    			$post = get_post( $id );
-	    			$org = new stdClass();
-	    			$org->ID = $id;
-	    			$org->title = $post->post_title;
-
-					/*
-					$donations = $this->get_donations( $id, $month );
-					$donation_count = ( $donations )? count( $donations ) : 0 ;
-					$org->count = $donation_count;
-					/**/
-					$donation_count = $this->get_donations( $id, $month, true );
-					$org->count = ( is_numeric( $donation_count ) )? $donation_count : '0' ;
-
-					$org->button = get_submit_button( $date->format( 'M Y' ), 'secondary small export-csv', 'export-csv-' . $id, false, array( 'aria-org-id' => $id ) );
-    				set_transient( $transient_name, $org, 1 * HOUR_IN_SECONDS );
-    			}
-
-				$response->columnHeading = $date->format( 'M Y' ) . ' Donations';
-				$response->org = $org;
-				$response->post = $post;
-    		break;
+    	if( file_exists( $file ) ){
+    		/**
+    		 * Main logic run by this method.
+    		 */
+    		$response->logic_file = basename( $file );
+    		require_once( $file );
+    	} else {
+    		$response->message = 'ERROR: callback_donation_report() unable to load file (' . basename( $file ) . ').';
     	}
 
     	wp_send_json( $response );
@@ -713,15 +482,4 @@ class DMReports extends DonationManager {
 		return $options;
     }
 }
-
-$DMReports = DMReports::get_instance();
-add_action( 'admin_menu', array( $DMReports, 'admin_menu' ) );
-//add_action( 'wp_ajax_export-csv', array( $DMReports, 'callback_export_csv' ) );
-add_action( 'wp_ajax_donation-report', array( $DMReports, 'callback_donation_report' ) );
-add_action( 'template_redirect', array( $DMReports, 'download_report' ) );
-add_action( 'template_redirect', array( $DMReports, 'get_attachment' ) );
-add_action( 'init', array( $DMReports, 'add_rewrite_rules' ) );
-add_action( 'init', array( $DMReports, 'add_rewrite_tags' ) );
-register_activation_hook( __FILE__, array( $DMReports, 'flush_rewrites' ) );
-register_deactivation_hook( __FILE__, array( $DMReports, 'flush_rewrites' ) );
 ?>

@@ -2,6 +2,20 @@
 
 Donation Manager is a WordPress plugin which handles a multi-form donation process. This plugin requires the [PODS Plugin for WordPress](http://pods.io).
 
+__05/13/2016 - Version 1.4.3__
+
+- New Report: `Donations > Donation Reports > Orphaned Donors`.
+- Refacotring: `$DMReports->callback_donation_report()` to load external fns file.
+- Refactoring: Moving report JS into `lib/js/reports.orgs.js`.
+- Refactoring: Renaming `lib/includes` to `lib/views`.
+- Refactoring: Tabbed interface for *Donations > Donation Reports*. 
+- Refactoring: Moved Shortcode class instantiation after class inclusion.
+- Refactoring: Moved Donation Report class instantiation after class inclusion.
+- Refactoring: Moved `$DonationManager` hooks to class construct
+- Refactoring: Moved `$DMReports` hook calls inside `__construct()`.
+- Moved *Donation Reports* to *Donations > Donation Reports*.
+- Bugfix: Month value was not getting set during Donation Report generation.
+
 __05/05/2016 - Version 1.4.2.1__
 
 - Displaying ad rows for all organizations on `select-your-organization` view

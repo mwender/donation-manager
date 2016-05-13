@@ -12,6 +12,13 @@ class DMShortcodes extends DonationManager {
 
     private function __construct() {
     	add_filter( 'wpseo_metadesc', array( $this, 'add_seo_page_metadesc' ), 11, 1 );
+		add_shortcode( 'boilerplate', array( $this, 'get_boilerplate' ) );
+		add_shortcode( 'donate-now-button', array( $this, 'get_donate_now_button' ) );
+		add_shortcode( 'list-pickup-codes', array( $this, 'get_pickup_codes' ) );
+		add_shortcode( 'organization-description', array( $this, 'get_organization_description' ) );
+		add_shortcode( 'organization-seo-page', array( $this, 'get_organization_seo_page' ) );
+		add_shortcode( 'unsubscribe-orphaned-contact', array( $this, 'unsubscribe' ) );
+		add_shortcode( 'bounced-orphaned-contact', array( $this, 'bounce_processing' ) );
     }
 
 	/**
@@ -339,13 +346,4 @@ Our mission is to connect you with organizations who will pick up your donation.
 		return $message;
     }
 }
-$DMShortcodes = DMShortcodes::get_instance();
-
-add_shortcode( 'boilerplate', array( $DMShortcodes, 'get_boilerplate' ) );
-add_shortcode( 'donate-now-button', array( $DMShortcodes, 'get_donate_now_button' ) );
-add_shortcode( 'list-pickup-codes', array( $DMShortcodes, 'get_pickup_codes' ) );
-add_shortcode( 'organization-description', array( $DMShortcodes, 'get_organization_description' ) );
-add_shortcode( 'organization-seo-page', array( $DMShortcodes, 'get_organization_seo_page' ) );
-add_shortcode( 'unsubscribe-orphaned-contact', array( $DMShortcodes, 'unsubscribe' ) );
-add_shortcode( 'bounced-orphaned-contact', array( $DMShortcodes, 'bounce_processing' ) );
 ?>

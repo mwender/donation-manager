@@ -44,6 +44,36 @@ class DonationManager {
 
     private function __construct() {
         if( ! defined( 'WP_CLI' ) ) session_start();
+
+        // Frontend functionality
+        add_shortcode( 'donationform', array( $this, 'callback_shortcode' ) );
+        add_action( 'init', array( $this, 'callback_init_set_debug' ), 98 );
+        add_action( 'init', array( $this, 'callback_init' ), 99 );
+        add_action( 'init', array( $this, 'callback_init_track_url_path' ), 100 );
+        add_action( 'template_redirect', array( $this, 'callback_template_redirect' ) );
+        add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_scripts' ) );
+
+        // Modifications to the WordPress Admin
+        add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_admin_scripts' ) );
+        add_action( 'add_meta_boxes', array( $this, 'callback_metaboxes' ) );
+
+        // Add columns to `donation` CPT list in admin
+        add_filter( 'manage_donation_posts_columns', array( $this, 'columns_for_donation' ) );
+        add_action( 'manage_donation_posts_custom_column', array( $this, 'custom_column_content' ), 10, 2 );
+        add_filter( 'manage_edit-donation_sortable_columns', array( $this, 'custom_sortable_columns') );
+
+        // Add columns to `store` CPT list in admin
+        add_filter( 'manage_store_posts_columns', array( $this, 'columns_for_store' ) );
+        add_action( 'manage_store_posts_custom_column', array( $this, 'custom_column_content' ), 10, 2 );
+        add_filter( 'manage_edit-store_sortable_columns', array( $this, 'custom_sortable_columns') );
+
+        // Add columns to `trans_dept` CPT list in admin
+        add_filter( 'manage_trans_dept_posts_columns', array( $this, 'columns_for_trans_dept' ) );
+        add_action( 'manage_trans_dept_posts_custom_column', array( $this, 'custom_column_content' ), 10, 2 );
+        add_filter( 'manage_edit-trans_dept_sortable_columns', array( $this, 'custom_sortable_columns') );
+
+        add_filter( 'request', array( $this, 'custom_columns_sort' ) );
+        add_action( 'save_post', array( $this, 'custom_save_post' ) );
     }
 
     static function activate() {
@@ -1280,7 +1310,6 @@ class DonationManager {
 
     public function enqueue_admin_scripts(){
         wp_register_script( 'dm-admin-js', plugins_url( 'lib/js/admin.js', __FILE__ ), array( 'jquery' ), filemtime( plugin_dir_path( __FILE__ ) . 'lib/js/admin.js' ) );
-        wp_localize_script( 'dm-admin-js', 'ajax_object', array( 'ajax_url' => admin_url( 'admin-ajax.php' ), 'site_url' => site_url( '/download/' ), 'permalink_url' => admin_url( 'options-permalink.php' ) ) );
         wp_enqueue_script( 'dm-admin-js' );
     }
 
@@ -2753,48 +2782,19 @@ class DonationManager {
 $DonationManager = DonationManager::get_instance();
 register_activation_hook( __FILE__, array( $DonationManager, 'activate' ) );
 
-// Frontend functionality
-add_shortcode( 'donationform', array( $DonationManager, 'callback_shortcode' ) );
-add_action( 'init', array( $DonationManager, 'callback_init_set_debug' ), 98 );
-add_action( 'init', array( $DonationManager, 'callback_init' ), 99 );
-add_action( 'init', array( $DonationManager, 'callback_init_track_url_path' ), 100 );
-add_action( 'template_redirect', array( $DonationManager, 'callback_template_redirect' ) );
-add_action( 'wp_enqueue_scripts', array( $DonationManager, 'enqueue_scripts' ) );
-
-// Modifications to the WordPress Admin
-add_action( 'admin_enqueue_scripts', array( $DonationManager, 'enqueue_admin_scripts' ) );
-add_action( 'add_meta_boxes', array( $DonationManager, 'callback_metaboxes' ) );
-
-// Add columns to `donation` CPT list in admin
-add_filter( 'manage_donation_posts_columns', array( $DonationManager, 'columns_for_donation' ) );
-add_action( 'manage_donation_posts_custom_column', array( $DonationManager, 'custom_column_content' ), 10, 2 );
-add_filter( 'manage_edit-donation_sortable_columns', array( $DonationManager, 'custom_sortable_columns') );
-
-// Add columns to `store` CPT list in admin
-add_filter( 'manage_store_posts_columns', array( $DonationManager, 'columns_for_store' ) );
-add_action( 'manage_store_posts_custom_column', array( $DonationManager, 'custom_column_content' ), 10, 2 );
-add_filter( 'manage_edit-store_sortable_columns', array( $DonationManager, 'custom_sortable_columns') );
-
-// Add columns to `trans_dept` CPT list in admin
-add_filter( 'manage_trans_dept_posts_columns', array( $DonationManager, 'columns_for_trans_dept' ) );
-add_action( 'manage_trans_dept_posts_custom_column', array( $DonationManager, 'custom_column_content' ), 10, 2 );
-add_filter( 'manage_edit-trans_dept_sortable_columns', array( $DonationManager, 'custom_sortable_columns') );
-
-add_filter( 'request', array( $DonationManager, 'custom_columns_sort' ) );
-add_action( 'save_post', array( $DonationManager, 'custom_save_post' ) );
-
 // Include our Orphaned Donations Class
 require 'lib/classes/orphaned-donations.php';
 $DMOrphanedDonations = DMOrphanedDonations::get_instance();
 
 // Include our Reporting Class
 require 'lib/classes/donation-reports.php';
+$DMReports = DMReports::get_instance();
+register_activation_hook( __FILE__, array( $DMReports, 'flush_rewrites' ) );
+register_deactivation_hook( __FILE__, array( $DMReports, 'flush_rewrites' ) );
 
 // Include Shortcodes Class
 require 'lib/classes/shortcodes.php';
-
-// Include our PMD1.0 Importer Class
-//require 'dmimporter.php';
+$DMShortcodes = DMShortcodes::get_instance();
 
 $mailtrap = dirname( __FILE__ ) . '/mailtrap.php';
 if( file_exists( $mailtrap ) )

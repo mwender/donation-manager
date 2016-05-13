@@ -157,6 +157,7 @@ class DMReports extends DonationManager {
     		/**
     		 * Main logic run by this method.
     		 */
+    		$response->logic_file = basename( $file );
     		require_once( $file );
     	} else {
     		$response->message = 'ERROR: callback_donation_report() unable to load file (' . basename( $file ) . ').';

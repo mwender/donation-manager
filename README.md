@@ -5,6 +5,7 @@ Donation Manager is a WordPress plugin which handles a multi-form donation proce
 __05/16/2016 - Version 1.4.3.1__
 
 - Disabling Priority Orphan donation option for markets with an existing non-profit partner.
+- Allow sending of trans dept emails even when donation is submitted via to an API.
 
 __05/13/2016 - Version 1.4.3__
 

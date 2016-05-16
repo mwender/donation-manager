@@ -2586,7 +2586,10 @@ class DonationManager {
                     $donor['routing_method'] = $this->_get_donation_routing_method( $donor['org_id'] );
                     if( 'email' != $donor['routing_method'] ){
                         $this->send_api_post( $donor );
-                        return; // Return from this function as we've already sent the trans dept notification.
+                        // If we have no trans dept email contacts, return from this function as we
+                        // we've already sent the trans dept notification.
+                        if( empty( $tc['contact_email'] ) && empty( $tc['cc_emails'] ) )
+                            return;
                     }
                 }
 

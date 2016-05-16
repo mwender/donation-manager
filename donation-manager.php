@@ -4,7 +4,7 @@
 	Plugin URI: http://www.pickupmydonation.com
 	Description: Online donation manager built for ReNew Management, Inc and PickUpMyDonation.com. This plugin displays the donation form and handles donation submissions.
 	Author: Michael Wender
-	Version: 1.4.2
+	Version: 1.4.3.1
 	Author URI: http:://michaelwender.com
  */
 /*  Copyright 2014-15  Michael Wender  (email : michael@michaelwender.com)
@@ -1638,7 +1638,13 @@ class DonationManager {
                     'alternate_donate_now_url' => $org['alternate_donate_now_url']
                 );
                 array_unshift( $organizations, $default_org );
-            } else if ( 1 == count( $organizations ) && false == $priority_pickup ){
+            }
+            // 05/16/2016 (16:02) - the following adds a `Priority Orphan` pick up
+            // option in markets with 1 non-profit pick up provider. As of 05/16/2016
+            // we're turning off this option b/c it degrades the service donors
+            // receive, and it is confusing to our non-profit providers.
+            /*
+            else if ( 1 == count( $organizations ) && false == $priority_pickup ){
                 // Add our default priority pick up option to the end of the array.
                 $org = $this->get_default_organization( true );
                 $organizations[] = array(
@@ -1649,6 +1655,7 @@ class DonationManager {
                     'priority_pickup'           => true,
                 );
             }
+            */
         } else {
             return false;
         }

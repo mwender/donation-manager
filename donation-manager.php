@@ -23,7 +23,7 @@
     Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 define( 'DONMAN_DIR', dirname( __FILE__ ) );
-define( 'NON_PROFIT_BUTTON_TEXT', 'Free Pick Up' );
+define( 'NON_PROFIT_BUTTON_TEXT', 'Non-Profit Pick Up' );
 define( 'PRIORITY_BUTTON_TEXT', 'Priority Pick Up' );
 require 'vendor/autoload.php';
 

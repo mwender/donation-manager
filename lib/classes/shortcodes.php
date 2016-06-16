@@ -340,13 +340,12 @@ Our mission is to connect you with organizations who will pick up your donation.
 						}
 
 						wp_mail( $to, $subject, $message, $headers );
+						if( true === $atts['notify_webmaster'] )
+							wp_mail( 'webmaster@pickupmydonation.com', 'Mandrill Event - Inbound Email', 'The following was sent to ' . $to . "\n------\n\n" . $message );
 					break;
 				}
 			}
 		}
-
-		if( true === $atts['notify_webmaster'] )
-			wp_mail( 'webmaster@pickupmydonation.com', 'Mandrill Event - Inbound Email', 'The following was sent to ' . $to . "\n------\n\n" . $message );
 
 		return '<div class="alert alert-success">The event has been processed.</div>';
     }

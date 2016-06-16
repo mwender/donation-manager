@@ -2573,10 +2573,11 @@ class DonationManager {
                     'trans_contact' => $trans_contact,
                     'orphaned_donation_note' => $orphaned_donation_note,
                 ));
-                $recipients = array( $donor['email'] );
+                $recipients = array( $donor['address']['name']['first'] . ' ' . $donor['address']['name']['last'] . ' <' . $donor['email'] . '>' );
                 $subject = 'Thank You for Donating to ' . $organization_name;
 
                 // Set Reply-To the Transportation Department
+                $headers[] = 'Sender: PickUpMyDonation.com <contact@pickupmydonation.com>';
                 $headers[] = 'Reply-To: ' . $tc['contact_name'] . ' <' . $tc['contact_email'] . '>';
             break;
 
@@ -2644,13 +2645,28 @@ class DonationManager {
 
         }
 
-        add_filter( 'wp_mail_from', function( $email ){
-            return 'contact@pickupmydonation.com';
-        } );
+        if( 'donor_confirmation' != $type ){
+            add_filter( 'wp_mail_from', function( $email ){
+                return 'contact@pickupmydonation.com';
+            } );
 
-        add_filter( 'wp_mail_from_name', function( $name ){
-            return 'PickUpMyDonation';
-        });
+            add_filter( 'wp_mail_from_name', function( $name ){
+                return 'PickUpMyDonation.com';
+            });
+        } else {
+            add_filter( 'wp_mail_from', function( $email ){
+                $donor = $_SESSION['donor'];
+                $tc = $this->get_trans_dept_contact( $donor['trans_dept_id'] );
+                return ( ! empty( $tc['contact_email'] ) )? $tc['contact_email'] : 'contact@pickupmydonation.com';
+            } );
+
+            add_filter( 'wp_mail_from_name', function( $name ){
+                $donor = $_SESSION['donor'];
+                $tc = $this->get_trans_dept_contact( $donor['trans_dept_id'] );
+                return ( ! empty( $tc['contact_name'] ) )? $tc['contact_name'] : 'PickUpMyDonation.com';
+            });
+        }
+
         add_filter( 'wp_mail_content_type', array( $this, 'return_content_type' ) );
 
         $subject = html_entity_decode( $subject, ENT_COMPAT, 'UTF-8' );

@@ -328,11 +328,11 @@ Our mission is to connect you with organizations who will pick up your donation.
 							global $from;
 							switch( $recipient[0] ){
 								case 'donor':
-									$contact = $DonationManager->get_donation_contact( $recipient[1], 'donor' );
+									$contact = DonationManager::get_donation_contact( $recipient[1], 'donor' );
 									$from = 'transdept-' . $recipient[1] . '@inbound.pickupmydonation.com';
 								break;
 								case 'transdept':
-									$contact = $DonationManager->get_donation_contact( $recipient[1], 'transdept' );
+									$contact = DonationManager::get_donation_contact( $recipient[1], 'transdept' );
 									$from = 'donor-' . $recipient[1] . '@inbound.pickupmydonation.com';
 								break;
 							}

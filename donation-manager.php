@@ -1479,7 +1479,7 @@ class DonationManager {
 
             case 'transdept':
                 $transdept_id = get_post_meta( $donation_id, 'trans_dept', true );
-                $contact = $this->get_trans_dept_contact( $transdept_id );
+                $contact = DonationManager::get_trans_dept_contact( $transdept_id );
             break;
         }
 

@@ -347,6 +347,10 @@ Our mission is to connect you with organizations who will pick up your donation.
 				            return $from;
 				        } );
 
+				        add_filter( 'wp_mail_from_name', function( $name ){
+				            return 'PMD Replies';
+				        });
+
 						wp_mail( $to, $subject, $message, $headers );
 					break;
 				}

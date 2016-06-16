@@ -318,6 +318,12 @@ Our mission is to connect you with organizations who will pick up your donation.
 						$headers = $event['msg']['headers'];
 						$message = $event['msg']['text'];
 
+						if( stristr( $message, 'Content-Transfer-Encoding: 8bit' ) ){
+							$message_parts = explode( 'Content-Transfer-Encoding: 8bit', $message );
+							if( isset( $message_parts[1] ) )
+								$message = $message_parts[1];
+						}
+
 						$to = $event['msg']['email'];
 						// Inbound email format example: donor-89777@inbound.pickupmydonation.com
 						// - donor = this is being sent to the donor

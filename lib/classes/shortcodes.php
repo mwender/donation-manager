@@ -325,7 +325,7 @@ Our mission is to connect you with organizations who will pick up your donation.
 						$email_parts = explode( '@', $to );
 						if( stristr( $email_parts[0], '-' ) ){
 							$recipient = explode( '-', $email_parts[0] );
-
+							global $from;
 							switch( $recipient[0] ){
 								case 'donor':
 									$contact = $DonationManager->get_donation_contact( $recipient[1], 'donor' );
@@ -339,9 +339,15 @@ Our mission is to connect you with organizations who will pick up your donation.
 							$to = $contact['contact_email'];
 						}
 
-						wp_mail( $to, $subject, $message, $headers );
 						if( true === $atts['notify_webmaster'] )
 							wp_mail( 'webmaster@pickupmydonation.com', 'Mandrill Event - Inbound Email', 'The following was sent to ' . $to . "\n------\n\n" . $message );
+
+				        add_filter( 'wp_mail_from', function( $email ){
+				            global $from;
+				            return $from;
+				        } );
+
+						wp_mail( $to, $subject, $message, $headers );
 					break;
 				}
 			}

@@ -2645,27 +2645,13 @@ class DonationManager {
 
         }
 
-        if( 'donor_confirmation' != $type ){
-            add_filter( 'wp_mail_from', function( $email ){
-                return 'contact@pickupmydonation.com';
-            } );
+        add_filter( 'wp_mail_from', function( $email ){
+            return 'contact@pickupmydonation.com';
+        } );
 
-            add_filter( 'wp_mail_from_name', function( $name ){
-                return 'PickUpMyDonation.com';
-            });
-        } else {
-            add_filter( 'wp_mail_from', function( $email ){
-                $donor = $_SESSION['donor'];
-                $tc = $this->get_trans_dept_contact( $donor['trans_dept_id'] );
-                return ( ! empty( $tc['contact_email'] ) )? $tc['contact_email'] : 'contact@pickupmydonation.com';
-            } );
-
-            add_filter( 'wp_mail_from_name', function( $name ){
-                $donor = $_SESSION['donor'];
-                $tc = $this->get_trans_dept_contact( $donor['trans_dept_id'] );
-                return ( ! empty( $tc['contact_name'] ) )? $tc['contact_name'] : 'PickUpMyDonation.com';
-            });
-        }
+        add_filter( 'wp_mail_from_name', function( $name ){
+            return 'PickUpMyDonation.com';
+        });
 
         add_filter( 'wp_mail_content_type', array( $this, 'return_content_type' ) );
 

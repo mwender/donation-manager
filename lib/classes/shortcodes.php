@@ -19,6 +19,7 @@ class DMShortcodes extends DonationManager {
 		add_shortcode( 'organization-seo-page', array( $this, 'get_organization_seo_page' ) );
 		add_shortcode( 'unsubscribe-orphaned-contact', array( $this, 'unsubscribe' ) );
 		add_shortcode( 'bounced-orphaned-contact', array( $this, 'bounce_processing' ) );
+		add_shortcode( 'inbound_email_processing', array( $this, 'inbound_email_processing' ) );
     }
 
 	/**
@@ -286,6 +287,68 @@ Our mission is to connect you with organizations who will pick up your donation.
 		$html[] = $this->get_boilerplate( array( 'title' => 'about-pmd' ) );
 
 		return implode( "\n", $html );
+    }
+
+	/**
+	 * Processes inbound webhook notifications from Mandrill
+	 *
+	 * @since 1.4.4
+	 *
+	 * @param array $atts Shortcode attributes.
+	 * @return string Shortcode output.
+	 */
+    public static function inbound_email_processing( $atts ){
+    	$atts = shortcode_atts( array(
+			'notify_webmaster' => true,
+		), $atts );
+
+		if( 'false' === $atts['notify_webmaster'] )
+			$atts['notify_webmaster'] = false;
+		settype( $atts['notify_webmaster'], 'boolean' );
+
+		if( ! isset( $_POST['mandrill_events'] ) )
+			return '<div class="alert alert-danger"><strong>ERROR:</strong> No <code>mandrill_events</code> received.</div>';
+
+		$mandrill_events = json_decode( stripslashes( $_POST['mandrill_events'] ), true );
+		if( is_array( $mandrill_events ) ){
+			foreach( $mandrill_events as $event ){
+				switch( $event['event'] ){
+					case 'inbound':
+						$subject = $event['msg']['subject'];
+						$headers = $event['msg']['headers'];
+						$message = $event['msg']['text'];
+
+						$to = $event['msg']['email'];
+						// Inbound email format example: donor-89777@inbound.pickupmydonation.com
+						// - donor = this is being sent to the donor
+						// - 89777 = the donation ID
+						$email_parts = explode( '@', $to );
+						if( stristr( $email_parts[0], '-' ) ){
+							$recipient = explode( '-', $email_parts[0] );
+
+							switch( $recipient[0] ){
+								case 'donor':
+									$contact = $DonationManager->get_donation_contact( $recipient[1], 'donor' );
+									$from = 'transdept-' . $recipient[1] . '@inbound.pickupmydonation.com';
+								break;
+								case 'transdept':
+									$contact = $DonationManager->get_donation_contact( $recipient[1], 'transdept' );
+									$from = 'donor-' . $recipient[1] . '@inbound.pickupmydonation.com';
+								break;
+							}
+							$to = $contact['contact_email'];
+						}
+
+						wp_mail( $to, $subject, $message, $headers );
+					break;
+				}
+			}
+		}
+
+		if( true === $atts['notify_webmaster'] )
+			wp_mail( 'webmaster@pickupmydonation.com', 'Mandrill Event - Inbound Email', 'The following was sent to ' . $to . "\n------\n\n" . $message );
+
+		return '<div class="alert alert-success">The event has been processed.</div>';
     }
 
 	/**

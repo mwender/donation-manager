@@ -1456,6 +1456,37 @@ class DonationManager {
     }
 
     /**
+     * Given a donation ID and a contact type, returns contact
+     * info for a donation’s donor or trans dept contact.
+     *
+     * @since 1.4.4
+     *
+     * @param int $donation_id Donation ID.
+     * @param string $contact_type Either `donor` or `transdept`.
+     * @return array Contact name and email.
+     */
+    public function get_donation_contact( $donation_id = null, $contact_type = null ){
+        if( is_null( $donation_id ) || is_null( $contact_type ) )
+            return false;
+
+        $contact = array();
+
+        switch( $contact_type ){
+            case 'donor':
+                $contact['contact_email'] = get_post_meta( $donation_id, 'donor_email', true );
+                $contact['contact_name'] = get_post_meta( $donation_id, 'donor_name', true );
+            break;
+
+            case 'transdept':
+                $transdept_id = get_post_meta( $donation_id, 'trans_dept', true );
+                $contact = $this->get_trans_dept_contact( $transdept_id );
+            break;
+        }
+
+        return $contact;
+    }
+
+    /**
      * Compiles the donation into an HTML receipt
      *
      * @since 1.0.0

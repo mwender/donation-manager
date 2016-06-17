@@ -2685,6 +2685,7 @@ class DonationManager {
         // be processed at https://www.pickupmydonation.com/inbound/.
         // DMShortcodes::inbound_email_processing() does the processing.
         //
+/*
         if( 'donor_confirmation' == $type ){
             add_filter( 'wp_mail_from', function( $email ){
                 $donor = $_SESSION['donor'];
@@ -2709,13 +2710,14 @@ class DonationManager {
                 return $donor['address']['name']['first'] . ' ' .$donor['address']['name']['last'];
             });
         } else {
+*/
             add_filter( 'wp_mail_from', function( $email ){
                 return 'contact@pickupmydonation.com';
             } );
             add_filter( 'wp_mail_from_name', function( $name ){
                 return 'PickUpMyDonation.com';
             });
-        }
+//        }
 
         add_filter( 'wp_mail_content_type', array( $this, 'return_content_type' ) );
 

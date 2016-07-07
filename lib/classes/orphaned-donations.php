@@ -865,14 +865,16 @@ class DMOrphanedDonations extends DonationManager {
 	 * @param string  $email Contact email to unsubscribe.
 	 * @return int/bool Returns number of rows affected or false on failure.
 	 */
-	public static function unsubscribe_email( $email = null ) {
+	public static function update_email( $email = null, $action = 'unsubscribe' ) {
 		if ( is_null( $email ) || ! is_email( $email ) )
 			return false;
 
 		global $wpdb;
 
-		$sql = 'UPDATE ' . $wpdb->prefix . 'dm_contacts SET receive_emails=0 WHERE email_address="%s"';
-		$rows_affected = $wpdb->query( $wpdb->prepare( $sql, $email ) );
+		$receive_emails = ( 'unsubscribe' == $action )? 0 : 1;
+
+		$sql = 'UPDATE ' . $wpdb->prefix . 'dm_contacts SET receive_emails=%d WHERE email_address="%s"';
+		$rows_affected = $wpdb->query( $wpdb->prepare( $sql, $receive_emails, $email ) );
 
 		return $rows_affected;
 	}
@@ -932,14 +934,16 @@ class DMOrphanedDonations extends DonationManager {
 
 			$response->output = '<pre>$search = '.$search.'<br />$replace = '.$replace.'<br />$wpdb->last_result = ' . print_r( $wpdb->last_result, true ) . '<br />$wpdb->num_rows = ' . $wpdb->num_rows . '<br />$wpdb->last_query = ' . $wpdb->last_query . $message . '</pre>';
 			break;
-		case 'unsubscribe_email':
+		case 'subscribe':
+		case 'unsubscribe':
 			$email = $_POST['email'];
 
 			if ( ! is_email( $email ) || empty( $email ) )
 				$response->output = '<pre>ERROR: Not a valid email!</pre>';
 
-			$rows_affected = self::unsubscribe_email( $email );
-			$response->output = '<pre>$email = ' . $email . '<br />' . $rows_affected . ' contacts unsubscribed.</pre>';
+			$rows_affected = self::update_email( $email, $cb_action );
+			$response->action = $cb_action;
+			$response->output = '<pre>$email = ' . $email . '<br />' . $rows_affected . ' contacts ' . $cb_action . 'd.</pre>';
 			break;
 		default:
 			$posted_radius = $_POST['radius'];

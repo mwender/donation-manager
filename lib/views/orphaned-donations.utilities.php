@@ -65,3 +65,15 @@
 	</table>
 </form>
 <div class="output" id="output-unsubscribe"></div>
+<hr/>
+
+<h3>Subscribe an Email</h3>
+<form action="" id="form-subscribe">
+	<table>
+		<tr>
+			<td><input name="subscribe-email" id="subscribe-email" value="" size="30" placeholder="enter email to subscribe" /></td>
+			<td><button class="button" id="subscribe-email" type="submit">Subscribe</button></td>
+		</tr>
+	</table>
+</form>
+<div class="output" id="output-subscribe"></div>

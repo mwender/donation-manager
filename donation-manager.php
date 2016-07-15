@@ -4,7 +4,7 @@
 	Plugin URI: http://www.pickupmydonation.com
 	Description: Online donation manager built for ReNew Management, Inc and PickUpMyDonation.com. This plugin displays the donation form and handles donation submissions.
 	Author: Michael Wender
-	Version: 1.4.5
+	Version: 1.4.6
 	Author URI: http:://michaelwender.com
  */
 /*  Copyright 2014-15  Michael Wender  (email : michael@michaelwender.com)
@@ -2872,6 +2872,10 @@ register_deactivation_hook( __FILE__, array( $DMReports, 'flush_rewrites' ) );
 // Include Shortcodes Class
 require 'lib/classes/shortcodes.php';
 $DMShortcodes = DMShortcodes::get_instance();
+
+if ( defined( 'WP_CLI' ) && WP_CLI ) {
+    require_once 'lib/fns/fns.stats.php';
+}
 
 $mailtrap = dirname( __FILE__ ) . '/mailtrap.php';
 if( file_exists( $mailtrap ) )

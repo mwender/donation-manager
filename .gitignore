@@ -6,3 +6,4 @@ mailtrap.php
 *.sublime-*
 zipcodes.sql
 lib/mjml/*.bkup
+stats.json

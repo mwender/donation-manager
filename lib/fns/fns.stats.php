@@ -85,7 +85,7 @@ function donations_by_interval( $interval = null ){
  * @return string Dollar value of donations.
  */
 function get_donations_value( $donations = 0 ){
-  $value = '$' . number_format( $donations * 200 );
+  $value = $donations * 200;
   return $value;
 }
 ?>

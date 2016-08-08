@@ -22,16 +22,16 @@ Class DonManCLI extends \WP_CLI_Command {
     $total_donations = \wp_count_posts( 'donation' );
 
     $stats->donations->alltime = new \stdClass();
-    $stats->donations->alltime->number = $total_donations->publish;
+    $stats->donations->alltime->number = intval( $total_donations->publish );
     $stats->donations->alltime->value = get_donations_value( $stats->donations->alltime->number );
     \WP_CLI::log( '- All Time: ' . number_format( $stats->donations->alltime->number ) . ' total donations valued at $' . number_format( $stats->donations->alltime->value ) . '.' );
 
     $stats->donations->thisyear = new \stdClass();
-    $stats->donations->thisyear->number = donations_by_interval( 'this_year' );
+    $stats->donations->thisyear->number = intval( donations_by_interval( 'this_year' ) );
     $stats->donations->thisyear->value = get_donations_value( $stats->donations->thisyear->number );
 
     $stats->donations->lastmonth = new \stdClass();
-    $stats->donations->lastmonth->number = donations_by_interval( 'last_month' );
+    $stats->donations->lastmonth->number = intval( donations_by_interval( 'last_month' ) );
     $stats->donations->lastmonth->value = get_donations_value( $stats->donations->lastmonth->number );
 
     \WP_CLI::log( '- This Year: ' . number_format( $stats->donations->thisyear->number ) . ' donations valued at $' . number_format( $stats->donations->thisyear->value ) . '.' );

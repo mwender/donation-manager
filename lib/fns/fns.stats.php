@@ -2,41 +2,49 @@
 namespace DonationManager\lib\fns\stats;
 
 /**
- * Writes donation stats to a JSON file.
+ * Interacts with the Donation Manager plugin.
+ *
+ * @since 1.4.6
  */
-function write_stats(){
-  $stats = new \stdClass();
+Class DonManCLI extends \WP_CLI_Command {
 
-  \WP_CLI::log( 'Getting stats from Donation Manager:' );
+  /**
+   * Writes donation stats to a JSON file.
+   *
+   * @subcommand writestats
+   */
+  function write_stats(){
+    $stats = new \stdClass();
+    $stats->donations = new \stdClass();
 
-  $total_donations = \wp_count_posts( 'donation' );
+    \WP_CLI::log( 'Getting stats from Donation Manager:' );
 
-  $stats->total_donations = $total_donations->publish;
-  $stats->total_donations_value = get_donations_value( $stats->total_donations );
-  \WP_CLI::log( '- All Time: ' . number_format( $stats->total_donations ) . ' total donations valued at ' . $stats->total_donations_value . '.' );
+    $total_donations = \wp_count_posts( 'donation' );
 
-  $donations_by_interval = new \stdClass();
-  $donations_by_interval->this_year = donations_by_interval( 'this_year' );
-  $donations_by_interval->last_month = donations_by_interval( 'last_month' );
+    $stats->donations->alltime = new \stdClass();
+    $stats->donations->alltime->number = $total_donations->publish;
+    $stats->donations->alltime->value = get_donations_value( $stats->donations->alltime->number );
+    \WP_CLI::log( '- All Time: ' . number_format( $stats->donations->alltime->number ) . ' total donations valued at $' . number_format( $stats->donations->alltime->value ) . '.' );
 
-  $stats->donations_by_interval = $donations_by_interval;
+    $stats->donations->thisyear = new \stdClass();
+    $stats->donations->thisyear->number = donations_by_interval( 'this_year' );
+    $stats->donations->thisyear->value = get_donations_value( $stats->donations->thisyear->number );
 
-  $donations_by_value = new \stdClass();
-  $donations_by_value->this_year = get_donations_value( $donations_by_interval->this_year );
-  $donations_by_value->last_month = get_donations_value( $donations_by_interval->last_month );
+    $stats->donations->lastmonth = new \stdClass();
+    $stats->donations->lastmonth->number = donations_by_interval( 'last_month' );
+    $stats->donations->lastmonth->value = get_donations_value( $stats->donations->lastmonth->number );
 
-  $stats->donations_by_value = $donations_by_value;
-
-  \WP_CLI::log( '- This Year: ' . number_format( $donations_by_interval->this_year ) . ' donations valued at ' . $donations_by_value->this_year . '.' );
-  \WP_CLI::log( '- Last Month: ' . number_format( $donations_by_interval->last_month ) . ' donations valued at ' . $donations_by_value->last_month . '.' );
+    \WP_CLI::log( '- This Year: ' . number_format( $stats->donations->thisyear->number ) . ' donations valued at $' . number_format( $stats->donations->thisyear->value ) . '.' );
+    \WP_CLI::log( '- Last Month: ' . number_format( $stats->donations->lastmonth->number ) . ' donations valued at $' . number_format( $stats->donations->lastmonth->value ) . '.' );
 
 
-  $json_string = json_encode( $stats );
-  file_put_contents( DONMAN_DIR . '/stats.json', $json_string );
+    $json_string = json_encode( $stats );
+    file_put_contents( DONMAN_DIR . '/stats.json', $json_string );
 
-  \WP_CLI::success('Donation stats written to ' . DONMAN_DIR . '/stats.json.');
+    \WP_CLI::success('Donation stats written to ' . DONMAN_DIR . '/stats.json.');
+  }
 }
-\WP_CLI::add_command( 'writestats', __NAMESPACE__ . '\\write_stats' );
+\WP_CLI::add_command( 'donman', __NAMESPACE__ . '\\DonManCLI' );
 
 /**
  * Returns donations from a specified interval.

@@ -793,8 +793,8 @@ class DonationManager {
 
                 $html = $this->get_template_part( 'form4.contact-details-form', array(
                     'nextpage' => $nextpage,
-                    'state' => DonationManager::get_state_select(),
-                    'pickup_state' => DonationManager::get_state_select( 'pickup_address' ),
+                    'state' => DonationManager\lib\fns\helpers\get_state_select(),
+                    'pickup_state' => DonationManager\lib\fns\helpers\get_state_select( 'pickup_address' ),
                     'checked_yes' => $checked_yes,
                     'checked_no' => $checked_no,
                     'checked_phone' => $checked_phone,
@@ -1868,73 +1868,6 @@ class DonationManager {
     }
 
     /**
-     * Retrieves state select input
-     */
-    public function get_state_select( $var = 'address' ) {
-        $html = '';
-
-        $states = array(
-            'Alabama'=>'AL',
-            'Alaska'=>'AK',
-            'Arizona'=>'AZ',
-            'Arkansas'=>'AR',
-            'California'=>'CA',
-            'Colorado'=>'CO',
-            'Connecticut'=>'CT',
-            'Delaware'=>'DE',
-            'Florida'=>'FL',
-            'Georgia'=>'GA',
-            'Hawaii'=>'HI',
-            'Idaho'=>'ID',
-            'Illinois'=>'IL',
-            'Indiana'=>'IN',
-            'Iowa'=>'IA',
-            'Kansas'=>'KS',
-            'Kentucky'=>'KY',
-            'Louisiana'=>'LA',
-            'Maine'=>'ME',
-            'Maryland'=>'MD',
-            'Massachusetts'=>'MA',
-            'Michigan'=>'MI',
-            'Minnesota'=>'MN',
-            'Mississippi'=>'MS',
-            'Missouri'=>'MO',
-            'Montana'=>'MT',
-            'Nebraska'=>'NE',
-            'Nevada'=>'NV',
-            'New Hampshire'=>'NH',
-            'New Jersey'=>'NJ',
-            'New Mexico'=>'NM',
-            'New York'=>'NY',
-            'North Carolina'=>'NC',
-            'North Dakota'=>'ND',
-            'Ohio'=>'OH',
-            'Oklahoma'=>'OK',
-            'Oregon'=>'OR',
-            'Pennsylvania'=>'PA',
-            'Rhode Island'=>'RI',
-            'South Carolina'=>'SC',
-            'South Dakota'=>'SD',
-            'Tennessee'=>'TN',
-            'Texas'=>'TX',
-            'Utah'=>'UT',
-            'Vermont'=>'VT',
-            'Virginia'=>'VA',
-            'Washington'=>'WA',
-            'Washington DC' => 'DC',
-            'West Virginia'=>'WV',
-            'Wisconsin'=>'WI',
-            'Wyoming'=>'WY'
-        );
-        $html.= '<option value="">Select a state...</option>';
-        foreach( $states as $state => $abbr ){
-            $selected = ( isset( $_POST['donor'][$var]['state'] ) && $abbr == $_POST['donor'][$var]['state'] )? ' selected="selected"' : '';
-            $html.= '<option value="' . $abbr . '"' . $selected . '>' . $state . '</option>';
-        }
-        return '<select class="form-control" name="donor[' . $var . '][state]">' .  $html . '</select>';
-    }
-
-    /**
      * Retrieves HTML for showing Trans Dept Contact and all Stores for Trans Dept.
      */
     public function get_stores_footer( $trans_dept_id, $get_stores = true ) {
@@ -2631,6 +2564,7 @@ register_activation_hook( __FILE__, array( $DonationManager, 'activate' ) );
 
 // Include function files
 require_once 'lib/fns/fns.admin.php';
+require_once 'lib/fns/fns.helpers.php';
 
 // Include our Orphaned Donations Class
 require 'lib/classes/orphaned-donations.php';

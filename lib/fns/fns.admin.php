@@ -2,6 +2,19 @@
 namespace DonationManager\lib\fns\admin;
 
 /**
+ * Adds meta boxes to WordPress admin.
+ *
+ * @since 1.0.1
+ *
+ * @return void
+ */
+function callback_metaboxes(){
+    \add_meta_box( 'pmd_meta_enhanced_fields', 'Enhanced Fields', __NAMESPACE__ . '\\metabox_enhanced_fields', 'store', 'normal', 'high' );
+    \add_meta_box( 'pmd_meta_enhanced_fields', 'Enhanced Fields', __NAMESPACE__ . '\\metabox_enhanced_fields', 'trans_dept', 'normal', 'high' );
+}
+add_action( 'add_meta_boxes', __NAMESPACE__ . '\\callback_metaboxes' );
+
+/**
  * Adds columns to admin donation custom post_type listings.
  *
  * @since 1.0.1
@@ -141,4 +154,78 @@ function custom_save_post( $post_id ){
 
 }
 add_action( 'save_post', __NAMESPACE__ . '\\custom_save_post' );
+
+/**
+ * Enqueues admin scripts and styles
+ *
+ * @since 1.0.0
+ *
+ * @return void
+ */
+function enqueue_admin_scripts(){
+    \wp_register_script( 'dm-admin-js',  DONMAN_URL . 'lib/js/admin.js', array( 'jquery' ), filemtime( DONMAN_DIR . '/lib/js/admin.js' ) );
+    \wp_enqueue_script( 'dm-admin-js' );
+}
+add_action( 'admin_enqueue_scripts', __NAMESPACE__ . '\\enqueue_admin_scripts' );
+
+/**
+ * Meta box for enhanced fields.
+ *
+ * Provides extended information for help in selecting the
+ * correct Trans Dept and Organization.
+ *
+ * @since 1.0.1
+ *
+ * @param object $post Current post object.
+ * @return void
+ */
+function metabox_enhanced_fields( $post ){
+    $post_type = $post->post_type;
+
+    echo '<p>The following fields provide extended information not available under the <em>More Fields</em> meta box. When you make a selection in any fields here, the corresponding field under <em>More Fields</em> will also update.</p>';
+
+    $rows = array();
+
+    // Get all organizations
+    $args = array(
+        'posts_per_page' => -1,
+        'post_type' => 'organization',
+        'order' => 'ASC',
+        'orderby' => 'title',
+    );
+    $organizations = \get_posts( $args );
+
+    if( $organizations ){
+        switch( $post_type ){
+            case 'trans_dept':
+                $corg = \get_post_meta( $post->ID, 'organization', true ); // current organization
+                $rows['select'] = '<th><label>Organization</label></th>';
+                foreach( $organizations as $org ){
+                    $selected = ( isset( $corg['ID'] ) && $corg['ID'] == $org->ID )? ' selected="selected"' : '' ;
+                    $excerpt = substr( strip_tags( $org->post_content ), 0, 65 ) . '...';
+                    $options[] = '<option value="' . $org->ID . '"' . $selected . '>' . strtoupper( $org->post_title ) . ' - ' . $excerpt . '</option>';
+                }
+
+                $rows['select'].= '<td><select id="enhanced-organization-select"><option value="">Select an organization...</option>' . implode( '', $options ) . '</select></td>';
+            break;
+            case 'store':
+                $ctd = \get_post_meta( $post->ID, 'trans_dept', true ); // current trans dept
+                $rows['select'] = '<th><label>Transportation Department</label></th>';
+                foreach( $organizations as $org ){
+                    $tds = \get_post_meta( $org->ID, 'trans_depts', false );
+                    foreach( $tds as $td ){
+                        $selected = ( isset( $ctd['ID'] ) && $ctd['ID'] == $td['ID'] )? ' selected="selected"' : '' ;
+                        $options[] = '<option value="' . $td['ID'] . '"' . $selected . '>' . strtoupper( $org->post_title ) . ' - ' . $td['post_title'] . ' - ' . strip_tags( $td['post_content'] ) . '</option>';
+                    }
+                }
+                $rows['select'].= '<td><select id="enhanced-trans-dept-select"><option value="">Select a transportation department...</option>' . implode( '', $options ) . '</select></td>';
+            break;
+        }
+
+    } else {
+        $rows['select'].= '<td>No organizations found.</td>';
+    }
+
+    echo '<table class="form-table"><tbody><tr>' . implode( '</tr><tr>', $rows ) . '</tr></tbody></table>';
+}
 ?>

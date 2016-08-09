@@ -9,6 +9,7 @@
         }
     ],
     "require": {
-        "rlanvin/php-form": "dev-master"
+        "rlanvin/php-form": "dev-master",
+        "zordius/lightncandy": "dev-master"
     }
 }

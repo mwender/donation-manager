@@ -1,0 +1,43 @@
+<form action="" method="post">
+	<p class="lead">Please select three <em>POTENTIAL</em> pickup dates.</p>
+	<div class="alert alert-warning"><strong><em>Please note:</strong> <em>NONE</em> of the dates and times you select are confirmed until our schedulers are able to contact you directly.</em></div>
+	<div class="row">
+		{{#each pickupdays}}
+		<div class="col-md-4">
+			<label for="yourname">Preferred Pickup Date {{@index}}<span class="required">*</span>:</label><br />
+			<input type="text" name="donor[pickupdate{{@index}}]" id="pickupdate{{@index}}" class="date" gldp-id="gldatepicker{{@index}}" value="{{value}}" />
+			<div style="position: relative;">
+				<div gldp-el="gldatepicker{{@index}}" style="width: 400px; height: 300px;"></div>
+			</div>
+			{{#each times}}
+			<div class="radio">
+				<label>
+					<input type="radio" name="donor[pickuptime{{../@index}}]" id="pickuptimes{{key}}" value="{{time}}"{{checked}}>
+					{{time}}
+				</label>
+			</div>
+			{{/each}}
+		</div>
+		{{/each}}
+	</div>
+	<br />
+	{{{priority_pickup_option}}}
+	<div class="row">
+		<div class="col-md-12">
+			<p><strong>Location of items:</strong></p>
+			{{#each pickuplocations}}
+			<div class="radio">
+				<label>
+					<input type="radio" name="donor[pickuplocation]" id="pickuplocation{{key}}" value="{{location_attr_esc}}"{{checked}}>
+					{{location}}
+				</label>
+			</div>
+			{{/each}}
+		</div>
+	</div>
+	<br />
+	<div class="row">
+		<div class="col-md-12"><p class="text-right"><button type="submit" class="btn btn-primary">Finish and Submit</button></p></div>
+	</div>
+	<input type="hidden" name="nextpage" value="{{nextpage}}" />
+</form>

@@ -687,7 +687,7 @@ class DonationManager {
         switch( $form ) {
 
             case 'contact-details':
-                $contact_details_form_html = DonationManager::get_template_part( 'form4.contact-details-form' );
+                //$contact_details_form_html = DonationManager::get_template_part( 'form4.contact-details-form' );
 
                 $checked_yes = '';
                 $checked_no = '';
@@ -791,7 +791,7 @@ class DonationManager {
                     $donor_preferred_code = $_SESSION['donor']['preferred_code'];
                 }
 
-                $html = $this->get_template_part( 'form4.contact-details-form', array(
+                $hbs_vars = [
                     'nextpage' => $nextpage,
                     'state' => DonationManager\lib\fns\helpers\get_state_select(),
                     'pickup_state' => DonationManager\lib\fns\helpers\get_state_select( 'pickup_address' ),
@@ -810,8 +810,8 @@ class DonationManager {
                     'donor_email' => $donor_email,
                     'donor_phone' => $donor_phone,
                     'preferred_code' => $donor_preferred_code,
-                ) );
-
+                ];
+                $html = \DonationManager\lib\fns\templates\render_template( 'form4.contact-details-form', $hbs_vars );
                 $this->add_html( $html );
             break;
 
@@ -868,23 +868,28 @@ class DonationManager {
             case 'screening-questions':
                 $screening_questions = DonationManager::get_screening_questions( $_SESSION['donor']['org_id'] );
 
-                $row_template = DonationManager::get_template_part( 'form3.screening-questions.row' );
-                $search = array( '{question}', '{question_esc_attr}', '{key}', '{checked_yes}', '{checked_no}', '{additional_details}' );
                 $questions = array();
                 foreach( $screening_questions as $question ) {
-                    $key = $question['id'];
                     $checked_yes = ( isset( $_POST['donor']['answers'][$key] ) &&  'Yes' == $_POST['donor']['answers'][$key] )? ' checked="checked"' : '';
                     $checked_no = ( isset( $_POST['donor']['answers'][$key] ) &&  'No' == $_POST['donor']['answers'][$key] )? ' checked="checked"' : '';
-                    $replace = array( $question['desc'], esc_attr( $question['desc'] ), $key, $checked_yes, $checked_no );
-                    $questions[] = str_replace( $search, $replace, $row_template );
+                    $questions[] = [
+                        'key' => $question['id'],
+                        'question' => $question['desc'],
+                        'question_esc_attr' => esc_attr( $question['desc'] ),
+                        'checked_yes' => $checked_yes,
+                        'checked_no' => $checked_no,
+                    ];
                 }
                 $provide_additional_details = get_post_meta( $_SESSION['donor']['org_id'], 'provide_additional_details', true );
                 $additional_details = ( isset( $_POST['donor']['additional_details'] ) )? esc_textarea( $_POST['donor']['additional_details'] ) : '';
 
-                $form_template = DonationManager::get_template_part( 'form3.screening-questions.form' );
-                $search = array( '{nextpage}', '{question_rows}', '{additional_details}', '{provide_additional_details}' );
-                $replace = array( $nextpage, implode( "\n", $questions ), $additional_details, $provide_additional_details );
-                $html.= str_replace( $search, $replace, $form_template );
+                $hbs_vars = [
+                    'questions' => $questions,
+                    'additional_details' => $additional_details,
+                    'nextpage' => $nextpage,
+                    'provide_additional_details' => $provide_additional_details
+                ];
+                $html = \DonationManager\lib\fns\templates\render_template( 'form3.screening-questions-form', $hbs_vars );
                 $this->add_html( $html );
             break;
 
@@ -893,7 +898,6 @@ class DonationManager {
                 $tid = $_SESSION['donor']['trans_dept_id'];
 
                 $terms = $this->get_organization_meta_array( $oid, 'donation_option' );
-                //$this->add_html( '<pre>$terms = '.print_r($terms,true).'</pre>' );
 
                 $step_one_note = '';
                 $pod = pods( 'organization' );
@@ -917,16 +921,29 @@ class DonationManager {
                 ksort( $donation_options );
 
                 $checkboxes = array();
-                $row_template = $this->get_template_part( 'form2.donation-option-row' );
-                $search = array( '{key}', '{name}', '{desc}', '{value}', '{checked}', '{pickup}', '{skip_questions}', '{term_id}' );
+
                 foreach( $donation_options as $key => $opt ) {
                     $checked = '';
                     if( isset( $_SESSION['donor']['items'][$opt['term_id']] ) )
                         $checked = ' checked="checked"';
                     if( trim( $_POST['donor']['options'][$key]['field_value'] ) == $opt['value'] )
                         $checked = ' checked="checked"';
-                    $replace = array( $key, $opt['name'], $opt['desc'], $opt['value'], $checked, $opt['pickup'], $opt['skip_questions'], $opt['term_id'] );
-                    $checkboxes[] = str_replace( $search, $replace, $row_template );
+
+                    $checkboxes[] = [
+                        'key' => $key,
+                        'value' => $opt['value'],
+                        'checked' => $checked,
+                        'name' => $opt['name'],
+                        'desc' => $opt['desc'],
+                        'pickup' => $opt['pickup'],
+                        'skip_questions' => $opt['skip_questions'],
+                        'term_id' => $opt['term_id'],
+
+
+                        'term_id' => $opt['term_id'],
+
+
+                    ];
                 }
 
                 $description = '';
@@ -935,46 +952,58 @@ class DonationManager {
                 if( isset( $_POST['donor']['description'] ) )
                     $description = esc_textarea( $_POST['donor']['description'] );
 
-                $html.= $this->get_template_part( 'form2.donation-options-form', array(
+                $hbs_vars = [
+                    'checkboxes' => $checkboxes,
                     'step_one_note' => $step_one_note,
-                    'nextpage' => $nextpage,
-                    'donation-option-rows' => '<tr><td>' . implode( '</td></tr><tr><td>', $checkboxes ) . '</td></tr>',
                     'description' => $description,
-                ) );
+                    'nextpage' => $nextpage
+                ];
+                $html = \DonationManager\lib\fns\templates\render_template( 'form2.donation-options-form', $hbs_vars );
                 $this->add_html( $html );
             break;
 
             case 'select-preferred-pickup-dates':
                 $pickuptimes = $this->get_pickuptimes( $_SESSION['donor']['org_id'] );
+//$this->add_html( '<pre>$pickuptimes = ' . print_r( $pickuptimes, true ) . '</pre>' );
 
-                $pickuptime_template = $this->get_template_part( 'form5.pickuptimes' );
-                $search = array( '{x}', '{key}', '{time}', '{checked}' );
                 $times = array();
-                for( $x = 1; $x < 4; $x++ ){
-                    foreach( $pickuptimes as $id => $time ){
-                        $checked = ( isset( $_POST['donor']['pickuptime' . $x ] ) &&  $time['name'] == $_POST['donor']['pickuptime' . $x ] )? ' checked="checked"' : '';
-                        $replace = array( $x, $x . '-' . $id, $time['name'], $checked );
-                        $times[$x][] = str_replace( $search, $replace, $pickuptime_template );
-                    }
+                $x = 1;
+                foreach( $pickuptimes as $id => $time ){
+                    $pickuptime_key = 'pickupdate' . $x;
+                    $checked = ( isset( $_POST['donor'][$pickuptime_key] ) &&  $time['name'] == $_POST['donor'][$pickuptime_key] )? ' checked="checked"' : '';
+                    $value = ( isset( $_POST['donor'][$pickuptime_key] ) && preg_match( '/(([0-9]{2})\/([0-9]{2})\/([0-9]{4}))/', $_POST['donor'][$pickuptime_key] ) )? $_POST['donor'][$pickuptime_key] : '';
+                    $times[$x] = [
+                        'x' => $x,
+                        'key' => $x . '-' . $id,
+                        'value' => $value,
+                        'time' => $time['name'],
+                        'checked' => $checked,
+                    ];
+                    $x++;
                 }
-
+//$this->add_html( '<pre>$times = '.print_r($times,true).'</pre>' );
                 $pickuplocations = $this->get_pickuplocations( $_SESSION['donor']['org_id'] );
 
                 $pickuplocations_template = $this->get_template_part( 'form5.pickup-location' );
                 $search = array( '{key}', '{location}', '{location_attr_esc}', '{checked}' );
                 foreach( $pickuplocations as $key => $location ){
                     $checked = ( isset( $_POST['donor']['pickuplocation'] ) && $location['name'] == $_POST['donor']['pickuplocation'] )? ' checked="checked"' : '';
-                    $replace = array( $key, $location['name'], esc_attr( $location['name'] ), $checked );
-                    $locations[] = str_replace( $search, $replace, $pickuplocations_template );
+                    //$replace = array( $key, $location['name'], esc_attr( $location['name'] ), $checked );
+                    //$locations[] = str_replace( $search, $replace, $pickuplocations_template );
+                    $locations[] = [
+                        'key' => $key,
+                        'location' => $location['name'],
+                        'location_attr_esc' => esc_attr( $location['name'] ),
+                        'checked' => $checked,
+                    ];
                 }
 
-                $pickupdate1 = ( isset( $_POST['donor']['pickupdate1'] ) && preg_match( '/(([0-9]{2})\/([0-9]{2})\/([0-9]{4}))/', $_POST['donor']['pickupdate1'] ) )? $_POST['donor']['pickupdate1'] : '';
-                $pickupdate2 = ( isset( $_POST['donor']['pickupdate2'] ) && preg_match( '/(([0-9]{2})\/([0-9]{2})\/([0-9]{4}))/', $_POST['donor']['pickupdate2'] ) )? $_POST['donor']['pickupdate2'] : '';
-                $pickupdate3 = ( isset( $_POST['donor']['pickupdate3'] ) && preg_match( '/(([0-9]{2})\/([0-9]{2})\/([0-9]{4}))/', $_POST['donor']['pickupdate3'] ) )? $_POST['donor']['pickupdate3'] : '';
+
 
                 // Priority Donation Backlinks
                 $priority_html = ( false == $_SESSION['donor']['priority'] )? '<div class="row priority-note"><div class="col-md-12"><div class="alert alert-info" style="text-align: center;"><strong>Priority Pick Up Option:</strong> <em>Need expedited service?</em> <a href="#" class="show-priority">Click for details &rarr;</a></div></div></div><div class="row priority-row"><div class="col-md-12"><div class="priority-close"><a href="#" class="close-priority-row btn btn-default btn-xs">Close</a></div>' . $this->get_priority_pickup_links( $_SESSION['donor']['pickup_code'], 'We work as hard as we can to serve all of our donors in a timely fashion. If you need expedited service or you don\'t see a time that works in our calendar, click below to request a pick up from our <em>Fee Based</em> priority pick up provider, and they will deliver your donation to us:' ) . '</div></div>' : '' ;
 
+                /*
                 $html = $this->get_template_part( 'form5.select-preferred-pickup-dates', array(
                         'nextpage' => $nextpage,
                         'pickupdatevalue1' => $pickupdate1,
@@ -986,6 +1015,37 @@ class DonationManager {
                         'pickuplocations' => implode( "\n", $locations ),
                         'priority_pickup_option' => $priority_html,
                     ));
+                /**/
+
+                //*
+                $pickupdate1 = ( isset( $_POST['donor']['pickupdate1'] ) && preg_match( '/(([0-9]{2})\/([0-9]{2})\/([0-9]{4}))/', $_POST['donor']['pickupdate1'] ) )? $_POST['donor']['pickupdate1'] : '';
+                $pickupdate2 = ( isset( $_POST['donor']['pickupdate2'] ) && preg_match( '/(([0-9]{2})\/([0-9]{2})\/([0-9]{4}))/', $_POST['donor']['pickupdate2'] ) )? $_POST['donor']['pickupdate2'] : '';
+                $pickupdate3 = ( isset( $_POST['donor']['pickupdate3'] ) && preg_match( '/(([0-9]{2})\/([0-9]{2})\/([0-9]{4}))/', $_POST['donor']['pickupdate3'] ) )? $_POST['donor']['pickupdate3'] : '';
+                /**/
+
+                $days = [
+                    1 => [
+                        'value' => $pickupdate1,
+                        'times' => $times,
+                    ],
+                    2 => [
+                        'value' => $pickupdate2,
+                        'times' => $times,
+                    ],
+                    3 => [
+                        'value' => $pickupdate3,
+                        'times' => $times,
+                    ],
+                ];
+//$this->add_html( '<pre>$times = ' . print_r( $times, true ) . '</pre>' );
+                $hbs_vars = [
+                    'pickupdays' => $days,
+                    'priority_pickup_option' => $priority_html,
+                    'pickuplocations' => $locations,
+                    'nextpage' => $nextpage,
+                ];
+                //$this->add_html( '<pre>$hbs_vars = ' . print_r( $hbs_vars, true ) . '</pre>' );
+                $html = \DonationManager\lib\fns\templates\render_template( 'form5.pickup-dates', $hbs_vars );
                 $this->add_html( $html );
             break;
 
@@ -1010,9 +1070,6 @@ class DonationManager {
                     if( 0 < count( $contacts ) )
                         $organizations[] = $default_priority_org[0];
                 }
-
-                $template = $this->get_template_part( 'form1.select-your-organization.row' );
-                $search = array( '{name}', '{desc}', '{link}', '{button_text}', '{css_classes}' );
 
                 if( ! $organizations ){
                     $this->add_html( '<div class="alert alert-warning"><strong>No default organization found!</strong><br />No default organization has been specified in the Donation Manager settings.</div>' );
@@ -1063,10 +1120,18 @@ class DonationManager {
 
                     $replace = array( $org['name'], $org['desc'], $link, $button_text, $css_classes );
 
+                    $row = [
+                        'css_classes' => $css_classes,
+                        'link' => $link,
+                        'button_text' => $button_text,
+                        'name' => $org['name'],
+                        'desc' => $org['desc']
+                    ];
+
                     if( $org['priority_pickup'] ){
-                        $priority_rows[] = str_replace( $search, $replace, $template );
+                        $priority_rows[] = $row;
                     } else {
-                        $rows[] = str_replace( $search, $replace, $template );
+                        $rows[] = $row;
                     }
 
                     if( ! empty( $org['trans_dept_id'] ) && $org['priority_pickup'] ){
@@ -1084,7 +1149,9 @@ class DonationManager {
                 if( 0 < count( $priority_ads ) )
                     $ads = array_unique( array_merge( $ads, $priority_ads ) ); // merge non-profit and priority ads, ensuring unique array values
 
-                $this->add_html( '<div class="select-your-organization">' . implode( "\n", $rows ) . '</div>' );
+                $hbs_vars = [ 'rows' => $rows ];
+                $html = \DonationManager\lib\fns\templates\render_template( 'form1.select-your-organization', $hbs_vars );
+                $this->add_html( $html );
             break;
 
             case 'thank-you':
@@ -1097,7 +1164,8 @@ class DonationManager {
             break;
 
             default:
-                $html = $this->get_template_part( 'form0.enter-your-zipcode', array( 'nextpage' => $nextpage ) );
+                //$html = $this->get_template_part( 'form0.enter-your-zipcode', array( 'nextpage' => $nextpage ) );
+                $html = \DonationManager\lib\fns\templates\render_template( 'form0.enter-your-zipcode', [ 'nextpage' => $nextpage ] );
                 $this->add_html( $html );
             break;
         }
@@ -1751,7 +1819,7 @@ class DonationManager {
                 $pod = pods( 'pickup_time' );
                 $pod->fetch( $term->term_id );
                 $order = $pod->get_field( 'order' );
-                $key = ( ! array_key_exists( $order, $pickuptimes ) )? $order : $x;
+                $key = ( ! array_key_exists( $order, $pickuptimes ) && ! empty( $order ) )? $order : $x;
                 $pickuptimes[$key] = array( 'id' => $term->term_id, 'name' => $term->name );
                 $x++;
             }
@@ -2565,6 +2633,7 @@ register_activation_hook( __FILE__, array( $DonationManager, 'activate' ) );
 // Include function files
 require_once 'lib/fns/fns.admin.php';
 require_once 'lib/fns/fns.helpers.php';
+require_once 'lib/fns/fns.templates.php';
 
 // Include our Orphaned Donations Class
 require 'lib/classes/orphaned-donations.php';

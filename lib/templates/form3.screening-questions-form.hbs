@@ -1,0 +1,20 @@
+<form action="" method="post" name="screening-questions">
+	<table class="table table-striped"><colgroup><col style="width: 70%;" /><col style="width: 15%" /><col style="width: 15%" /></colgroup>
+
+	{{#each questions}}
+	<tr>
+		<td>{{question}}<input type="hidden" name="donor[questions][{{key}}]" value="{{question_esc_attr}}"><input type="hidden" name="donor[question][ids][]" value="{{key}}" /></td>
+		<td><label ><input type="radio" name="donor[answers][{{key}}]" value="Yes"{{checked_yes}} /> Yes</label></td>
+		<td><label ><input type="radio" name="donor[answers][{{key}}]" value="No"{{checked_no}} /> No</label></td>
+	</tr>
+	{{/each}}
+	</table>
+	<div id="additional-details">
+		<label>Please provide additional detail about your items for which you answered "Yes" above:</label>
+		<textarea class="form-control" rows="4" name="donor[additional_details]">{{additional_details}}</textarea>
+		<span class="help-block">Please be considerate of the costs associated with large item pick ups to our organization. We will gladly and thankully pick up items that will help us further the mission of our organization. However we must respectfully deny items that create an additional disposal liability.</span>
+	</div>
+	<p class="text-right"><button type="submit" class="btn btn-primary">Continue to Step 3</button></p>
+	<input type="hidden" name="nextpage" value="{{nextpage}}" />
+	<input type="hidden" name="provide_additional_details" value="{{provide_additional_details}}" />
+</form>

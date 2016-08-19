@@ -1,0 +1,84 @@
+<form action="" method="post">
+	<div class="row">
+		<div class="form-group col-xs-3">
+			<label>First Name <span class="red">*</span></label>
+			<input type="text" class="form-control" name="donor[address][name][first]" value="{{donor_name_first}}">
+		</div>
+		<div class="form-group col-xs-3">
+			<label>Last Name <span class="red">*</span></label>
+			<input type="text" class="form-control" name="donor[address][name][last]" value="{{donor_name_last}}">
+		</div>
+	</div>
+
+	<div class="row">
+		<div class="form-group col-xs-10">
+			<label>Address <span class="red">*</span></label>
+			<input type="text" class="form-control" name="donor[address][address]" value="{{donor_address}}">
+		</div>
+	</div>
+	<div class="row">
+		<div class="form-group col-xs-4">
+			<label>City <span class="red">*</span></label>
+			<input type="text" class="form-control" name="donor[address][city]" value="{{donor_city}}">
+		</div>
+		<div class="form-group col-xs-3">
+			<label>State <span class="red">*</span></label>
+			{{{state}}}
+		</div>
+		<div class="form-group col-xs-3">
+			<label>ZIP <span class="red">*</span></label>
+			<input type="text" class="form-control" name="donor[address][zip]" value="{{donor_zip}}">
+		</div>
+	</div>
+	<div class="row">
+		<div class="form-group col-xs-6">Pickup address is different from above address?</div>
+		<div class="form-group col-xs-2"><label><input type="radio" value="Yes"{{checked_yes}} name="donor[different_pickup_address]"> Yes</label></div>
+		<div class="form-group col-xs-2"><label><input type="radio" value="No"{{checked_no}} name="donor[different_pickup_address]"> No</label></div>
+	</div>
+<div id="different-pickup-address">
+	<div class="row">
+		<div class="form-group col-xs-10">
+			<label>Pickup Address <span class="red">*</span></label>
+			<input type="text" class="form-control" name="donor[pickup_address][address]" value="{{donor_pickup_address}}">
+		</div>
+	</div>
+	<div class="row">
+		<div class="form-group col-xs-4">
+			<label>Pickup City <span class="red">*</span></label>
+			<input type="text" class="form-control" name="donor[pickup_address][city]" value="{{donor_pickup_city}}">
+		</div>
+		<div class="form-group col-xs-3">
+			<label>Pickup State <span class="red">*</span></label>
+			{{pickup_state}}
+		</div>
+		<div class="form-group col-xs-3">
+			<label>Pickup ZIP <span class="red">*</span></label>
+			<input type="text" class="form-control" name="donor[pickup_address][zip]" value="{{donor_pickup_zip}}">
+		</div>
+	</div>
+</div>
+	<div class="row">
+		<div class="form-group col-xs-5">
+			<label>Contact Email <span class="red">*</span></label>
+			<input type="email" class="form-control" name="donor[email]" value="{{donor_email}}">
+		</div>
+		<div class="form-group col-xs-5">
+			<label>Contact Phone <span class="red">*</span></label>
+			<input type="tel" class="form-control" name="donor[phone]" value="{{donor_phone}}">
+		</div>
+	</div>
+	<div class="row">
+		<div class="form-group col-xs-6">Preferred method of contact:</div>
+		<div class="form-group col-xs-2"><label><input type="radio" value="Phone"{{checked_phone}} name="donor[preferred_contact_method]"> Phone</label></div>
+		<div class="form-group col-xs-2"><label><input type="radio" value="Email"{{checked_email}} name="donor[preferred_contact_method]"> Email</label></div>
+	</div>
+	<div class="row">
+		<div class="form-group col-xs-10">
+			<label>Preferred Donor Code</label>
+			<input type="text" class="form-control" name="donor[preferred_code]" value="{{preferred_code}}" style="max-width: 150px;">
+			<p class="help-block">Got a <em>Preferred Donor Code</em>? Enter it here (<em>optional</em>).</p>
+		</div>
+	</div>
+	<p class="text-right"><button type="submit" class="btn btn-primary">Continue to Final Step</button></p>
+	<input type="hidden" name="nextpage" value="{{nextpage}}" />
+</form>

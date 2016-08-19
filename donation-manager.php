@@ -687,8 +687,6 @@ class DonationManager {
         switch( $form ) {
 
             case 'contact-details':
-                //$contact_details_form_html = DonationManager::get_template_part( 'form4.contact-details-form' );
-
                 $checked_yes = '';
                 $checked_no = '';
                 if( isset( $_POST['donor']['different_pickup_address'] ) ) {
@@ -964,7 +962,6 @@ class DonationManager {
 
             case 'select-preferred-pickup-dates':
                 $pickuptimes = $this->get_pickuptimes( $_SESSION['donor']['org_id'] );
-//$this->add_html( '<pre>$pickuptimes = ' . print_r( $pickuptimes, true ) . '</pre>' );
 
                 $times = array();
                 $x = 1;
@@ -981,15 +978,13 @@ class DonationManager {
                     ];
                     $x++;
                 }
-//$this->add_html( '<pre>$times = '.print_r($times,true).'</pre>' );
+
                 $pickuplocations = $this->get_pickuplocations( $_SESSION['donor']['org_id'] );
 
                 $pickuplocations_template = $this->get_template_part( 'form5.pickup-location' );
                 $search = array( '{key}', '{location}', '{location_attr_esc}', '{checked}' );
                 foreach( $pickuplocations as $key => $location ){
                     $checked = ( isset( $_POST['donor']['pickuplocation'] ) && $location['name'] == $_POST['donor']['pickuplocation'] )? ' checked="checked"' : '';
-                    //$replace = array( $key, $location['name'], esc_attr( $location['name'] ), $checked );
-                    //$locations[] = str_replace( $search, $replace, $pickuplocations_template );
                     $locations[] = [
                         'key' => $key,
                         'location' => $location['name'],
@@ -1003,25 +998,9 @@ class DonationManager {
                 // Priority Donation Backlinks
                 $priority_html = ( false == $_SESSION['donor']['priority'] )? '<div class="row priority-note"><div class="col-md-12"><div class="alert alert-info" style="text-align: center;"><strong>Priority Pick Up Option:</strong> <em>Need expedited service?</em> <a href="#" class="show-priority">Click for details &rarr;</a></div></div></div><div class="row priority-row"><div class="col-md-12"><div class="priority-close"><a href="#" class="close-priority-row btn btn-default btn-xs">Close</a></div>' . $this->get_priority_pickup_links( $_SESSION['donor']['pickup_code'], 'We work as hard as we can to serve all of our donors in a timely fashion. If you need expedited service or you don\'t see a time that works in our calendar, click below to request a pick up from our <em>Fee Based</em> priority pick up provider, and they will deliver your donation to us:' ) . '</div></div>' : '' ;
 
-                /*
-                $html = $this->get_template_part( 'form5.select-preferred-pickup-dates', array(
-                        'nextpage' => $nextpage,
-                        'pickupdatevalue1' => $pickupdate1,
-                        'pickupdatevalue2' => $pickupdate2,
-                        'pickupdatevalue3' => $pickupdate3,
-                        'pickuptimes1' => implode( "\n", $times[1] ),
-                        'pickuptimes2' => implode( "\n", $times[2] ),
-                        'pickuptimes3' => implode( "\n", $times[3] ),
-                        'pickuplocations' => implode( "\n", $locations ),
-                        'priority_pickup_option' => $priority_html,
-                    ));
-                /**/
-
-                //*
                 $pickupdate1 = ( isset( $_POST['donor']['pickupdate1'] ) && preg_match( '/(([0-9]{2})\/([0-9]{2})\/([0-9]{4}))/', $_POST['donor']['pickupdate1'] ) )? $_POST['donor']['pickupdate1'] : '';
                 $pickupdate2 = ( isset( $_POST['donor']['pickupdate2'] ) && preg_match( '/(([0-9]{2})\/([0-9]{2})\/([0-9]{4}))/', $_POST['donor']['pickupdate2'] ) )? $_POST['donor']['pickupdate2'] : '';
                 $pickupdate3 = ( isset( $_POST['donor']['pickupdate3'] ) && preg_match( '/(([0-9]{2})\/([0-9]{2})\/([0-9]{4}))/', $_POST['donor']['pickupdate3'] ) )? $_POST['donor']['pickupdate3'] : '';
-                /**/
 
                 $days = [
                     1 => [
@@ -1037,14 +1016,14 @@ class DonationManager {
                         'times' => $times,
                     ],
                 ];
-//$this->add_html( '<pre>$times = ' . print_r( $times, true ) . '</pre>' );
+
                 $hbs_vars = [
                     'pickupdays' => $days,
                     'priority_pickup_option' => $priority_html,
                     'pickuplocations' => $locations,
                     'nextpage' => $nextpage,
                 ];
-                //$this->add_html( '<pre>$hbs_vars = ' . print_r( $hbs_vars, true ) . '</pre>' );
+
                 $html = \DonationManager\lib\fns\templates\render_template( 'form5.pickup-dates', $hbs_vars );
                 $this->add_html( $html );
             break;
@@ -1164,7 +1143,6 @@ class DonationManager {
             break;
 
             default:
-                //$html = $this->get_template_part( 'form0.enter-your-zipcode', array( 'nextpage' => $nextpage ) );
                 $html = \DonationManager\lib\fns\templates\render_template( 'form0.enter-your-zipcode', [ 'nextpage' => $nextpage ] );
                 $this->add_html( $html );
             break;

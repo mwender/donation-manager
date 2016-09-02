@@ -1149,7 +1149,7 @@ class DonationManager {
         }
 
         if( is_array( $ads ) && 0 < count( $ads ) )
-            $this->add_html( '<div class="row ads">' . implode( "\n", $ads ) . '</div>' );
+            $this->add_html( implode( "\n", $ads ) );
 
         if( current_user_can( 'activate_plugins') && 'on' == $_COOKIE['dmdebug'] )
             $this->add_html( '<br /><div class="alert alert-info"><strong>NOTE:</strong> This note and the following array output is only visible to logged in PMD Admins.</div><pre>$_SESSION[\'donor\'] = ' . print_r( $_SESSION['donor'], true ) . '</pre>' );
@@ -1994,16 +1994,19 @@ class DonationManager {
         if( 0 < count( $ads ) ){
             for( $x = 1; $x <= 3; $x++ ){
                 if( $ads[$x] ){
-                    $banner = '<img src="' . $ads[$x]['src'] . '" />';
+                    $banner = '<img src="' . $ads[$x]['src'] . '" style="max-width: 100%;" />';
                     if( $ads[$x]['link'] )
                         $banner = '<a href="' . $ads[$x]['link'] . '" target="_blank">' . $banner . '</a>';
-                    $replace['ad-' . $x ] = $banner;
-                } else {
-                    $replace['ad-' . $x ] = '';
+                    $banners[] = [ 'banner' => $banner ];
                 }
+                /*
+                else {
+                    $banners[] = [ 'banner' => ''];
+                }
+                */
             }
-
-            $html = $this->get_template_part( 'banner-ad.row', $replace );
+            $html = \DonationManager\lib\fns\templates\render_template( 'banner-ad-row', [ 'banners' => $banners ] );
+            //$html = $this->get_template_part( 'banner-ad.row', $replace );
         }
 
         return $html;

@@ -1,0 +1,10 @@
+{{#each rows}}
+	<div class="row organization{{css_classes}}">
+		<div class="col-lg-12">
+			<h3>{{name}}</h3>
+			{{{desc}}}
+			<a class="btn btn-primary btn-lg" href="{{link}}">{{button_text}}</a>
+		</div>
+	</div>
+	<hr />
+{{/each}}

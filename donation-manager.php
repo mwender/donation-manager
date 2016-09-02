@@ -1720,8 +1720,6 @@ class DonationManager {
         $priority_html = '';
         $priority_orgs = $this->get_priority_organizations( $pickup_code );
         if( is_array( $priority_orgs ) ){
-            $template = $this->get_template_part( 'form1.select-your-organization.row' );
-            $search = array( '{name}', '{desc}', '{link}', '{button_text}', '{css_classes}' );
             foreach( $priority_orgs as $org ){
                 // Setup button link
                 if(
@@ -1733,15 +1731,24 @@ class DonationManager {
                     $link = '/step-one/?oid=' . $org['id'] . '&tid=' . $org['trans_dept_id'] . '&priority=1';
                 }
 
-                $replace = array( $org['name'], '', $link, PRIORITY_BUTTON_TEXT, ' priority' );
-
-                $rows[] = str_replace( $search, $replace, $template );
+                $row = [
+                    'name' => $org['name'],
+                    'link' => $link,
+                    'button_text' => PRIORITY_BUTTON_TEXT,
+                    'css_classes' => ' priority',
+                    'desc' => '',
+                ];
+                $rows[] = $row;
             }
+            $hbs_vars = [
+                'rows' => $rows,
+            ];
+            $priority_rows = \DonationManager\lib\fns\templates\render_template( 'form1.select-your-organization.rows', $hbs_vars );
 
             if( is_null( $note ) )
                 $note = 'Even though your items don\'t qualify for pick up, you can connect with our "fee based" priority pick up partner that will pick up items we can\'t use as well as any other items you would like to recycle or throw away:';
 
-            $priority_html = '<div class="alert alert-warning"><h3 style="margin-top: 0;">Priority Pick Up Option</h3><p style="margin-bottom: 20px;">' . $note . '</p>' . implode( "\n", $rows ) . '</div>';
+            $priority_html = '<div class="alert alert-warning"><h3 style="margin-top: 0;">Priority Pick Up Option</h3><p style="margin-bottom: 20px;">' . $note . '</p>' . $priority_rows . '</div>';
         }
 
         return $priority_html;

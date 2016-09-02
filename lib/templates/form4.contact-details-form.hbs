@@ -1,27 +1,27 @@
 <form action="" method="post">
 	<div class="row">
-		<div class="form-group col-xs-3">
+		<div class="form-group col-xs-4">
 			<label>First Name <span class="red">*</span></label>
 			<input type="text" class="form-control" name="donor[address][name][first]" value="{{donor_name_first}}">
 		</div>
-		<div class="form-group col-xs-3">
+		<div class="form-group col-xs-4">
 			<label>Last Name <span class="red">*</span></label>
 			<input type="text" class="form-control" name="donor[address][name][last]" value="{{donor_name_last}}">
 		</div>
 	</div>
 
 	<div class="row">
-		<div class="form-group col-xs-10">
+		<div class="form-group col-xs-12">
 			<label>Address <span class="red">*</span></label>
 			<input type="text" class="form-control" name="donor[address][address]" value="{{donor_address}}">
 		</div>
 	</div>
 	<div class="row">
-		<div class="form-group col-xs-4">
+		<div class="form-group col-xs-5">
 			<label>City <span class="red">*</span></label>
 			<input type="text" class="form-control" name="donor[address][city]" value="{{donor_city}}">
 		</div>
-		<div class="form-group col-xs-3">
+		<div class="form-group col-xs-4">
 			<label>State <span class="red">*</span></label>
 			{{{state}}}
 		</div>
@@ -37,19 +37,19 @@
 	</div>
 <div id="different-pickup-address">
 	<div class="row">
-		<div class="form-group col-xs-10">
+		<div class="form-group col-xs-12">
 			<label>Pickup Address <span class="red">*</span></label>
 			<input type="text" class="form-control" name="donor[pickup_address][address]" value="{{donor_pickup_address}}">
 		</div>
 	</div>
 	<div class="row">
-		<div class="form-group col-xs-4">
+		<div class="form-group col-xs-5">
 			<label>Pickup City <span class="red">*</span></label>
 			<input type="text" class="form-control" name="donor[pickup_address][city]" value="{{donor_pickup_city}}">
 		</div>
-		<div class="form-group col-xs-3">
+		<div class="form-group col-xs-4">
 			<label>Pickup State <span class="red">*</span></label>
-			{{pickup_state}}
+			{{{pickup_state}}}
 		</div>
 		<div class="form-group col-xs-3">
 			<label>Pickup ZIP <span class="red">*</span></label>
@@ -73,7 +73,7 @@
 		<div class="form-group col-xs-2"><label><input type="radio" value="Email"{{checked_email}} name="donor[preferred_contact_method]"> Email</label></div>
 	</div>
 	<div class="row">
-		<div class="form-group col-xs-10">
+		<div class="form-group col-xs-12">
 			<label>Preferred Donor Code</label>
 			<input type="text" class="form-control" name="donor[preferred_code]" value="{{preferred_code}}" style="max-width: 150px;">
 			<p class="help-block">Got a <em>Preferred Donor Code</em>? Enter it here (<em>optional</em>).</p>

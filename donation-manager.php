@@ -1202,7 +1202,7 @@ class DonationManager {
 
             case 'select-preferred-pickup-dates':
                 wp_enqueue_style( 'gl-datepicker', plugins_url( 'lib/css/glDatePicker.pmd.css', __FILE__ ) );
-                wp_enqueue_script( 'gl-datepicker', plugins_url( 'lib/components/vendor/gl-datepicker/glDatePicker.min.js', __FILE__ ), array( 'jquery' ), '2.0' );
+                wp_enqueue_script( 'gl-datepicker', plugins_url( 'lib/js/glDatePicker.min.js', __FILE__ ), array( 'jquery' ), filemtime( DONMAN_DIR . '/lib/js/glDatePicker.min.js' ) );
                 wp_enqueue_script( 'gl-datepicker-init', plugins_url( 'lib/js/gl-datepicker.js', __FILE__ ), array( 'gl-datepicker' ), filemtime( DONMAN_DIR . '/lib/js/gl-datepicker.js' ) );
 
                 /**

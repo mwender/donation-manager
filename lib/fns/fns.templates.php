@@ -66,4 +66,34 @@ function render_template( $filename = '', $data = [] ){
 
 	return $renderer( $data );
 }
+
+/**
+ * Checks if template file exists.
+ *
+ * @since 1.4.6
+ *
+ * @param string $filename Filename of the template to check for.
+ * @return bool Returns TRUE if template file exists.
+ */
+function template_exists( $filename = '' ){
+	if( empty( $filename ) )
+	return false;
+
+	// Remove file extension
+	$extensions = ['.hbs', '.htm', '.html'];
+	$filename = str_replace( $extensions, '', $filename );
+
+	$theme_path = \get_stylesheet_directory();
+	$theme_template = \trailingslashit( $theme_path ) . 'donation-manager-templates/' . $filename . '.hbs';
+
+	$plugin_template = trailingslashit( DONMAN_DIR ) . 'lib/templates/' . $filename . '.hbs';
+
+	if(	file_exists( $theme_template ) ){
+		return true;
+	} else if( file_exists( $plugin_template ) ){
+		return true;
+	} else if( ! file_exists( $plugin_template ) ){
+		return false;
+	}
+}
 ?>

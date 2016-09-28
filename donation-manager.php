@@ -644,7 +644,8 @@ class DonationManager {
         $html = '';
 
         $args = shortcode_atts( array(
-            'nextpage' => ''
+            'nextpage' => '',
+            'template' => ''
         ), $atts, 'donationmanager' );
 
         /**
@@ -672,7 +673,7 @@ class DonationManager {
          *  which form displays on which page. Otherwise, we setup
          *  $_SESSION['donor']['form'] inside callback_init().
          */
-        if( is_front_page() )
+        if( is_front_page() || is_page('donate-now') )
             $_SESSION['donor'] = array();
 
         $this->callback_init_track_url_path();
@@ -682,6 +683,14 @@ class DonationManager {
             $form = 'select-your-organization';
         } else if( isset( $_REQUEST['oid'] ) && isset( $_REQUEST['tid'] ) ){
             $form = 'describe-your-donation';
+        }
+
+        $template = '';
+        // Allow $template to be set by the shortcode's `template` attribute
+        if( ! empty( $args['template'] ) ){
+            $template_exists = \DonationManager\lib\fns\templates\template_exists( $args['template'] );
+            if( $template_exists )
+                $template = $args['template'];
         }
 
         switch( $form ) {
@@ -809,7 +818,9 @@ class DonationManager {
                     'donor_phone' => $donor_phone,
                     'preferred_code' => $donor_preferred_code,
                 ];
-                $html = \DonationManager\lib\fns\templates\render_template( 'form4.contact-details-form', $hbs_vars );
+                if( empty( $template ) )
+                    $template = 'form4.contact-details-form';
+                $html = \DonationManager\lib\fns\templates\render_template( $template, $hbs_vars );
                 $this->add_html( $html );
             break;
 
@@ -887,7 +898,9 @@ class DonationManager {
                     'nextpage' => $nextpage,
                     'provide_additional_details' => $provide_additional_details
                 ];
-                $html = \DonationManager\lib\fns\templates\render_template( 'form3.screening-questions-form', $hbs_vars );
+                if( empty( $template ) )
+                    $template = 'form3.screening-questions-form';
+                $html = \DonationManager\lib\fns\templates\render_template( $template, $hbs_vars );
                 $this->add_html( $html );
             break;
 
@@ -956,7 +969,9 @@ class DonationManager {
                     'description' => $description,
                     'nextpage' => $nextpage
                 ];
-                $html = \DonationManager\lib\fns\templates\render_template( 'form2.donation-options-form', $hbs_vars );
+                if( empty( $template ) )
+                    $template = 'form2.donation-options-form';
+                $html = \DonationManager\lib\fns\templates\render_template( $template, $hbs_vars );
                 $this->add_html( $html );
             break;
 
@@ -1024,7 +1039,9 @@ class DonationManager {
                     'nextpage' => $nextpage,
                 ];
 
-                $html = \DonationManager\lib\fns\templates\render_template( 'form5.pickup-dates', $hbs_vars );
+                if( empty( $template ) )
+                    $template = 'form5.pickup-dates';
+                $html = \DonationManager\lib\fns\templates\render_template( $template, $hbs_vars );
                 $this->add_html( $html );
             break;
 
@@ -1129,7 +1146,9 @@ class DonationManager {
                     $ads = array_unique( array_merge( $ads, $priority_ads ) ); // merge non-profit and priority ads, ensuring unique array values
 
                 $hbs_vars = [ 'rows' => $rows ];
-                $html = \DonationManager\lib\fns\templates\render_template( 'form1.select-your-organization', $hbs_vars );
+                if( empty( $template ) )
+                    $template = 'form1.select-your-organization';
+                $html = \DonationManager\lib\fns\templates\render_template( $template, $hbs_vars );
                 $this->add_html( $html );
             break;
 
@@ -1143,7 +1162,9 @@ class DonationManager {
             break;
 
             default:
-                $html = \DonationManager\lib\fns\templates\render_template( 'form0.enter-your-zipcode', [ 'nextpage' => $nextpage ] );
+                if( empty( $template ) )
+                    $template = 'form0.enter-your-zipcode';
+                $html = \DonationManager\lib\fns\templates\render_template( $template, [ 'nextpage' => $nextpage ] );
                 $this->add_html( $html );
             break;
         }

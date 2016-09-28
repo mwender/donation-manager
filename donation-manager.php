@@ -643,9 +643,9 @@ class DonationManager {
         global $wp_query;
         $html = '';
 
-        extract( shortcode_atts( array(
+        $args = shortcode_atts( array(
             'nextpage' => ''
-        ), $atts, 'donationmanager' ) );
+        ), $atts, 'donationmanager' );
 
         /**
          *  NEXT PAGE - WHERE DOES OUR FORM REDIRECT?
@@ -656,7 +656,7 @@ class DonationManager {
          *  turn allows for adding the various pages as steps in an
          *  analytics tracking funnel (e.g. Google Analytics).
          */
-        $nextpage = ( empty( $nextpage ) )? get_permalink() : get_bloginfo( 'url' ) . '/' . $nextpage;
+        $nextpage = ( empty( $args['nextpage'] ) )? get_permalink() : get_bloginfo( 'url' ) . '/' . $args['nextpage'];
 
         /**
          *  RESET $_SESSION['donor'] ON HOME PAGE

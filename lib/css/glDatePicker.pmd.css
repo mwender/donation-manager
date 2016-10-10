@@ -168,3 +168,26 @@
 	background: linear-gradient(to bottom,  #88e888 0%,#9dff9d 1%,#42fd42 2%,#01ab01 98%,#37ef37 99%,#37ef37 100%);
 	filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#88e888', endColorstr='#37ef37',GradientType=0 );
 }
+@media only screen and (max-width: 760px){
+	.gldp-pmd{
+		width: 300px !important;
+	}
+	.gldp-pmd .dow,
+	.gldp-pmd .noday,
+	.gldp-pmd .mon,
+	.gldp-pmd .tue,
+	.gldp-pmd .wed,
+	.gldp-pmd .thu,
+	.gldp-pmd .fri,
+	.gldp-pmd .sat,
+	.gldp-pmd .sun,
+	.gldp-pmd .special {
+		width: 41px !important;
+	}
+	.gldp-pmd .monyear{
+		width: 46px !important;
+	}
+	.gldp-pmd .monyear.title{
+		width: 191px !important;
+	}
+}

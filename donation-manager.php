@@ -1158,7 +1158,7 @@ class DonationManager {
                 // Retrieve the donation receipt
                 $donationreceipt = $this->get_donation_receipt( $_SESSION['donor'] );
 
-                $this->add_html( '<div style="width: 600px; margin: 0 auto;">' . $donationreceipt . '</div>' );
+                $this->add_html( '<div style="max-width: 600px; margin: 0 auto;">' . $donationreceipt . '</div>' );
             break;
 
             default:

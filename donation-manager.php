@@ -825,21 +825,29 @@ class DonationManager {
             break;
 
             case 'location-of-items':
+                $organization = get_the_title( $_SESSION['donor']['org_id'] );
                 $pickuplocations = $this->get_pickuplocations( $_SESSION['donor']['org_id'] );
 
-                $pickuplocations_template = $this->get_template_part( 'form5.pickup-location' );
-                $search = array( '{key}', '{location}', '{location_attr_esc}', '{checked}' );
                 foreach( $pickuplocations as $key => $location ){
                     $checked = ( isset( $_POST['donor']['pickuplocation'] ) && $location['name'] == $_POST['donor']['pickuplocation'] )? ' checked="checked"' : '';
-                    $replace = array( $key, $location['name'], esc_attr( $location['name'] ), $checked );
-                    $locations[] = str_replace( $search, $replace, $pickuplocations_template );
+                    $locations[] = [
+                        'key' => $key,
+                        'location' => $location['name'],
+                        'location_attr_esc' => esc_attr( $location['name'] ),
+                        'checked' => $checked,
+                    ];
                 }
 
-                $html = $this->get_template_part( 'form5.location-of-items', array(
-                        'organization' => get_the_title( $_SESSION['donor']['org_id'] ),
-                        'nextpage' => $nextpage,
-                        'pickuplocations' => implode( "\n", $locations ),
-                    ));
+                $hbs_vars = [
+                    'nextpage' => $nextpage,
+                    'pickuplocations' => $locations,
+                    'organization' => $organization,
+                ];
+
+                if( empty( $template ) )
+                    $template = 'form5.location-of-items';
+                $html = \DonationManager\lib\fns\templates\render_template( $template, $hbs_vars );
+
                 $this->add_html( $html );
             break;
 

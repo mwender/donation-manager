@@ -1,0 +1,23 @@
+<form action="" method="post">
+	<p class="lead">Thank you for your donation to <em>{{{organization}}}</em>. Once you hit <em>Finish and Submit</em>, your donation request will be emailed to us and we will contact you to schedule a pick up time that is convenient for you as well as <em>{{{organization}}}</em>.</p>
+	<br />
+	<div class="row">
+		<div class="col-md-12">
+			<p><strong>Location of items:</strong></p>
+			{{#each pickuplocations}}
+			<div class="radio">
+				<label>
+					<input type="radio" name="donor[pickuplocation]" id="pickuplocation{{key}}" value="{{location_attr_esc}}"{{checked}}>
+					{{location}}
+				</label>
+			</div>
+			{{/each}}
+		</div>
+	</div>
+	<br />
+	<div class="row">
+		<p class="text-right"><button type="submit" class="btn btn-primary">Finish and Submit</button></p>
+	</div>
+	<input type="hidden" name="nextpage" value="{{nextpage}}" />
+	<input type="hidden" name="skip_pickup_dates" value="true" />
+</form>

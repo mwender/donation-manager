@@ -24,7 +24,7 @@
 */
 define( 'DONMAN_DIR', dirname( __FILE__ ) );
 define( 'DONMAN_URL', plugin_dir_url( __FILE__ ) );
-define( 'NON_PROFIT_BUTTON_TEXT', 'Non-Profit Pick Up' );
+define( 'NON_PROFIT_BUTTON_TEXT', 'Free Pick Up' );
 define( 'PRIORITY_BUTTON_TEXT', 'Priority Pick Up' );
 require 'vendor/autoload.php';
 

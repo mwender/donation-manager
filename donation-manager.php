@@ -508,14 +508,17 @@ class DonationManager {
                     $this->notify_admin( 'missing_org_transdept' );
 
                 // Save the donation to the database and send the confirmation and notification emails.
-                $ID = $this->save_donation( $_SESSION['donor'] );
-                $this->tag_donation( $ID, $_SESSION['donor'] );
-                $this->send_email( 'trans_dept_notification' );
-                $this->send_email( 'donor_confirmation' );
-
+                if( $ID = $this->save_donation( $_SESSION['donor'] ) ){
+                    $this->tag_donation( $ID, $_SESSION['donor'] );
+                    $this->send_email( 'trans_dept_notification' );
+                    $this->send_email( 'donor_confirmation' );
+                    $_SESSION['donor']['form'] = 'thank-you';
+                } else {
+                    $_SESSION['donor']['form'] = 'duplicate-submission';
+                }
 
                 // Redirect to next step
-                $_SESSION['donor']['form'] = 'thank-you';
+
                 session_write_close();
                 header( 'Location: ' . $_REQUEST['nextpage'] );
                 die();
@@ -559,14 +562,16 @@ class DonationManager {
                     $this->notify_admin( 'missing_org_transdept' );
 
                 // Save the donation to the database and send the confirmation and notification emails.
-                $ID = $this->save_donation( $_SESSION['donor'] );
-                $this->tag_donation( $ID, $_SESSION['donor'] );
-                $this->send_email( 'trans_dept_notification' );
-                $this->send_email( 'donor_confirmation' );
-
+                if( $ID = $this->save_donation( $_SESSION['donor'] ) ){
+                    $this->tag_donation( $ID, $_SESSION['donor'] );
+                    $this->send_email( 'trans_dept_notification' );
+                    $this->send_email( 'donor_confirmation' );
+                    $_SESSION['donor']['form'] = 'thank-you';
+                } else {
+                    $_SESSION['donor']['form'] = 'duplicate-submission';
+                }
 
                 // Redirect to next step
-                $_SESSION['donor']['form'] = 'thank-you';
                 session_write_close();
                 header( 'Location: ' . $_REQUEST['nextpage'] );
                 die();
@@ -1167,6 +1172,10 @@ class DonationManager {
                 $donationreceipt = $this->get_donation_receipt( $_SESSION['donor'] );
 
                 $this->add_html( '<div style="max-width: 600px; margin: 0 auto;">' . $donationreceipt . '</div>' );
+            break;
+
+            case 'duplicate-submission':
+                $this->add_html( '<div class="alert alert-warning"><h2>Duplicate Submission Detected</h2><p>We have already received this donation and entered it into our system. Please check your email for a confirmation of your submission.</p></div>' );
             break;
 
             default:
@@ -1873,6 +1882,24 @@ class DonationManager {
     }
 
     /**
+     * Generates a donation hash
+     *
+     * @access (for functions: only use if private)
+     * @since 1.x.x
+     *
+     * @param array $donation Donation array.
+     * @return str MD5 hash generated from donation array.
+     */
+    private function _get_donation_hash( $donation ){
+        if( empty( $donation ) || ! is_array( $donation ) )
+            return false;
+
+        $donation_string = $donation['address']['name']['first'] . $donation['address']['name']['last'] . $donation['email'];
+        $hash = md5( $donation_string );
+        return $hash;
+    }
+
+    /**
      * Returns organization’s donation routing method.
      *
      * @access self::send_email()
@@ -2116,6 +2143,30 @@ class DonationManager {
     }
 
     /**
+     * Checks to see if a donation is a duplicate
+     *
+     *
+     *
+     * @see Function/method/class relied on
+     * @link URL short description.
+     * @global type $varname short description.
+     *
+     * @access self::save_donation()
+     * @since 1.4.6
+     *
+     * @param array $donation Donation array.
+     * @return bool Returns `true` if a duplicate exists.
+     */
+    private function _is_duplicate_donation( $donation ){
+        $duplicate = false;
+
+        $hash = $this->_get_donation_hash( $donation );
+        $duplicate = get_transient( 'dm_donation_' . $hash );
+
+        return $duplicate;
+    }
+
+    /**
      * Checks if a donation is `orphaned`.
      *
      * In order for this function to return `true`, orphaned
@@ -2179,6 +2230,13 @@ class DonationManager {
     public function save_donation( $donation = array() ){
         if( empty( $donation ) || 0 == count( $donation ) )
             return false;
+
+        if( $this->_is_duplicate_donation( $donation ) ){
+            return false;
+        } else {
+            $hash = $this->_get_donation_hash( $donation );
+            set_transient( 'dm_donation_' . $hash, 1, 15 * MINUTE_IN_SECONDS );
+        }
 
         $post = array(
             'post_type' => 'donation',

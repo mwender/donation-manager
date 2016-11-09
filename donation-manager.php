@@ -52,7 +52,7 @@ class DonationManager {
         add_action( 'init', array( $this, 'callback_init' ), 99 );
         add_action( 'init', array( $this, 'callback_init_track_url_path' ), 100 );
         add_action( 'template_redirect', array( $this, 'callback_template_redirect' ) );
-        add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_scripts' ) );
+        add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_scripts' ), 101 );
     }
 
     static function activate() {
@@ -1292,8 +1292,12 @@ class DonationManager {
             break;
         }
 
-        wp_register_script( 'dm-scripts', plugins_url( 'lib/js/scripts.js', __FILE__ ), array( 'jquery' ), filemtime( plugin_dir_path( __FILE__ ) . 'lib/js/scripts.js' ) );
-        wp_enqueue_script( 'dm-scripts' );
+        if( ! wp_script_is( 'jquery', 'done' ) ){
+            wp_enqueue_script( 'jquery' );
+        }
+
+        $dmscripts = file_get_contents( plugin_dir_path( __FILE__ ) . 'lib/js/scripts.js' );
+        wp_add_inline_script( 'jquery', $dmscripts );
     }
 
     /**

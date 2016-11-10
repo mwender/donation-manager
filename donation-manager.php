@@ -24,6 +24,7 @@
 */
 define( 'DONMAN_DIR', dirname( __FILE__ ) );
 define( 'DONMAN_URL', plugin_dir_url( __FILE__ ) );
+define( 'DONATION_TIMEOUT', 3 * MINUTE_IN_SECONDS );
 define( 'NON_PROFIT_BUTTON_TEXT', 'Free Pick Up' );
 define( 'PRIORITY_BUTTON_TEXT', 'Priority Pick Up' );
 require 'vendor/autoload.php';
@@ -2239,7 +2240,7 @@ class DonationManager {
             return false;
         } else {
             $hash = $this->_get_donation_hash( $donation );
-            set_transient( 'dm_donation_' . $hash, 1, 15 * MINUTE_IN_SECONDS );
+            set_transient( 'dm_donation_' . $hash, 1, DONATION_TIMEOUT );
         }
 
         $post = array(

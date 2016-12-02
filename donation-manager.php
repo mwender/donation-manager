@@ -546,7 +546,7 @@ class DonationManager {
         /**
          * 06b. VALIDATE PICKUP LOCATION (Skipping Pickup Dates)
          */
-        if( $_POST['skip_pickup_dates'] ){
+        if( isset( $_POST['skip_pickup_dates'] ) && true == $_POST['skip_pickup_dates'] ){
             $form = new Form([
                 'Pickup Location' => [ 'required', 'trim' ],
             ]);

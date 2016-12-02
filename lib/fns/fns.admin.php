@@ -165,6 +165,9 @@ add_action( 'save_post', __NAMESPACE__ . '\\custom_save_post' );
 function enqueue_admin_scripts(){
     \wp_register_script( 'dm-admin-js',  DONMAN_URL . 'lib/js/admin.js', array( 'jquery' ), filemtime( DONMAN_DIR . '/lib/js/admin.js' ) );
     \wp_enqueue_script( 'dm-admin-js' );
+
+    $debug = ( true == WP_DEBUG )? true : false;
+    wp_localize_script( 'dm-admin-js', 'wpvars', array( 'debug' => $debug ) );
 }
 add_action( 'admin_enqueue_scripts', __NAMESPACE__ . '\\enqueue_admin_scripts' );
 

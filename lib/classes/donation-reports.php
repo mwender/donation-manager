@@ -76,7 +76,8 @@ class DMReports extends DonationManager {
 
 		    	wp_register_script( 'dm-reports-donors-js', plugins_url( '../js/reports.donors.js', __FILE__ ), array( 'jquery', 'datatables' ), filemtime( plugin_dir_path( __FILE__ ) . '../js/reports.donors.js' ) );
 		    	wp_enqueue_script( 'dm-reports-donors-js' );
-		    	wp_localize_script( 'dm-reports-donors-js', 'ajax_object', array( 'ajax_url' => admin_url( 'admin-ajax.php' ) ) );
+		    	$debug = ( true == WP_DEBUG )? true : false;
+                wp_localize_script( 'dm-reports-donors-js', 'ajax_object', array( 'ajax_url' => admin_url( 'admin-ajax.php' ), 'debug' => $debug ) );
 			break;
 
     		default:

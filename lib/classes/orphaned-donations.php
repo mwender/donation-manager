@@ -619,7 +619,7 @@ class DMOrphanedDonations extends DonationManager {
 						<h2>Orphaned Donation Manager</h2>
 
 						<h2 class="nav-tab-wrapper">
-								<a href="edit.php?post_type=donation&page=orphaned-donations" class="nav-tab<?php echo ( 'default' == $active_tab )? ' nav-tab-active' : ''; ?>">Donations</a>
+								<a href="edit.php?post_type=donation&page=orphaned-donations" class="nav-tab<?php echo ( 'default' == $active_tab )? ' nav-tab-active' : ''; ?>">Donations by Store</a>
 								<a href="edit.php?post_type=donation&page=orphaned-donations&tab=providers" class="nav-tab<?php echo ( 'providers' == $active_tab )? ' nav-tab-active' : ''; ?>">Providers</a>
 								<a href="edit.php?post_type=donation&page=orphaned-donations&tab=import" class="nav-tab<?php echo ( 'import' == $active_tab )? ' nav-tab-active' : ''; ?>">Import</a>
 								<a href="edit.php?post_type=donation&page=orphaned-donations&tab=utilities" class="nav-tab<?php echo ( 'utilities' == $active_tab )? ' nav-tab-active' : ''; ?>">Utilities</a>

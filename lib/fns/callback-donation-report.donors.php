@@ -25,6 +25,14 @@ switch ( $switch ) {
         if( isset( $_POST['search']['value'] ) )
             $zipcode = $_POST['search']['value'];
 
+        if( isset( $_POST['radius'] ) )
+            $radius = $_POST['radius'];
+
+        if( empty( $radius ) || ! is_numeric( $radius ) )
+            $radius = 20;
+
+        $response->radius = intval( $radius );
+
         if( $zipcode && is_numeric( $zipcode ) ){
 
             // Get the Lat/Lon of our zipcode
@@ -37,9 +45,9 @@ switch ( $switch ) {
             $lat = $coordinates{0}->Latitude;
             $lon = $coordinates{0}->Longitude;
 
-            // Get all zipcodes within 20 miles of our zipcode
+            // Get all zipcodes within $radius miles of our zipcode
             $sql = 'SELECT distinct(ZipCode) FROM ' . $wpdb->prefix . 'dm_zipcodes  WHERE (3958*3.1415926*sqrt((Latitude-' . $lat . ')*(Latitude-' . $lat . ') + cos(Latitude/57.29578)*cos(' . $lat . '/57.29578)*(Longitude-' . $lon . ')*(Longitude-' . $lon . '))/180) <= %d';
-            $zipcodes = $wpdb->get_results( $wpdb->prepare( $sql, 20 ) ); // 20 == mile radius
+            $zipcodes = $wpdb->get_results( $wpdb->prepare( $sql, $radius ) ); // $radius == mile radius
 
             if( ! $zipcodes )
                 return $response->message = 'No zip codes returned for ' . $zipcode . '.';

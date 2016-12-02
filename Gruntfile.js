@@ -40,6 +40,9 @@ module.exports = function(grunt) {
       html: {
         files: ['lib/html/*.html']
       },
+      js: {
+        files: ['lib/js/*.js']
+      },
       mjml: {
         files: ['lib/mjml/*.mjml'],
         tasks: ['mjml']

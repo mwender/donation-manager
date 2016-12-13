@@ -1568,9 +1568,10 @@ class DonationManager {
                 global $post;
                 setup_postdata( $post );
                 $org = get_post_meta( $post->ID, 'organization', true );
-                $priority_pickup = (bool) get_post_meta( $org['ID'], 'priority_pickup', true );
-                $alternate_donate_now_url = get_post_meta( $org['ID'], 'alternate_donate_now_url', true );
-
+                if( isset( $org['ID'] ) ){
+                    $priority_pickup = (bool) get_post_meta( $org['ID'], 'priority_pickup', true );
+                    $alternate_donate_now_url = get_post_meta( $org['ID'], 'alternate_donate_now_url', true );
+                }
                 if( $org )
                     $organizations[] = array( 'id' => $org['ID'], 'name' => $org['post_title'], 'desc' => $org['post_content'], 'trans_dept_id' => $post->ID, 'alternate_donate_now_url' => $alternate_donate_now_url, 'priority_pickup' => $priority_pickup );
             }

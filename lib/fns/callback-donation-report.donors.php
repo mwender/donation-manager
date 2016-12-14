@@ -54,8 +54,8 @@ switch ( $switch ) {
 
             if( $zipcodes ){
                 $zipcodes_array = array();
-                foreach( $zipcodes as $zipcode ){
-                    $zipcodes_array[] = $zipcode->ZipCode;
+                foreach( $zipcodes as $found_zipcode ){
+                    $zipcodes_array[] = $found_zipcode->ZipCode;
                 }
             }
             $response->zipcodes_array = $zipcodes_array;

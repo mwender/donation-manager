@@ -1,9 +1,13 @@
 <?php
 global $wpdb;
 
+if( ! isset( $response ) || ! is_object( $response ) )
+    $response = new stdClass();
+
 switch ( $switch ) {
 	case 'query_zip':
-		$response->draw = $_POST['draw']; // $draw == 1 for the first request when the page is requested
+		if( isset( $_POST['draw'] ) )
+            $response->draw = $_POST['draw']; // $draw == 1 for the first request when the page is requested
 
         $default_organization = get_option( 'donation_settings_default_organization' );
         $default_org_id = $default_organization[0];
@@ -31,6 +35,11 @@ switch ( $switch ) {
         if( empty( $radius ) || ! is_numeric( $radius ) )
             $radius = 20;
 
+        // Button for downloading a CSV of this data
+        if( ! empty( $zipcode ) )
+            $response->download_csv_button = get_submit_button( 'Download ' . $zipcode . ' CSV', 'secondary small export-csv', 'download-zipcode-csv', false, ['aria-zipcode' => $zipcode, 'aria-radius' => $radius ] );
+
+        $response->zipcode = $zipcode;
         $response->radius = intval( $radius );
 
         if( $zipcode && is_numeric( $zipcode ) ){
@@ -74,6 +83,9 @@ switch ( $switch ) {
 		$args['offset'] = $response->offset;
 
 		$response->limit = ( isset( $_POST['length'] ) )? (int) $_POST['length'] : 25;
+        // Allow an override by $limit
+        if( isset( $limit ) && is_numeric( $limit ) )
+            $response->limit = $limit;
 
 		// Sorting (ASC||DESC)
 		$response->sort = ( isset( $_POST['order'][0]['dir'] ) )? strtoupper( $_POST['order'][0]['dir'] ) : 'DESC';
@@ -109,7 +121,6 @@ switch ( $switch ) {
     	}
     	$response->data = $data;
     	$response->body = 'count($data) = ' . count( $data ) . '<br />' . print_r( $data, true );
-
 	break;
 }
 ?>

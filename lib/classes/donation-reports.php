@@ -16,6 +16,7 @@ class DMReports extends DonationManager {
     	add_action( 'admin_menu', array( $this, 'admin_menu' ) );
     	add_action( 'wp_ajax_donation-report', array( $this, 'callback_donation_report' ) );
 		add_action( 'template_redirect', array( $this, 'download_report' ) );
+        add_action( 'template_redirect', array( $this, 'download_donorsbyzip_report' ) );
 		add_action( 'template_redirect', array( $this, 'get_attachment' ) );
 		add_action( 'init', array( $this, 'add_rewrite_rules' ) );
 		add_action( 'init', array( $this, 'add_rewrite_tags' ) );
@@ -34,6 +35,7 @@ class DMReports extends DonationManager {
 	 */
     public function add_rewrite_rules(){
     	add_rewrite_rule( 'download\/([0-9]{1,}|all)\/([0-9]{4}-[0-9]{2}|donations)\/?', 'index.php?orgid=$matches[1]&month=$matches[2]', 'top' );
+        add_rewrite_rule( 'download\-donorsbyzip\/([0-9-]{5,10})\/(^20|40|60{1}$)\/?', 'index.php?zipcode=$matches[1]&radius=$matches[2]', 'top' );
     	add_rewrite_rule( 'getattachment\/([0-9]{1,})\/?', 'index.php?attach_id=$matches[1]', 'top' );
     }
 
@@ -52,6 +54,8 @@ class DMReports extends DonationManager {
     public function add_rewrite_tags(){
     	add_rewrite_tag( '%orgid%', '[0-9]{1,}|all' );
     	add_rewrite_tag( '%month%', '[0-9]{4}-[0-9]{2}|donations' );
+        add_rewrite_tag( '%zipcode%', '[0-9-]{5,10}' );
+        add_rewrite_tag( '%radius%', '^(20|40|60){1}$' );
     	add_rewrite_tag( '%attach_id%', '[0-9]{1,}' );
     }
 
@@ -74,10 +78,12 @@ class DMReports extends DonationManager {
 				wp_enqueue_style( 'datatables', 'https://cdn.datatables.net/r/dt/dt-1.10.9,fh-3.0.0/datatables.min.css' );
 				wp_register_script( 'datatables', 'https://cdn.datatables.net/r/dt/dt-1.10.9,fh-3.0.0/datatables.min.js', array( 'jquery' ) );
 
-		    	wp_register_script( 'dm-reports-donors-js', plugins_url( '../js/reports.donors.js', __FILE__ ), array( 'jquery', 'datatables' ), filemtime( plugin_dir_path( __FILE__ ) . '../js/reports.donors.js' ) );
-		    	wp_enqueue_script( 'dm-reports-donors-js' );
-		    	$debug = ( true == WP_DEBUG )? true : false;
-                wp_localize_script( 'dm-reports-donors-js', 'ajax_object', array( 'ajax_url' => admin_url( 'admin-ajax.php' ), 'debug' => $debug ) );
+		    	wp_enqueue_script( 'dm-reports-donors-js', plugins_url( '../js/reports.donors.js', __FILE__ ), array( 'jquery', 'datatables' ), filemtime( plugin_dir_path( __FILE__ ) . '../js/reports.donors.js' ) );
+                $debug = ( true == WP_DEBUG )? true : false;
+                wp_localize_script( 'dm-reports-donors-js', 'ajax_object', [ 'ajax_url' => admin_url( 'admin-ajax.php' ), 'site_url' => site_url( '/download-donorsbyzip/'), 'debug' => $debug, 'permalink_url' => admin_url( 'options-permalink.php' ) ] );
+
+                wp_enqueue_script( 'jquery-file-download', plugins_url( '../components/vendor/jquery-file-download/src/Scripts/jquery.fileDownload.js', __FILE__ ), array( 'jquery', 'jquery-ui-dialog', 'jquery-ui-progressbar' ) );
+                wp_enqueue_style( 'wp-jquery-ui-dialog' );
 			break;
 
     		default:
@@ -168,7 +174,7 @@ class DMReports extends DonationManager {
     }
 
 	/**
-	 * Initiates a file download for $wp_query->query_vars['orgid'] and $wp_query->query_vars['month']
+	 * Initiates a file download for $wp_query->query_vars['zipcode'] and $wp_query->query_vars['radius']
 	 *
 	 * Matches example.com/download/orgid/YYYY-MM
 	 *
@@ -216,6 +222,56 @@ class DMReports extends DonationManager {
 		header('Content-Disposition: attachment; filename="' . $filename );
 		echo $csv;
 		die();
+    }
+
+    /**
+     * Initiates a file download for $wp_query->query_vars['orgid'] and $wp_query->query_vars['month']
+     *
+     * Matches example.com/download-donorsbyzip/zipcode/radius
+     *
+     * @see add_rewrite_rule()
+     * @global object $wp_query WordPress global query object.
+     *
+     * @since 1.4.7
+     *
+     * @return void
+     */
+    function download_donorsbyzip_report(){
+        // Only editors or higher can download reports
+        if( ! current_user_can( 'publish_pages' ) )
+            return;
+
+        global $wp_query;
+
+        if( ! isset( $wp_query->query_vars['zipcode'] ) && ! isset( $wp_query->query_vars['radius'] ) )
+            return;
+
+        // 12/13/2016 (10:21) - continue here
+        $zipcode = get_query_var( 'zipcode' );
+        $radius = get_query_var( 'radius' );
+
+        $file = plugin_dir_path( __FILE__ ) . '../fns/callback-donation-report.donors.php';
+        $switch = 'query_zip';
+        $limit = -1; // Don't limit results returned by WP query
+        require( $file );
+
+        if( is_array( $response->data ) ){
+            $csv = '"Date","ID","Name","Email","Zip Code"' . "\n";
+            foreach( $response->data as $donation ){
+                $csv.= '"' . $donation['date'] . '","' . $donation['id'] . '","' . $donation['name'] . '","' . $donation['email_address'] . '","' . $donation['zipcode'] . '"' . "\n";
+            }
+        } else {
+            $csv = 'No donations found within ' . $radius .' miles of zipcode `' . $zipcode . '`.';
+        }
+
+        $filename = 'donorsbyzip_' . $zipcode . '_' . $radius . 'miles.csv';
+
+        header('Set-Cookie: fileDownload=true; path=/');
+        header('Cache-Control: max-age=60, must-revalidate');
+        header("Content-type: text/csv");
+        header('Content-Disposition: attachment; filename="' . $filename );
+        echo $csv;
+        die();
     }
 
     public function flush_rewrites(){

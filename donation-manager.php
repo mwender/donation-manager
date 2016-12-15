@@ -430,7 +430,7 @@ class DonationManager {
                 $pod = pods( 'organization' );
                 $pod->fetch( $_SESSION['donor']['org_id'] );
                 $skip_pickup_dates = false;
-                $skip_pickup_dates = $pod->get_field( 'skip_pickup_dates' );
+                $skip_pickup_dates = $pod->field( 'skip_pickup_dates' );
                 $_SESSION['donor']['form'] = ( true == $skip_pickup_dates )? 'location-of-items' : 'select-preferred-pickup-dates';
 
                 //$_SESSION['donor']['form'] = 'select-preferred-pickup-dates';
@@ -927,7 +927,7 @@ class DonationManager {
                 $step_one_note = '';
                 $pod = pods( 'organization' );
                 $pod->fetch( $oid );
-                $note = $pod->get_field( 'step_one_note' );
+                $note = $pod->field( 'step_one_note' );
                 if( ! empty( $note ) )
                     $step_one_note = $note;
 
@@ -940,8 +940,8 @@ class DonationManager {
                     $term = get_term( $ID, 'donation_option' );
                     $pod = pods( 'donation_option' );
                     $pod->fetch( $ID );
-                    $order = $pod->get_field( 'order' );
-                    $donation_options[$order] = array( 'name' => $term->name, 'desc' => $term->description, 'value' => esc_attr( $term->name ), 'pickup' => $pod->get_field( 'pickup' ), 'skip_questions' => $pod->get_field( 'skip_questions' ), 'term_id' => $term->term_id );
+                    $order = $pod->field( 'order' );
+                    $donation_options[$order] = array( 'name' => $term->name, 'desc' => $term->description, 'value' => esc_attr( $term->name ), 'pickup' => $pod->field( 'pickup' ), 'skip_questions' => $pod->field( 'skip_questions' ), 'term_id' => $term->term_id );
                 }
                 ksort( $donation_options );
 
@@ -1730,7 +1730,7 @@ class DonationManager {
             foreach( $terms as $term ){
                 $pod = pods( $meta_field );
                 $pod->fetch( $term->term_id );
-                $order = $pod->get_field( 'order' );
+                $order = $pod->field( 'order' );
                 $key = ( ! array_key_exists( $order, $meta_array ) )? $order : $x;
                 $meta_array[$key] = array( 'id' => $term->term_id, 'name' => $term->name );
                 $x++;
@@ -1742,7 +1742,7 @@ class DonationManager {
                     $term = get_term( $meta_id, $meta_field );
                     $pod = pods( $meta_field );
                     $pod->fetch( $meta_id );
-                    $order = $pod->get_field( 'order' );
+                    $order = $pod->field( 'order' );
                     $key = ( ! array_key_exists( $order, $meta_array ) )? $order : $x;
                     $meta_array[$key] = array( 'id' => $meta_id, 'name' => $term->name );
                     $x++;
@@ -1812,7 +1812,7 @@ class DonationManager {
             foreach( $terms as $term ) {
                 $pod = pods( 'pickup_location' );
                 $pod->fetch( $term->term_id );
-                $order = $pod->get_field( 'order' );
+                $order = $pod->field( 'order' );
                 $key = ( ! array_key_exists( $order, $pickuplocations ) )? $order : $x;
                 $pickuplocations[$key] = array( 'id' => $term->term_id, 'name' => $term->name );
                 $x++;
@@ -1824,7 +1824,7 @@ class DonationManager {
                     $term = get_term( $pickuplocation_id, 'pickup_location' );
                     $pod = pods( 'pickup_location' );
                     $pod->fetch( $pickuplocation_id );
-                    $order = $pod->get_field( 'order' );
+                    $order = $pod->field( 'order' );
                     $key = ( ! array_key_exists( $order, $pickuplocations ) )? $order : $x;
                     $pickuplocations[$key] = array( 'id' => $pickuplocation_id, 'name' => $term->name );
                     $x++;
@@ -1849,7 +1849,7 @@ class DonationManager {
             foreach( $terms as $term ) {
                 $pod = pods( 'pickup_time' );
                 $pod->fetch( $term->term_id );
-                $order = $pod->get_field( 'order' );
+                $order = $pod->field( 'order' );
                 $key = ( ! array_key_exists( $order, $pickuptimes ) && ! empty( $order ) )? $order : $x;
                 $pickuptimes[$key] = array( 'id' => $term->term_id, 'name' => $term->name );
                 $x++;
@@ -1861,7 +1861,7 @@ class DonationManager {
                     $term = get_term( $pickuptime_id, 'pickup_time' );
                     $pod = pods( 'pickup_time' );
                     $pod->fetch( $pickuptime_id );
-                    $order = $pod->get_field( 'order' );
+                    $order = $pod->field( 'order' );
                     $key = ( ! array_key_exists( $order, $pickuptimes ) )? $order : $x;
                     $pickuptimes[$key] = array( 'id' => $pickuptime_id, 'name' => $term->name );
                     $x++;
@@ -1959,7 +1959,7 @@ class DonationManager {
             foreach( $terms as $term ) {
                 $pod = pods( 'screening_question' );
                 $pod->fetch( $term->term_id );
-                $order = $pod->get_field( 'order' );
+                $order = $pod->field( 'order' );
                 $key = ( ! array_key_exists( $order, $screening_questions ) )? $order : $x;
                 $screening_questions[$key] = array( 'id' => $term->term_id, 'name' => $term->name, 'desc' => $term->description );
                 $x++;
@@ -1971,7 +1971,7 @@ class DonationManager {
                     $term = get_term( $question_id, 'screening_question' );
                     $pod = pods( 'screening_question' );
                     $pod->fetch( $question_id );
-                    $order = $pod->get_field( 'order' );
+                    $order = $pod->field( 'order' );
                     $key = ( ! array_key_exists( $order, $screening_questions ) )? $order : $x;
                     $screening_questions[$key] = array( 'id' => $question_id, 'name' => $term->name, 'desc' => $term->description );
                     $x++;
@@ -2143,7 +2143,7 @@ class DonationManager {
         $pod->fetch( $trans_dept_id );
         $trans_dept_contact = array( 'contact_title' => '', 'contact_name' => '', 'contact_email' => '', 'cc_emails' => '', 'phone' => '' );
         foreach( $trans_dept_contact as $key => $val ) {
-            $trans_dept_contact[$key] = $pod->get_field( $key );
+            $trans_dept_contact[$key] = $pod->field( $key );
         }
 
         return $trans_dept_contact;

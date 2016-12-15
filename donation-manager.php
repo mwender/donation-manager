@@ -1285,7 +1285,7 @@ class DonationManager {
                         if( isset( $pickup_dow_array[0] ) && is_array( $pickup_dow_array[0] ) && ( 0 == count( $pickup_dow_array[0] ) ) )
                             unset( $pickup_dow_array ); // No pickup days set for org, skip $pickup_dow_array processing b/c it is empty!
 
-                        if( is_array( $pickup_dow_array ) && 0 < count( $pickup_dow_array ) ){
+                        if( isset( $pickup_dow_array ) && is_array( $pickup_dow_array ) && 0 < count( $pickup_dow_array ) ){
                             $pickup_dow = array();
                             foreach( $pickup_dow_array as $day ){
                                 $pickup_dow[] = intval( $day );

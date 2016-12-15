@@ -613,7 +613,7 @@ class DonationManager {
      * @return void
      */
     function callback_init_track_url_path(){
-        if( ! is_array( $_SESSION['donor']['url_path'] ) || ! isset( $_SESSION['donor']['url_path'] ) )
+        if( ! isset( $_SESSION['donor']['url_path'] ) || ! is_array( $_SESSION['donor']['url_path'] )  )
             $_SESSION['donor']['url_path'] = array();
 
         $site_host = str_replace( array( 'http://', 'https://' ), '', site_url() );
@@ -952,7 +952,7 @@ class DonationManager {
                     $checked = '';
                     if( isset( $_SESSION['donor']['items'][$opt['term_id']] ) )
                         $checked = ' checked="checked"';
-                    if( trim( $_POST['donor']['options'][$key]['field_value'] ) == $opt['value'] )
+                    if( isset( $_POST['donor'] ) && trim( $_POST['donor']['options'][$key]['field_value'] ) == $opt['value'] )
                         $checked = ' checked="checked"';
 
                     $checkboxes[] = [
@@ -1188,10 +1188,10 @@ class DonationManager {
             break;
         }
 
-        if( is_array( $ads ) && 0 < count( $ads ) )
+        if( isset( $ads ) && is_array( $ads ) && 0 < count( $ads ) )
             $this->add_html( implode( "\n", $ads ) );
 
-        if( current_user_can( 'activate_plugins') && 'on' == $_COOKIE['dmdebug'] )
+        if( current_user_can( 'activate_plugins') && isset( $_COOKIE['dmdebug'] ) && 'on' == $_COOKIE['dmdebug'] )
             $this->add_html( '<br /><div class="alert alert-info"><strong>NOTE:</strong> This note and the following array output is only visible to logged in PMD Admins.</div><pre>$_SESSION[\'donor\'] = ' . print_r( $_SESSION['donor'], true ) . '</pre>' );
 
         $html = $this->html;
@@ -2058,7 +2058,7 @@ class DonationManager {
 
         if( 0 < count( $ads ) ){
             for( $x = 1; $x <= 3; $x++ ){
-                if( $ads[$x] ){
+                if( isset( $ads[$x] ) && $ads[$x] ){
                     $banner = '<img src="' . $ads[$x]['src'] . '" style="max-width: 100%;" />';
                     if( $ads[$x]['link'] )
                         $banner = '<a href="' . $ads[$x]['link'] . '" target="_blank">' . $banner . '</a>';

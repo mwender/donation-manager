@@ -893,8 +893,9 @@ class DonationManager {
 
                 $questions = array();
                 foreach( $screening_questions as $question ) {
-                    $checked_yes = ( isset( $_POST['donor']['answers'][$key] ) &&  'Yes' == $_POST['donor']['answers'][$key] )? ' checked="checked"' : '';
-                    $checked_no = ( isset( $_POST['donor']['answers'][$key] ) &&  'No' == $_POST['donor']['answers'][$key] )? ' checked="checked"' : '';
+                    $question_id = $question['id'];
+                    $checked_yes = ( isset( $_POST['donor']['answers'][$question_id] ) &&  'Yes' == $_POST['donor']['answers'][$question_id] )? ' checked="checked"' : '';
+                    $checked_no = ( isset( $_POST['donor']['answers'][$question_id] ) &&  'No' == $_POST['donor']['answers'][$question_id] )? ' checked="checked"' : '';
                     $questions[] = [
                         'key' => $question['id'],
                         'question' => $question['desc'],

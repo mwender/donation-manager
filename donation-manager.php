@@ -441,11 +441,11 @@ class DonationManager {
                 $errors = $form->getErrors();
                 $error_msg = array();
                 foreach( $errors as $field => $array ){
-                    if( true == $array['required'] )
+                    if( isset( $array['required'] ) && true == $array['required'] )
                         $error_msg[] = '<strong><em>' . $field . '</em></strong> is a required field.';
                     if( isset( $array['max_length'] ) )
                         $error_msg[] = '<strong><em>' . $field . '</em></strong> can not exceed <em>' . $array['max_length'] . '</em> characters.';
-                    if( true == $array['email'] )
+                    if( isset( $array['email'] ) && true == $array['email'] )
                         $error_msg[] = '<strong><em>' . $field . '</em></strong> must be a valid email address.';
 
                     // Preferred Donor Code:
@@ -711,7 +711,7 @@ class DonationManager {
                         $checked_no = ' checked="checked"';
                     }
                 } else {
-                    if ( $_SESSION['donor']['different_pickup_address'] ){
+                    if ( isset( $_SESSION['donor']['different_pickup_address'] ) ){
                          if( 'Yes' == $_SESSION['donor']['different_pickup_address'] ) {
                             $checked_yes = ' checked="checked"';
                         } else {
@@ -731,7 +731,7 @@ class DonationManager {
                         $checked_email = ' checked="checked"';
                     }
                 } else {
-                    if( $_SESSION['donor']['preferred_contact_method'] ){
+                    if( isset( $_SESSION['donor']['preferred_contact_method'] ) ){
                         if( 'Phone' == $_SESSION['donor']['preferred_contact_method'] ) {
                             $checked_phone = ' checked="checked"';
                         } else {
@@ -742,66 +742,88 @@ class DonationManager {
                     }
                 }
 
-                if( $_POST['donor']['address']['name']['first'] ){
+                if( isset( $_POST['donor']['address']['name']['first'] ) ){
                     $first_name = $_POST['donor']['address']['name']['first'];
-                } else if( $_SESSION['donor']['address']['name']['first'] ) {
+                } else if( isset( $_SESSION['donor']['address']['name']['first'] ) ){
                     $first_name = $_SESSION['donor']['address']['name']['first'];
+                } else {
+                    $first_name = '';
                 }
-                if( $_POST['donor']['address']['name']['last'] ){
+                if( isset( $_POST['donor']['address']['name']['last'] ) ){
                     $last_name = $_POST['donor']['address']['name']['last'];
-                } else if( $_SESSION['donor']['address']['name']['last'] ) {
+                } else if( isset( $_SESSION['donor']['address']['name']['last'] ) ){
                     $last_name = $_SESSION['donor']['address']['name']['last'];
+                } else {
+                    $last_name = '';
                 }
-                if( $_POST['donor']['address']['address'] ){
+                if( isset( $_POST['donor']['address']['address'] ) ){
                     $address = $_POST['donor']['address']['address'];
-                } else if( $_SESSION['donor']['address']['address'] ) {
+                } else if( isset( $_SESSION['donor']['address']['address'] ) ){
                     $address = $_SESSION['donor']['address']['address'];
+                } else {
+                    $address = '';
                 }
-                if( $_POST['donor']['address']['city'] ){
+                if( isset( $_POST['donor']['address']['city'] ) ){
                     $city = $_POST['donor']['address']['city'];
-                } else if( $_SESSION['donor']['address']['city'] ) {
+                } else if( isset( $_SESSION['donor']['address']['city'] ) ){
                     $city = $_SESSION['donor']['address']['city'];
+                } else {
+                    $city = '';
                 }
-                if( ! $_POST['donor']['address']['state'] && $_SESSION['donor']['address']['state'] ){
+                if( ! isset( $_POST['donor']['address']['state'] ) && isset( $_SESSION['donor']['address']['state'] ) ){
                     $_POST['donor']['address']['state'] = $_SESSION['donor']['address']['state'];
                 }
-                if( $_POST['donor']['address']['zip'] ){
+                if( isset( $_POST['donor']['address']['zip'] ) ){
                     $zip = $_POST['donor']['address']['zip'];
-                } else if( $_SESSION['donor']['address']['zip'] ) {
+                } else if( isset( $_SESSION['donor']['address']['zip'] ) ){
                     $zip = $_SESSION['donor']['address']['zip'];
+                } else {
+                    $zip = '';
                 }
-                if( $_POST['donor']['pickup_address']['address'] ){
+                if( isset( $_POST['donor']['pickup_address']['address'] ) ){
                     $pickup_address = $_POST['donor']['pickup_address']['address'];
-                } else if( $_SESSION['donor']['pickup_address']['address'] ) {
+                } else if( isset( $_SESSION['donor']['pickup_address']['address'] ) ){
                     $pickup_address = $_SESSION['donor']['pickup_address']['address'];
+                } else {
+                    $pickup_address = '';
                 }
-                if( $_POST['donor']['pickup_address']['city'] ){
+                if( isset( $_POST['donor']['pickup_address']['city'] ) ){
                     $pickup_address_city = $_POST['donor']['pickup_address']['city'];
-                } else if( $_SESSION['donor']['pickup_address']['city'] ) {
+                } else if( isset( $_SESSION['donor']['pickup_address']['city'] ) ){
                     $pickup_address_city = $_SESSION['donor']['pickup_address']['city'];
+                } else {
+                    $pickup_address_city = '';
                 }
-                if( ! $_POST['donor']['pickup_address']['state'] && $_SESSION['donor']['pickup_address']['state'] ){
+                if( ! isset( $_POST['donor']['pickup_address']['state'] ) && isset( $_SESSION['donor']['pickup_address']['state'] ) ){
                     $_POST['donor']['pickup_address']['state'] = $_SESSION['donor']['pickup_address']['state'];
                 }
-                if( $_POST['donor']['pickup_address']['zip'] ){
+                if( isset( $_POST['donor']['pickup_address']['zip'] ) ){
                     $pickup_address_zip = $_POST['donor']['pickup_address']['zip'];
-                } else if( $_SESSION['donor']['pickup_address']['zip'] ) {
+                } else if( isset( $_SESSION['donor']['pickup_address']['zip'] ) ){
                     $pickup_address_zip = $_SESSION['donor']['pickup_address']['zip'];
+                } else {
+                    $pickup_address_zip = '';
                 }
-                if( $_POST['donor']['email'] ){
+                if( isset( $_POST['donor']['email'] ) ){
                     $donor_email = $_POST['donor']['email'];
-                } else if( $_SESSION['donor']['email'] ) {
+                } else if( isset( $_SESSION['donor']['email'] ) ){
                     $donor_email = $_SESSION['donor']['email'];
+                } else {
+                    $donor_email = '';
                 }
-                if( $_POST['donor']['phone'] ){
+                if( isset( $_POST['donor']['phone'] ) ){
                     $donor_phone = $_POST['donor']['phone'];
-                } else if( $_SESSION['donor']['phone'] ) {
+                } else if( isset( $_SESSION['donor']['phone'] ) ){
                     $donor_phone = $_SESSION['donor']['phone'];
+                } else {
+                    $donor_phone = '';
                 }
-                if( $_POST['donor']['preferred_code'] ){
+                if( isset( $_POST['donor']['preferred_code'] ) ){
                     $donor_preferred_code = $_POST['donor']['preferred_code'];
-                } else if( $_SESSION['donor']['preferred_code'] ) {
+                } else if( isset( $_SESSION['donor']['preferred_code'] ) ){
                     $donor_preferred_code = $_SESSION['donor']['preferred_code'];
+                } else {
+                    $donor_preferred_code = '';
                 }
 
                 $hbs_vars = [

@@ -51,7 +51,8 @@ class DonationManager {
         add_shortcode( 'donationform', array( $this, 'callback_shortcode' ) );
         add_action( 'init', array( $this, 'callback_init_set_debug' ), 98 );
         add_action( 'init', array( $this, 'callback_init' ), 99 );
-        add_action( 'init', array( $this, 'callback_init_track_url_path' ), 100 );
+        if( ! is_admin() && ! defined( 'WP_CLI' ) )
+            add_action( 'init', array( $this, 'callback_init_track_url_path' ), 100 );
         add_action( 'template_redirect', array( $this, 'callback_template_redirect' ) );
         add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_scripts' ), 101 );
     }

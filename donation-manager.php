@@ -1162,16 +1162,14 @@ class DonationManager {
                         'desc' => $org['desc']
                     ];
 
+                    if( false !== ( $ads = $this->get_trans_dept_ads( $org['trans_dept_id'] ) ) )
+                        $row['ads'] = $ads;
+                    unset( $ads );
+
                     if( $org['priority_pickup'] ){
                         $priority_rows[] = $row;
                     } else {
                         $rows[] = $row;
-                    }
-
-                    if( ! empty( $org['trans_dept_id'] ) && $org['priority_pickup'] ){
-                        $priority_ads[] = $this->get_trans_dept_ads( $org['trans_dept_id'] );
-                    } else if ( ! empty( $org['trans_dept_id'] ) ){
-                        $ads[] = $this->get_trans_dept_ads( $org['trans_dept_id'] );
                     }
                 }
                 if( ! is_array( $rows ) )
@@ -1179,9 +1177,6 @@ class DonationManager {
 
                 if( 0 < count( $priority_rows ) )
                     $rows = array_merge( $rows, $priority_rows );
-
-                if( 0 < count( $priority_ads ) )
-                    $ads = array_unique( array_merge( $ads, $priority_ads ) ); // merge non-profit and priority ads, ensuring unique array values
 
                 $hbs_vars = [ 'rows' => $rows ];
                 if( empty( $template ) )
@@ -1210,9 +1205,6 @@ class DonationManager {
                 $this->add_html( $html );
             break;
         }
-
-        if( isset( $ads ) && is_array( $ads ) && 0 < count( $ads ) )
-            $this->add_html( implode( "\n", $ads ) );
 
         if( current_user_can( 'activate_plugins') && isset( $_COOKIE['dmdebug'] ) && 'on' == $_COOKIE['dmdebug'] )
             $this->add_html( '<br /><div class="alert alert-info"><strong>NOTE:</strong> This note and the following array output is only visible to logged in PMD Admins.</div><pre>$_SESSION[\'donor\'] = ' . print_r( $_SESSION['donor'], true ) . '</pre>' );
@@ -2060,13 +2052,13 @@ class DonationManager {
      * @since 1.?.?
      *
      * @param int $id Transportation Department ID.
-     * @return string HTML for banner ads.
+     * @return string HTML for banner ads, or FALSE if no ads.
      */
     function get_trans_dept_ads( $id = null ){
         if( is_null( $id ) )
             return;
 
-        $html = '';
+        $html = false;
 
         for( $x = 1; $x <= 3; $x++ ){
             $graphic = get_post_meta( $id, 'ad_' . $x . '_graphic', true );
@@ -2084,17 +2076,11 @@ class DonationManager {
                 if( isset( $ads[$x] ) && $ads[$x] ){
                     $banner = '<img src="' . $ads[$x]['src'] . '" style="max-width: 100%;" />';
                     if( $ads[$x]['link'] )
-                        $banner = '<a href="' . $ads[$x]['link'] . '" target="_blank">' . $banner . '</a>';
+                        $banner = '<a href="' . $ads[$x]['link'] . '" target="_blank" rel="nofollow">' . $banner . '</a>';
                     $banners[] = [ 'banner' => $banner ];
                 }
-                /*
-                else {
-                    $banners[] = [ 'banner' => ''];
-                }
-                */
             }
             $html = \DonationManager\lib\fns\templates\render_template( 'banner-ad-row', [ 'banners' => $banners ] );
-            //$html = $this->get_template_part( 'banner-ad.row', $replace );
         }
 
         return $html;

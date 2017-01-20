@@ -2,6 +2,61 @@
 namespace DonationManager\lib\fns\helpers;
 
 /**
+ * Gets the posted variable.
+ *
+ * Returns the following:
+ *
+ * - If $_POST[$varname] isset
+ * - else if $_SESSION[$varname] isset
+ * - else and empty string
+ *
+ * Check for a multi-level array value by using a
+ * colon (i.e. `:`) between each level. Example:
+ *
+ * `get_posted_var( 'foo:bar' )` checks for $_POST['foo']['bar']
+ *
+ * @param      string  $varname  The varname
+ *
+ * @return     string  The value of the posted variable.
+ */
+function get_posted_var( $varname ){
+    $varname = ( stristr( $varname, ':') )? explode( ':', $varname ) : [$varname];
+    $value = '';
+    //*
+    switch( count( $varname ) ){
+        case 4:
+            if( isset( $_POST[$varname[0]][$varname[1]][$varname[2]][$varname[3]] ) ){
+                $value = $_POST[$varname[0]][$varname[1]][$varname[2]][$varname[3]];
+            } else if( isset( $_SESSION[$varname[0]][$varname[1]][$varname[2]][$varname[3]] ) ){
+                $value = $_SESSION[$varname[0]][$varname[1]][$varname[2]][$varname[3]];
+            }
+        break;
+        case 3:
+            if( isset( $_POST[$varname[0]][$varname[1]][$varname[2]] ) ){
+                $value = $_POST[$varname[0]][$varname[1]][$varname[2]];
+            } else if( isset( $_SESSION[$varname[0]][$varname[1]][$varname[2]] ) ){
+                $value = $_SESSION[$varname[0]][$varname[1]][$varname[2]];
+            }
+        break;
+        case 2:
+            if( isset( $_POST[$varname[0]][$varname[1]] ) ){
+                $value = $_POST[$varname[0]][$varname[1]];
+            } else if( isset( $_SESSION[$varname[0]][$varname[1]] ) ){
+                $value = $_SESSION[$varname[0]][$varname[1]];
+            }
+        break;
+        case 1:
+            if( isset( $_POST[$varname[0]] ) ){
+                $value = $_POST[$varname[0]];
+            } else if( isset( $_SESSION[$varname[0]] ) ){
+                $value = $_SESSION[$varname[0]];
+            }
+        break;
+    }
+    return $value;
+}
+
+/**
  * Retrieves state select input
  */
 function get_state_select( $var = 'address' ) {

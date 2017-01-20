@@ -2,6 +2,10 @@
 
 Donation Manager is a WordPress plugin which handles a multi-form donation process. This plugin requires the [PODS Plugin for WordPress](http://pods.io).
 
+__01/20/2017 - Version 1.4.9__
+
+- Adding "Tweet/Instagram my donation" option
+
 __12/15/2016 - Version 1.4.8.1__
 
 - Code cleanup: setting undefined variables, checking if variables are set

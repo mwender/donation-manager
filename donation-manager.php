@@ -1126,7 +1126,19 @@ class DonationManager {
             break;
 
             case 'thank-you':
-                $this->add_html( '<p>Thank you for donating! We will contact you to finalize your pickup date. Below is a copy of your donation receipt which you will also receive via email.</p><div class="alert alert-warning">IMPORTANT: If your donations are left unattended during pick up, copies of this ticket MUST be attached to all items or containers of items in order for them to be picked up.</div><div class="alert alert-info"><em>PLEASE NOTE: The dates and times you selected during the donation process are not confirmed. Those dates will be used by our Transportation Director when he/she contacts you to schedule your actual pickup date.</em></div>' );
+                $this->add_html( '<p>Thank you for donating! We will contact you to finalize your pickup date. Below is a copy of your donation receipt which you will also receive via email.</p>' );
+
+                // Unattended donations
+                $this->add_html( '<div class="alert alert-warning">IMPORTANT: If your donations are left unattended during pick up, copies of this ticket MUST be attached to all items or containers of items in order for them to be picked up.</div>' );
+
+                // Social Sharing
+                $organization_name = get_the_title( $_SESSION['donor']['org_id'] );
+                $donation_id_hashtag = '#id' . $_SESSION['donor']['ID'];
+                $social_post_text = '<div class="alert alert-success"><p style="margin-bottom: 10px;"><strong>Tweet/Instagram Your Donation!</strong><br />Tweet or Instagram a photo of your donation along with the following caption. Some organizations respond faster when you do!</p><textarea class="form-control" rows="3" onclick="this.setSelectionRange(0, this.value.length)">I just used @pickupdonations to schedule a donation pick up from ' . $organization_name . '. That was simple! #MyStuffMadeADifference ' . $donation_id_hashtag . '</textarea><p class="help-block small">NOTE: Be sure to include the donation ID hashtag with your post (i.e. ' . $donation_id_hashtag . ').</p></div>';
+                $this->add_html( $social_post_text );
+
+                // Dates and times are not confirmed
+                $this->add_html( '<div class="alert alert-info"><em>PLEASE NOTE: The dates and times you selected during the donation process are not confirmed. Those dates will be used by our Transportation Director when he/she contacts you to schedule your actual pickup date.</em></div>' );
 
                 // Retrieve the donation receipt
                 $donationreceipt = $this->get_donation_receipt( $_SESSION['donor'] );
@@ -2463,6 +2475,11 @@ class DonationManager {
                     $template = ( true == $priority )? 'email.trans-dept.priority-donation-note' : 'email.trans-dept.orphaned-donation-note';
                     $orphaned_donation_note = $this->get_template_part( $template );
                 }
+
+                // Add links to check social media for this donation
+                $donation_id_hashtag = 'id' . $donor['ID'];
+                $social_links = '<br><br><strong>DONATION PHOTO:</strong><br>This donor may have posted a photo of this donation. Check these links to see:<ul><li><a href="https://twitter.com/hashtag/' . $donation_id_hashtag . '">Check Twitter</a></li><li><a href="http://www.instagram.com/explore/tags/' . $donation_id_hashtag . '">Check Instagram</a></li></ul>';
+                $donationreceipt = $donationreceipt . $social_links;
 
                 $html = $this->get_template_part( 'email.trans-dept-notification', array(
                     'donor_name' => $donor['address']['name']['first'] . ' ' .$donor['address']['name']['last'],

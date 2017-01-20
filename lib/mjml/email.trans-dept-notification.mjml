@@ -3,8 +3,8 @@
         <mj-column width="100%">
             <mj-table padding="0">
                     <tr>
-                        <td width="70%" style="font-size: 28px; line-height: .8; font-weight: 600; padding-left: 0; color: #6f6f6f;">Donation Notification<br><span style="font-size: 14px; line-height: 18px; font-weight: normal; color: #000;">From: {donor_name}, {contact_info}</span></td>
-                        <td width="30%"><img width="180" style="width: 180px;" src="https://www.pickupmydonation.com/wp-content/plugins/donation-manager/lib/images/pickupmydonation.1200x335.png"/></td>
+                        <td width="55%" style="font-size: 28px; line-height: .8; font-weight: 600; padding-left: 0; color: #6f6f6f;">Donation Notification<br><span style="font-size: 14px; line-height: 18px; font-weight: normal; color: #000;">From: {donor_name}, {contact_info}</span></td>
+                        <td width="45%" align="right"><img width="260" style="width: 260px;" src="http://pickupmydonation.dev/wp-content/plugins/donation-manager/lib/images/pickupmydonation.1200x143.png"/></td>
                     </tr>
             </mj-table>
         </mj-column>
@@ -30,7 +30,7 @@
                 base-url="https://www.pickupmydonation.com/wp-content/plugins/donation-manager/lib/images/"
             />
             <mj-text align="center" color="#fff">
-                    &copy; 2012 &ndash; 2016 PickUpMyDonation.com. All rights reserved.<br>
+                    &copy; 2012 &ndash; 2017 PickUpMyDonation.com. All rights reserved.<br>
                     <a href="mailto:contact@pickupmydonation.com?subject=Remove%20My%20Email&amp;body=Unsubscribe%20me%20from%20further%20mailings." style="color: #f68428; text-decoration: none;">Unsubscribe from these emails.</a>
             </mj-text>
         </mj-column>

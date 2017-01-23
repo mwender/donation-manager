@@ -62,13 +62,16 @@
         <mj-column>
             <mj-social
                 mode="horizontal"
-                display="twitter:url facebook:url"
+                display="twitter:url facebook:url instagram:url"
                 facebook-href="https://www.facebook.com/PickUpMyDonationcom"
                 facebook-content=""
                 facebook-icon-color="transparent"
                 twitter-href="https://twitter.com/pickupdonations"
                 twitter-content=""
                 twitter-icon-color="transparent"
+                instagram-href="https://www.instagram.com/pickupdonations/"
+                instagram-content=""
+                instagram-icon-color="transparent"
                 icon-size="30px"
                 base-url="https://www.pickupmydonation.com/wp-content/plugins/donation-manager/lib/images/"
             />

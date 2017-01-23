@@ -4,7 +4,7 @@
             <mj-table padding="0">
                     <tr>
                         <td width="55%" style="font-size: 28px; line-height: .8; font-weight: 600; padding-left: 0; color: #6f6f6f;">Donation Notification<br><span style="font-size: 14px; line-height: 18px; font-weight: normal; color: #000;">From: {donor_name}, {contact_info}</span></td>
-                        <td width="45%" align="right"><img width="260" style="width: 260px;" src="http://pickupmydonation.dev/wp-content/plugins/donation-manager/lib/images/pickupmydonation.1200x143.png"/></td>
+                        <td width="45%" align="right"><img width="260" style="width: 260px;" src="https://www.pickupmydonation.com/wp-content/plugins/donation-manager/lib/images/pickupmydonation.1200x143.png"/></td>
                     </tr>
             </mj-table>
         </mj-column>
@@ -19,13 +19,16 @@
         <mj-column>
             <mj-social
                 mode="horizontal"
-                display="twitter:url facebook:url"
+                display="twitter:url facebook:url instagram:url"
                 facebook-href="https://www.facebook.com/PickUpMyDonationcom"
                 facebook-content=""
                 facebook-icon-color="transparent"
                 twitter-href="https://twitter.com/pickupdonations"
                 twitter-content=""
                 twitter-icon-color="transparent"
+                instagram-href="https://www.instagram.com/pickupdonations/"
+                instagram-content=""
+                instagram-icon-color="transparent"
                 icon-size="30px"
                 base-url="https://www.pickupmydonation.com/wp-content/plugins/donation-manager/lib/images/"
             />

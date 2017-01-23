@@ -1128,17 +1128,18 @@ class DonationManager {
             case 'thank-you':
                 $this->add_html( '<p>Thank you for donating! We will contact you to finalize your pickup date. Below is a copy of your donation receipt which you will also receive via email.</p>' );
 
-                // Unattended donations
-                $this->add_html( '<div class="alert alert-warning">IMPORTANT: If your donations are left unattended during pick up, copies of this ticket MUST be attached to all items or containers of items in order for them to be picked up.</div>' );
-
                 // Social Sharing
                 $organization_name = get_the_title( $_SESSION['donor']['org_id'] );
                 $donation_id_hashtag = '#id' . $_SESSION['donor']['ID'];
-                $social_post_text = '<div class="alert alert-success"><p style="margin-bottom: 10px;"><strong>Tweet/Instagram Your Donation!</strong><br />Tweet or Instagram a photo of your donation along with the following caption. Some organizations respond faster when you do!</p><textarea class="form-control" rows="3" onclick="this.setSelectionRange(0, this.value.length)">I just used @pickupdonations to schedule a donation pick up from ' . $organization_name . '. That was simple! #MyStuffMadeADifference ' . $donation_id_hashtag . '</textarea><p class="help-block small">NOTE: Be sure to include the donation ID hashtag with your post (i.e. ' . $donation_id_hashtag . ').</p></div>';
+                $social_post_text = '<div class="alert alert-success hidden-print"><p style="margin-bottom: 10px;"><strong>Tweet/Instagram Your Donation!</strong><br />Tweet or Instagram a photo of your donation along with the following caption. Some organizations respond faster when you do!</p><textarea class="form-control" rows="3" onclick="this.setSelectionRange(0, this.value.length)">I just used @pickupdonations to schedule a donation pick up from ' . $organization_name . '. That was simple! #MyStuffMadeADifference ' . $donation_id_hashtag . '</textarea><p class="help-block small">NOTE: Be sure to include the donation ID hashtag with your post (i.e. ' . $donation_id_hashtag . ').</p></div>';
                 $this->add_html( $social_post_text );
 
+
+                // Unattended donations
+                $this->add_html( '<div class="alert alert-warning hidden-print"><strong>IMPORTANT:</strong> If your donations are left unattended during pick up, copies of this ticket MUST be attached to all items or containers of items in order for them to be picked up.</div>' );
+
                 // Dates and times are not confirmed
-                $this->add_html( '<div class="alert alert-info"><em>PLEASE NOTE: The dates and times you selected during the donation process are not confirmed. Those dates will be used by our Transportation Director when he/she contacts you to schedule your actual pickup date.</em></div>' );
+                $this->add_html( '<div class="alert alert-info hidden-print"><em>PLEASE NOTE: The dates and times you selected during the donation process are not confirmed. Those dates will be used by our Transportation Director when he/she contacts you to schedule your actual pickup date.</em></div>' );
 
                 // Retrieve the donation receipt
                 $donationreceipt = $this->get_donation_receipt( $_SESSION['donor'] );

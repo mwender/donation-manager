@@ -1131,20 +1131,22 @@ class DonationManager {
                 // Social Sharing
                 $organization_name = get_the_title( $_SESSION['donor']['org_id'] );
                 $donation_id_hashtag = '#id' . $_SESSION['donor']['ID'];
-                $social_post_text = '<div class="alert alert-success hidden-print"><p style="margin-bottom: 10px;"><strong>Tweet/Instagram Your Donation!</strong><br />Tweet or Instagram a photo of your donation along with the following caption. Some organizations respond faster when you do!</p><textarea class="form-control" rows="3" onclick="this.setSelectionRange(0, this.value.length)">I just used @pickupdonations to schedule a donation pick up from ' . $organization_name . '. That was simple! #MyStuffMadeADifference ' . $donation_id_hashtag . '</textarea><p class="help-block small">NOTE: Be sure to include the donation ID hashtag with your post (i.e. ' . $donation_id_hashtag . ').</p></div>';
+
+                $instagram_image = '<img alt="Instagram" style="width: 48px; height: 48px;" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGAAAABgCAMAAADVRocKAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAyhpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuNi1jMTM4IDc5LjE1OTgyNCwgMjAxNi8wOS8xNC0wMTowOTowMSAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RSZWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZVJlZiMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENDIDIwMTcgKE1hY2ludG9zaCkiIHhtcE1NOkluc3RhbmNlSUQ9InhtcC5paWQ6MzQxNzVCNTJEQUE3MTFFNjlCNkZCNEY1MzhFMDhDNDEiIHhtcE1NOkRvY3VtZW50SUQ9InhtcC5kaWQ6MzQxNzVCNTNEQUE3MTFFNjlCNkZCNEY1MzhFMDhDNDEiPiA8eG1wTU06RGVyaXZlZEZyb20gc3RSZWY6aW5zdGFuY2VJRD0ieG1wLmlpZDozNDE3NUI1MERBQTcxMUU2OUI2RkI0RjUzOEUwOEM0MSIgc3RSZWY6ZG9jdW1lbnRJRD0ieG1wLmRpZDozNDE3NUI1MURBQTcxMUU2OUI2RkI0RjUzOEUwOEM0MSIvPiA8L3JkZjpEZXNjcmlwdGlvbj4gPC9yZGY6UkRGPiA8L3g6eG1wbWV0YT4gPD94cGFja2V0IGVuZD0iciI/PhCu3BcAAADAUExURcso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">';
+
+                $social_post_text = '<div class="hidden-print" style="margin-bottom: 30px"><hr><h3>' . $instagram_image . ' Need faster service?</h3><h4>Tweet/Instagram your donation with ID hashtag!</h4><p style="margin-bottom: 10px;">Tweet or Instagram a photo of your donation along with your Donation ID hashtag. Some organizations respond faster when you do! Here\'s an idea you can copy-and-paste:</p><textarea class="form-control" rows="3" onclick="this.setSelectionRange(0, this.value.length)" style="background-color: #eee;">I just used @pickupdonations to schedule a donation pick up from ' . $organization_name . '. That was simple! #MyStuffMadeADifference ' . $donation_id_hashtag . '</textarea><p class="help-block small">NOTE: Be sure to include the donation ID hashtag with your post (i.e. ' . $donation_id_hashtag . ').</p><hr></div>';
                 $this->add_html( $social_post_text );
-
-
-                // Unattended donations
-                $this->add_html( '<div class="alert alert-warning hidden-print"><strong>IMPORTANT:</strong> If your donations are left unattended during pick up, copies of this ticket MUST be attached to all items or containers of items in order for them to be picked up.</div>' );
-
-                // Dates and times are not confirmed
-                $this->add_html( '<div class="alert alert-info hidden-print"><em>PLEASE NOTE: The dates and times you selected during the donation process are not confirmed. Those dates will be used by our Transportation Director when he/she contacts you to schedule your actual pickup date.</em></div>' );
 
                 // Retrieve the donation receipt
                 $donationreceipt = $this->get_donation_receipt( $_SESSION['donor'] );
 
                 $this->add_html( '<div style="max-width: 600px; margin: 0 auto;">' . $donationreceipt . '</div>' );
+
+                // Unattended donations
+                $this->add_html( '<br><br><div class="alert alert-warning hidden-print"><strong>IMPORTANT:</strong> If your donations are left unattended during pick up, copies of this ticket MUST be attached to all items or containers of items in order for them to be picked up.</div>' );
+
+                // Dates and times are not confirmed
+                $this->add_html( '<div class="alert alert-info hidden-print"><em>PLEASE NOTE: The dates and times you selected during the donation process are not confirmed. Those dates will be used by our Transportation Director when he/she contacts you to schedule your actual pickup date.</em></div>' );
             break;
 
             case 'duplicate-submission':
@@ -2479,14 +2481,15 @@ class DonationManager {
 
                 // Add links to check social media for this donation
                 $donation_id_hashtag = 'id' . $donor['ID'];
-                $social_links = '<br><br><strong>DONATION PHOTO:</strong><br>This donor may have posted a photo of this donation. Check these links to see:<ul><li><a href="https://twitter.com/hashtag/' . $donation_id_hashtag . '">Check Twitter</a></li><li><a href="http://www.instagram.com/explore/tags/' . $donation_id_hashtag . '">Check Instagram</a></li></ul>';
-                $donationreceipt = $donationreceipt . $social_links;
+                $social_links = '<strong>DONATION PHOTO:</strong><br>This donor may have posted a photo of this donation. Check these links to see:<ul><li><a href="https://twitter.com/hashtag/' . $donation_id_hashtag . '">Check Twitter</a></li><li><a href="http://www.instagram.com/explore/tags/' . $donation_id_hashtag . '">Check Instagram</a></li></ul>';
+                //$donationreceipt = $donationreceipt . $social_links;
 
                 $html = $this->get_template_part( 'email.trans-dept-notification', array(
                     'donor_name' => $donor['address']['name']['first'] . ' ' .$donor['address']['name']['last'],
                     'contact_info' => str_replace( '<a href', '<a style="color: #6f6f6f; text-decoration: none;" href', $contact_info ),
                     'donationreceipt' => $donationreceipt,
                     'orphaned_donation_note' => $orphaned_donation_note,
+                    'social_links' => $social_links,
                 ));
 
                 if( is_array( $cc_emails ) )

@@ -9,6 +9,11 @@
             </mj-table>
         </mj-column>
     </mj-section>
+    <mj-section background-color="#fff" padding="20px" padding-bottom="0">
+        <mj-column background-color="#fffdd8">
+            <mj-text padding="10">{social_links}</mj-text>
+        </mj-column>
+    </mj-section>
     <mj-section background-color="#fff" padding="20px">
         <mj-column background-color="#e6e7e9">
             <mj-text padding="0">{orphaned_donation_note}</mj-text>

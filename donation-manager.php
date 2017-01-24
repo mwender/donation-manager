@@ -893,7 +893,7 @@ class DonationManager {
                 $pod->fetch( $oid );
                 $note = $pod->field( 'step_one_note' );
                 if( ! empty( $note ) )
-                    $step_one_note = $note;
+                    $step_one_note = apply_filters( 'the_content', $note );
 
                 if( true == $_SESSION['donor']['priority'] )
                     $step_one_note = '<div class="alert alert-info">You have selected our <strong>Expedited Pick Up Service</strong>.  Your request will be sent to our <strong>Fee Based</strong> pick up partners (<em>fee to be determined by the pick up provider</em>) who will in most cases be able to handle your request within 24 hours, bring quality donations to a local non-profit, and help you dispose of unwanted and/or unsellable items.  <br/><br/>If you reached this page in error, <a href="' . site_url() . '/select-your-organization/?pcode=' . $_SESSION['donor']['pickup_code'] . '&priority=0">CLICK HERE</a> and select <em>Free Pick Up</em>.</div>' . $step_one_note;

@@ -57,6 +57,23 @@ function get_posted_var( $varname ){
 }
 
 /**
+ * Gets the socialshare copy.
+ *
+ * @param      string   $organization         The organization
+ * @param      string   $donation_id_hashtag  The donation identifier hashtag
+ *
+ * @return     boolean/string  FALSE or The socialshare copy.
+ */
+function get_socialshare_copy( $organization = '', $donation_id_hashtag = '' ){
+    if( empty( $organization ) || empty( $donation_id_hashtag ) )
+        return false;
+
+    $format = 'I just used @pickupdonations to schedule a donation pick up from %1$s. That was simple! #MyStuffMadeADifference %2$s';
+
+    return sprintf( $format, $organization, $donation_id_hashtag );
+}
+
+/**
  * Retrieves state select input
  */
 function get_state_select( $var = 'address' ) {

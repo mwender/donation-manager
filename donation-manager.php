@@ -2696,6 +2696,7 @@ register_activation_hook( __FILE__, array( $DonationManager, 'activate' ) );
 
 // Include function files
 require_once 'lib/fns/fns.admin.php';
+require_once 'lib/fns/fns.debug.php';
 require_once 'lib/fns/fns.helpers.php';
 require_once 'lib/fns/fns.templates.php';
 

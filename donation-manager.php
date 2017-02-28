@@ -27,6 +27,7 @@ define( 'DONMAN_URL', plugin_dir_url( __FILE__ ) );
 define( 'DONATION_TIMEOUT', 3 * MINUTE_IN_SECONDS );
 define( 'NON_PROFIT_BUTTON_TEXT', 'Free Pick Up' );
 define( 'PRIORITY_BUTTON_TEXT', 'Priority Pick Up' );
+define( 'ORPHANED_PICKUP_RADIUS', 15 ); // radius in miles for zipcode search
 require 'vendor/autoload.php';
 
 class DonationManager {

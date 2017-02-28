@@ -603,7 +603,8 @@ class DonationManager {
         if( ! isset( $_GET['dmdebug'] ) )
             return;
 
-        setcookie( 'dmdebug', 'on', time() + 3600, COOKIEPATH, COOKIE_DOMAIN );
+        $debug = ( 'false' === strtolower( $_GET['dmdebug'] ) )? false : 'on';
+        setcookie( 'dmdebug', $debug, time() + 3600, COOKIEPATH, COOKIE_DOMAIN );
     }
 
     /**

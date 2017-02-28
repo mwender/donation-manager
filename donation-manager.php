@@ -1034,6 +1034,11 @@ class DonationManager {
                 if( false == $organizations ){
                     // Default non-profit org
                     $default_org = $this->get_default_organization();
+                    // Add orphaned pick up providers
+                    if( ! isset( $default_org[0]['providers'] ) ){
+                        $default_org[0]['providers'] = $this->get_orphaned_donation_contacts( array( 'pcode' => $pickup_code, 'radius' => ORPHANED_PICKUP_RADIUS, 'priority' => 0, 'fields' => 'store_name,email_address,zipcode,priority', 'duplicates' => false ) );
+                    }
+
                     $organizations[] = $default_org[0];
 
                     // Default priority org
@@ -1073,20 +1078,22 @@ class DonationManager {
                         $link = $nextpage . '?oid=' . $org['id'] . '&tid=' . $org['trans_dept_id'];
                     }
 
-                    if( true == $org['priority_pickup'] && ! stristr( $link, '&priority=1') ){
+                    if( isset( $org['priority_pickup'] ) && true == $org['priority_pickup'] && ! stristr( $link, '&priority=1') ){
                         $link.= '&priority=1';
-                    } else if(  false == $org['priority_pickup'] && ! stristr( $link, '&priority=0' ) ) {
+                    } else if( isset( $org['priority_pickup'] ) &&  false == $org['priority_pickup'] && ! stristr( $link, '&priority=0' ) ) {
+                        $link.= '&priority=0';
+                    } else if( ! stristr( $link, '&priority=0' ) ) {
                         $link.= '&priority=0';
                     }
 
                     $css_classes = array();
-                    if( true == $org['priority_pickup'] )
+                    if( isset( $org['priority_pickup'] ) && true == $org['priority_pickup'] )
                         $css_classes[] = 'priority';
 
                     // Setup button text
                     if( isset( $org['button_text'] ) ){
                         $button_text = $org['button_text'];
-                    } else if ( $org['priority_pickup'] ){
+                    } else if ( isset( $org['priority_pickup'] ) && $org['priority_pickup'] ){
                         $button_text = PRIORITY_BUTTON_TEXT;
                     } else {
                         $button_text = NON_PROFIT_BUTTON_TEXT;
@@ -1094,21 +1101,23 @@ class DonationManager {
 
                     $css_classes = ( 0 < count( $css_classes ) ) ? ' ' . implode( ' ', $css_classes ) : '';
 
-                    $replace = array( $org['name'], $org['desc'], $link, $button_text, $css_classes );
+                    //$replace = array( $org['name'], $org['desc'], $link, $button_text, $css_classes ); // 02/21/2017 (16:20) - unused/legacy code?
 
                     $row = [
                         'css_classes' => $css_classes,
                         'link' => $link,
                         'button_text' => $button_text,
                         'name' => $org['name'],
-                        'desc' => $org['desc']
+                        'desc' => $org['desc'],
                     ];
+                    if( isset( $org['providers'] ) && ! empty( $org['providers'] ) )
+                        $row['providers'] = $org['providers'];
 
                     if( false !== ( $ads = $this->get_trans_dept_ads( $org['trans_dept_id'] ) ) )
                         $row['ads'] = $ads;
                     unset( $ads );
 
-                    if( $org['priority_pickup'] ){
+                    if( isset( $org['priority_pickup'] ) && $org['priority_pickup'] ){
                         $priority_rows[] = $row;
                     } else {
                         $rows[] = $row;
@@ -1167,7 +1176,7 @@ class DonationManager {
         }
 
         if( current_user_can( 'activate_plugins') && isset( $_COOKIE['dmdebug'] ) && 'on' == $_COOKIE['dmdebug'] )
-            $this->add_html( '<br /><div class="alert alert-info"><strong>NOTE:</strong> This note and the following array output is only visible to logged in PMD Admins.</div><pre>$_SESSION[\'donor\'] = ' . print_r( $_SESSION['donor'], true ) . '</pre>' );
+            $this->add_html( '<br /><div class="alert alert-info"><strong>NOTE:</strong> This note and the following array output is only visible to logged in PMD Admins.</div><pre style="text-align: left;">$_SESSION[\'donor\'] = ' . print_r( $_SESSION['donor'], true ) . '</br>$_COOKIE[\'dmdebug\'] = ' . $_COOKIE['dmdebug'] . '</pre>' );
 
         $html = $this->html;
 
@@ -1519,13 +1528,14 @@ class DonationManager {
     public function get_organizations( $pickup_code ) {
         $args = array(
             'post_type' => 'trans_dept',
+            'post_status' => 'publish',
             'tax_query' => array(
                 array(
                     'taxonomy' => 'pickup_code',
                     'terms' => $pickup_code,
                     'field' => 'slug'
                 )
-            )
+            ),
         );
         $query = new WP_Query( $args );
 
@@ -1565,8 +1575,14 @@ class DonationManager {
                     'name' => $org[0]['name'],
                     'desc' => $org[0]['desc'],
                     'trans_dept_id' => $org[0]['trans_dept_id'],
-                    'alternate_donate_now_url' => $org['alternate_donate_now_url']
                 );
+                // Get list of Orphaned Pick Up Providers
+                $providers = $this->get_orphaned_donation_contacts( array( 'pcode' => $pickup_code, 'radius' => ORPHANED_PICKUP_RADIUS, 'priority' => 0, 'fields' => 'store_name,email_address,zipcode,priority', 'duplicates' => false ) );
+                if( 0 < count( $providers ) )
+                    $default_org['providers'] = $providers;
+
+                if( isset( $org['alternate_donate_now_url'] ) )
+                    $default_org['alternate_donate_now_url'] = $org['alternate_donate_now_url'];
                 array_unshift( $organizations, $default_org );
             }
             // 05/16/2016 (16:02) - the following adds a `Priority Orphan` pick up
@@ -1599,10 +1615,12 @@ class DonationManager {
      * @since 1.2.0
      *
      * @param array $args{
-     *      @type int $radius Optional (defaults to 20 miles). Radius in miles to retrieve organization contacts.
-     *      @type string $pcode Zip Code.
-     *      @type int $limit Optional. Max number of contacts to return.
-     *      @type bool $priority Optional. Query priority contacts.
+     *      @type int       $radius     Optional (defaults to ORPHANED_PICKUP_RADIUS miles). Radius in miles to retrieve organization contacts.
+     *      @type string    $pcode      Zip Code.
+     *      @type int       $limit      Optional. Max number of contacts to return.
+     *      @type bool      $priority   Optional. Query priority contacts.
+     *      @type string    $fields     Optional. Specify fields to return (e.g. `store_name,zipcode,email_address`). Defaults to `email_address`.
+     *      @type bool      $duplicates Optional. Should we return duplicate stores? Defaults to TRUE.
      * }
      * @return array Returns an array of contact emails.
      */
@@ -1610,15 +1628,21 @@ class DonationManager {
         global $wpdb;
 
         $args = shortcode_atts( array(
-            'radius' => 20,
+            'radius' => ORPHANED_PICKUP_RADIUS,
             'pcode' => null,
             'limit' => null,
             'priority' => 0,
+            'fields' => 'email_address',
+            'duplicates' => true,
         ), $args );
 
         // Validate $args['priority'], ensuring it is only `0` or `1`.
         if( ! in_array( $args['priority'], array( 0, 1 ) ) )
             $args['priority'] = 0;
+
+        // In case ! is_defined( ORPHANED_PICKUP_RADIUS ), we'll set this to 15 miles:
+        if( empty( $args['radius'] ) )
+            $args['radius'] = 15;
 
         $error = new WP_Error();
 
@@ -1651,30 +1675,51 @@ class DonationManager {
         }
 
         // Get all email addresses for contacts in our group of zipcodes
-        $sql = 'SELECT ID,zipcode,email_address FROM ' . $wpdb->prefix . 'dm_contacts WHERE receive_emails=1 AND priority=' . $args['priority'] . ' AND zipcode IN (' . $zipcodes . ')';
+        $sql = 'SELECT ID,' . $args['fields'] . ' FROM ' . $wpdb->prefix . 'dm_contacts WHERE receive_emails=1 AND priority=' . $args['priority'] . ' AND zipcode IN (' . $zipcodes . ')';
         if( ! is_null( $args['limit'] ) && is_numeric( $args['limit'] ) )
             $sql.= ' LIMIT ' . $args['limit'];
-        $contacts = $wpdb->get_results( $sql );
+        $contacts = $wpdb->get_results( $sql, ARRAY_A );
 
         if( ! $contacts )
             return $error->add( 'nocontacts', 'No contacts returned for `' . $args['pcode'] . '`.' );
-
+write_log( str_repeat( '-', 60 ) );
         if( $contacts ){
             $contacts_array = array();
-            foreach( $contacts as $contact ){
-                if( ! in_array( $contact->email_address,  $contacts_array ) ){
-                    $contacts_array[$contact->ID] = $contact->email_address;
+            foreach( $contacts as $key => $contact ){
+                // Dirty Data: Remove &#194;&#160; from end of Store Names
+                if( 'store_name' == $key ){
+                    $contact['store_name'] = preg_replace( '/[[:^print:]]/', '', $contact['store_name'] );
+                    $contact['store_name'] = str_replace(chr(194).chr(160), '', $contact['store_name']);
+                }
+                // Prevents duplicates from the same store
+                if( isset( $contact['store_name'] )
+                    && ( false == $args['duplicates'] )
+                    && DonationManager\lib\fns\helpers\in_array_r( $contact['store_name'], $contacts_array )
+                )
+                    continue;
+
+                if( isset( $contact['email_address'] ) && ! DonationManager\lib\fns\helpers\in_array_r( $contact['email_address'], $contacts_array ) ){
+                    $contacts_array[$contact['ID']] = ( 'email_address' == $args['fields'] )? $contact['email_address'] : $contact;
                 }
 
-                if( trim( $args['pcode'] ) == trim( $contact->zipcode ) ){
+                /*
+                // 02/28/2017 (12:32) - the following code doesn't appear to work
+                if( isset( $contact['zipcode'] ) && trim( $args['pcode'] ) == trim( $contact['zipcode'] ) ){
+                    write_log('Before Giving Priority...'. "\n" .'$args[\'pcode\'] = '.$args['pcode'].";\n".'$contact[zipcode] = '.$contact['zipcode'].";\n".' $contacts_array = ' . print_r( $contacts_array, true ) . "\nSearching on this email address: " . $contact['email_address'] );
                     // Give priority to the contact for this $args['pcode'],
                     // otherwise we are setting the contact to the first
                     // zipcode returned.
-                    $key = array_search( $contact->email_address, $contacts_array );
+                    if( 'email_address' == $args['fields'] ){
+                        $key = array_search( $contact['email_address'], $contacts_array );
+                    } else {
+                        $key = array_search( $contact['email_address'], array_column( $contacts_array, 'email_address' ) );
+                    }
+                    write_log("\n\n" . '$args[\'fields\'] = '.$args['fields'].'; '."\n".'Unsetting $contacts_array['.$key.'].' . "\n\n");
                     unset( $contacts_array[$key] );
-                    $contacts_array[$contact->ID] = $contact->email_address;
-
+                    $contacts_array[$contact['ID']] = ( 'email_address' == $args['fields'] )? $contact['email_address'] : $contact;
+                    write_log('After Giving Priority... '."\n".'$contacts_array = ' . print_r( $contacts_array, true ) );
                 }
+                */
             }
         }
 
@@ -2361,7 +2406,7 @@ class DonationManager {
         //* Is this an ORPHANED DONATION? `true` or `false`?
         $orphaned_donation = $this->_is_orphaned_donation( $donor_trans_dept_id );
 
-        //* Get ORPHANED DONATION Contacts, LIMIT to 50 inside a 20 mile radius
+        //* Get ORPHANED DONATION Contacts, LIMIT to 50 inside a `ORPHANED_PICKUP_RADIUS` mile radius
         if( $orphaned_donation ){
 
             // PRIORITY PICK UP?
@@ -2370,7 +2415,7 @@ class DonationManager {
             if( isset( $donor['priority'] ) && 1 == $donor['priority'] )
                 $priority = 1;
 
-            $bcc_emails = $this->get_orphaned_donation_contacts( array( 'pcode' => $donor['pickup_code'], 'limit' => 50, 'radius' => 20, 'priority' => $priority ) );
+            $bcc_emails = $this->get_orphaned_donation_contacts( array( 'pcode' => $donor['pickup_code'], 'limit' => 50, 'radius' => ORPHANED_PICKUP_RADIUS, 'priority' => $priority ) );
             if( 0 < count( $bcc_emails ) )
                 $tc['orphaned_donation_contacts'] = $bcc_emails;
         }

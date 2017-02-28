@@ -4,6 +4,7 @@
 	<tr>
 		<td><input name="test-pcode" id="test-pcode" value="" placeholder="test a pickup code" size="15" /></td>
 		<td><select name="test-radius" id="test-radius">
+	<option value="15">15 miles</option>
 	<option value="20">20 miles</option>
 	<option value="25">25 miles</option>
 	<option value="30">30 miles</option>

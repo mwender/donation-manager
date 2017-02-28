@@ -79,7 +79,7 @@ class DMOrphanedDonations extends DonationManager {
 		$response = new stdClass();
 
 		$cb_action = $_POST['cb_action'];
-		$id = $_POST['csvID'];
+		$id = ( isset( $_POST['csvID'] ) )? $_POST['csvID'] : '';
 
 		switch ( $cb_action ) {
 		case 'delete_csv':
@@ -114,7 +114,7 @@ class DMOrphanedDonations extends DonationManager {
 				$x++;
 			}
 
-			$response->data = $data;
+			$response->data = ( isset( $data ) )? $data : '';
 			break;
 
 		case 'import_csv':
@@ -549,9 +549,7 @@ class DMOrphanedDonations extends DonationManager {
 		$filterby_cols = array( 'email_address', 'store_name', 'zipcode' );
 		$filterby = ( in_array( $args['filterby'], $filterby_cols ) )? $args['filterby'] : 'email_address' ;
 
-		if ( ! empty( $args['search'] ) ) {
-			$search = "\n\t\t" . 'AND ' . $filterby . ' LIKE \'%' . esc_sql( $args['search'] ) . '%\'';
-		}
+		$search = ( ! empty( $args['search'] ) )? "\n\t\t" . 'AND ' . $filterby . ' LIKE \'%' . esc_sql( $args['search'] ) . '%\'' : null;
 
 		$sql_format = 'SELECT contacts.ID,store_name,zipcode,email_address,receive_emails,timestamp,COUNT(donation_id) AS total_donations
 				FROM ' . $wpdb->prefix . 'dm_contacts AS contacts, ' . $wpdb->prefix . 'dm_orphaned_donations AS donations
@@ -801,8 +799,7 @@ class DMOrphanedDonations extends DonationManager {
 		}
 
 		// Filterby
-		if( isset( $_POST['filterby'] ) )
-			$response->filterby = $_POST['filterby'];
+		$response->filterby = ( isset( $_POST['filterby'] ) )? $_POST['filterby'] : '';
 
 		// SQL: Count the total number of records
 		$count_sql = $this->_get_orphaned_donations_query( array( 'orderby' => $response->orderby, 'sort' => $response->sort, 'start_date' => $start_date, 'search' => $response->search, 'priority' => $priority, 'filterby' => $response->filterby ) );
@@ -890,10 +887,10 @@ class DMOrphanedDonations extends DonationManager {
 
 		$response = new stdClass();
 
-		$cb_action = $_POST['cb_action'];
-		$pcode = $_POST['pcode'];
+		$cb_action = ( isset( $_POST['cb_action'] ) )? $_POST['cb_action'] : '';
+		$pcode = ( isset( $_POST['pcode'] ) )? $_POST['pcode'] : '';
 
-		$response->pcode;
+		$response->pcode = $pcode;
 
 		switch ( $cb_action ) {
 		case 'add_contact':
@@ -949,17 +946,11 @@ class DMOrphanedDonations extends DonationManager {
 			break;
 		default:
 			$posted_radius = $_POST['radius'];
-			$radius = ( is_numeric( $posted_radius ) )? $posted_radius : 20;
+			$radius = ( is_numeric( $posted_radius ) )? $posted_radius : ORPHANED_PICKUP_RADIUS;
+			if( empty( $radius ) )
+				$radius = 15; // Ensure radius is set
 			$priority = $_POST['priority'];
-			$contacts = $this->get_orphaned_donation_contacts( array( 'pcode' => $pcode, 'radius' => $radius, 'priority' => $priority ) );
-			//$response->output = '<pre>' . count( $contacts ) . ' result(s):<br />'.print_r($contacts,true).'</pre>';
-			if ( 0 < count( $contacts ) ) {
-
-				foreach ( $contacts as $ID => $email ) {
-					$contact_data = $wpdb->get_row( 'SELECT store_name,zipcode,priority FROM ' . $wpdb->prefix . 'dm_contacts WHERE ID=' . $ID );
-					$contacts[$ID] = array( 'name' => $contact_data->store_name, 'email' => $email, 'zipcode' => $contact_data->zipcode, 'priority' => $contact_data->priority  );
-				}
-			}
+			$contacts = $this->get_orphaned_donation_contacts( array( 'pcode' => $pcode, 'radius' => $radius, 'priority' => $priority, 'fields' => 'store_name,email_address,zipcode,priority' ) );
 			$orphaned_donation_routing = get_option( 'donation_settings_orphaned_donation_routing' );
 			$response->output = ( ! is_wp_error( $contacts ) )? '<pre>$orphaned_donation_routing = ' . $orphaned_donation_routing . '<br />Results for `' . $pcode . '` within a ' . $radius . ' mile radius.<br />' . count( $contacts ) . ' result(s):<br />'.print_r( $contacts, true ).'</pre>' : $contacts->get_error_message();
 			break;

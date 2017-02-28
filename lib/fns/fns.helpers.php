@@ -139,4 +139,23 @@ function get_state_select( $var = 'address' ) {
     }
     return '<select class="form-control" name="donor[' . $var . '][state]">' .  $html . '</select>';
 }
+
+/**
+ * Multidimensional in_array() search
+ *
+ * @param      mixed   $needle    The needle
+ * @param      array   $haystack  The haystack
+ * @param      boolean  $strict   Check type of $needle in the $haystack?
+ *
+ * @return     boolean  Returns TRUE if $needle is found in $haystack
+ */
+function in_array_r($needle, $haystack, $strict = false) {
+    foreach ($haystack as $item) {
+        if (($strict ? $item === $needle : $item == $needle) || (is_array($item) && in_array_r($needle, $item, $strict))) {
+            return true;
+        }
+    }
+
+    return false;
+}
 ?>

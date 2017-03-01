@@ -4,10 +4,10 @@
 	Plugin URI: http://www.pickupmydonation.com
 	Description: Online donation manager built for ReNew Management, Inc and PickUpMyDonation.com. This plugin displays the donation form and handles donation submissions.
 	Author: Michael Wender
-	Version: 1.4.9
-	Author URI: http:://michaelwender.com
+	Version: 1.5.0
+	Author URI: http://michaelwender.com
  */
-/*  Copyright 2014-15  Michael Wender  (email : michael@michaelwender.com)
+/*  Copyright 2014-17  Michael Wender  (email : michael@michaelwender.com)
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License, version 2, as
@@ -1682,12 +1682,12 @@ class DonationManager {
 
         if( ! $contacts )
             return $error->add( 'nocontacts', 'No contacts returned for `' . $args['pcode'] . '`.' );
-write_log( str_repeat( '-', 60 ) );
+
         if( $contacts ){
             $contacts_array = array();
             foreach( $contacts as $key => $contact ){
                 // Dirty Data: Remove &#194;&#160; from end of Store Names
-                if( 'store_name' == $key ){
+                if( isset( $contact['store_name'] ) && 'store_name' == $key ){
                     $contact['store_name'] = preg_replace( '/[[:^print:]]/', '', $contact['store_name'] );
                     $contact['store_name'] = str_replace(chr(194).chr(160), '', $contact['store_name']);
                 }
@@ -2344,10 +2344,10 @@ write_log( str_repeat( '-', 60 ) );
                 case 'pickup_state':
                 case 'pickup_zip':
                     $key = str_replace( 'pickup_', '', $meta_key );
-                    $meta_value = $donation['pickup_address'][$key];
+                    $meta_value = ( isset( $donation['pickup_address'] ) )? $donation['pickup_address'][$key] : '';
                 break;
                 default:
-                    $meta_value = $donation[$donation_key];
+                    $meta_value = ( isset( $donation[$donation_key] ) )? $donation[$donation_key] : '';
                 break;
             }
             if( ! empty( $meta_value ) )
@@ -2549,7 +2549,7 @@ write_log( str_repeat( '-', 60 ) );
                     'social_links' => $social_links,
                 ));
 
-                if( is_array( $cc_emails ) )
+                if( isset( $cc_emails ) && is_array( $cc_emails ) )
                     $recipients = array_merge( $recipients, $cc_emails );
 
                 // Set Reply-To our donor
@@ -2618,6 +2618,7 @@ write_log( str_repeat( '-', 60 ) );
 
             // Add Orphaned BCC contacts to email sent to orphaned contacts
             $orphaned_headers = array_merge( $headers, $bcc_headers );
+            write_log('Sending an Orphaned Donation request with these headers:' . "\n" . print_r( $orphaned_headers, true ) );
             wp_mail( 'noreply@pickupmydonation.com', $subject, $html, $orphaned_headers );
         } else {
             wp_mail( $recipients, $subject, $html, $headers );

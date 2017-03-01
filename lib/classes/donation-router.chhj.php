@@ -27,8 +27,6 @@ class CHHJDonationRouter extends DonationRouter{
             $screening_questions = "\n\n# SCREENING QUESTIONS\n" . implode( "\n", $questions );
         $type_of_junk = "# TYPE OF JUNK\n" . implode( ', ',  $donation['items'] ) . "\n\n# DESCRIPTION OF JUNK\n" . $donation['description'] . "\n\n# LOCATION OF ITEMS\n" . $donation['pickuplocation'] . $screening_questions;
 
-        // $special_instructions = pick updates and $donation['pickup_address']
-        $special_instructions_format = "# PREFERRED PICK UP DATES\n%1$s%2$s";
         $pickup_address = '';
         if( 'Yes' == $donation['different_pickup_address'] ){
             $pickup_address = "\n\n# PICK UP ADDRESS IS DIFFERENT FROM CUSTOMER ADDRESS:\n" . $donation['pickup_address']['address'] . "\n" . $donation['pickup_address']['city'] . ", " . $donation['pickup_address']['state'] . " " . $donation['pickup_address']['zip'] . "\n";
@@ -38,6 +36,8 @@ class CHHJDonationRouter extends DonationRouter{
             '- ' . $donation['pickupdate2'] . ', ' . $donation['pickuptime2'],
             '- ' . $donation['pickupdate3'] . ', ' . $donation['pickuptime3']
         );
+
+        // $special_instructions = pick updates and $donation['pickup_address']
         $special_instructions = "\n\n# PREFERRED PICK UP DATES\n" . implode( "\n", $pickup_dates ) . $pickup_address;
 
     	$args = array(
@@ -56,6 +56,13 @@ class CHHJDonationRouter extends DonationRouter{
 			),
 		);
         $this->save_api_post( $donation['ID'], $args );
+
+        // Don't send if we're debugging:
+        if( true === WP_DEBUG ){
+            write_log('INFO: `WP_DEBUG` is ON. CHHJ pickup request not sent.');
+            return;
+        }
+
         $response = wp_remote_post( 'https://support.chhj.com/hunkware/API/ClientCreatePickUpMyDonation.php', $args );
         $this->save_api_response( $donation['ID'], $response );
     }

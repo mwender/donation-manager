@@ -2,6 +2,10 @@
 
 Donation Manager is a WordPress plugin which handles a multi-form donation process. This plugin requires the [PODS Plugin for WordPress](http://pods.io).
 
+__03/01/2017 - Version 1.5.0__
+
+- Displaying Orphaned Pick Up Providers on the "Select Your Organization" screen.
+
 __01/20/2017 - Version 1.4.9__
 
 - Adding "Tweet/Instagram my donation" option

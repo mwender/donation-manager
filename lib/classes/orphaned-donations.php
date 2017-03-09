@@ -298,7 +298,7 @@ class DMOrphanedDonations extends DonationManager {
 				'%d',
 			);
 
-			$affeced = $wpdb->insert( $wpdb->prefix . 'dm_contacts', $data, $format );
+			$affected = $wpdb->insert( $wpdb->prefix . 'dm_contacts', $data, $format );
 
 			if ( false === $affected ) {
 				$message = 'Error encountered while attempting to create contact';

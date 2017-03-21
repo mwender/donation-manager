@@ -193,6 +193,10 @@ class DonationManager {
                 $_SESSION['donor']['org_id'] = $_REQUEST['oid'];
                 $_SESSION['donor']['trans_dept_id'] = $_REQUEST['tid'];
                 $_SESSION['donor']['priority'] = ( isset( $_REQUEST['priority'] ) && 1 == $_REQUEST['priority'] ) ? 1 : 0 ;
+                // Set Orphaned Pick Up Provider ID
+                if( isset( $_REQUEST['orphanid'] ) && is_numeric( $_REQUEST['orphanid'] ) ){
+                    $_SESSION['donor']['orphan_provider_id'] = $_REQUEST['orphanid'];
+                }
             } else {
                 // Invalid org_id or trans_dept_id, redirect to site home page
                 $this->notify_admin( 'invalid_link' );
@@ -1698,6 +1702,12 @@ class DonationManager {
                 )
                     continue;
 
+                // Generate by-pass link
+                $default_organization = get_option( 'donation_settings_default_organization' );
+                $default_trans_dept = get_option( 'donation_settings_default_trans_dept' );
+                $siteurl = get_option( 'siteurl' );
+                $contact['by-pass-link'] = $siteurl . '/step-one/?oid=' . $default_organization[0] . '&tid=' . $default_trans_dept[0] . '&priority=0&orphanid=' . $contact['ID'];
+
                 if( isset( $contact['email_address'] ) && ! DonationManager\lib\fns\helpers\in_array_r( $contact['email_address'], $contacts_array ) ){
                     $contacts_array[$contact['ID']] = ( 'email_address' == $args['fields'] )? $contact['email_address'] : $contact;
                 }
@@ -2166,6 +2176,29 @@ class DonationManager {
     }
 
     /**
+     * Gets the orphaned provider contact.
+     *
+     * @param      int   $orphan_provider_id  The orphan provider ID
+     *
+     * @return     array  The orphaned provider contact.
+     */
+    public function get_orphaned_provider_contact( $orphan_provider_id = '' ){
+        if( empty( $orphan_provider_id ) )
+            return false;
+
+        global $wpdb;
+        $row = $wpdb->get_row( $wpdb->prepare( 'SELECT * FROM ' . $wpdb->prefix . 'dm_contacts WHERE ID=%d', $orphan_provider_id ) );
+        $contact['contact_title'] = 'Transportation Dept';
+        $contact['store_name'] = $row->store_name;
+        $contact['contact_email'] = $row->email_address;
+        $contact['contact_name'] = 'Transport Manager';
+        $contact['cc_emails'] = '';
+        $contact['phone'] = '';
+
+        return $contact;
+    }
+
+    /**
      * Checks to see if a donation is a duplicate
      *
      *
@@ -2401,10 +2434,18 @@ class DonationManager {
         $organization_name = get_the_title( $donor['org_id'] );
         $donor_trans_dept_id = $donor['trans_dept_id'];
 
-        $tc = $this->get_trans_dept_contact( $donor['trans_dept_id'] );
+        $orphaned_donation = false;
 
-        //* Is this an ORPHANED DONATION? `true` or `false`?
-        $orphaned_donation = $this->_is_orphaned_donation( $donor_trans_dept_id );
+        // If isset( $donor['orphan_provider_id'] ), donor is using an Orphaned By-Pass link
+        if( isset( $donor['orphan_provider_id'] ) && is_numeric( $donor['orphan_provider_id'] ) ){
+            $tc = $this->get_orphaned_provider_contact( $donor['orphan_provider_id'] );
+            $organization_name = $tc['store_name'];
+        } else {
+            $tc = $this->get_trans_dept_contact( $donor['trans_dept_id'] );
+
+            //* Is this an ORPHANED DONATION? `true` or `false`?
+            $orphaned_donation = $this->_is_orphaned_donation( $donor_trans_dept_id );
+        }
 
         //* Get ORPHANED DONATION Contacts, LIMIT to 50 inside a `ORPHANED_PICKUP_RADIUS` mile radius
         if( $orphaned_donation ){
@@ -2467,7 +2508,7 @@ class DonationManager {
                 }
 
                 // Social Sharing
-                $organization_name = $organization_name;
+                //$organization_name = $organization_name;
                 $donation_id_hashtag = '#id' . $donor['ID'];
                 $socialshare_copy = \DonationManager\lib\fns\helpers\get_socialshare_copy( $organization_name, $donation_id_hashtag );
 
@@ -2533,6 +2574,11 @@ class DonationManager {
                     // Orphaned Donation Note - Non-profit/Priority
                     $template = ( true == $priority )? 'email.trans-dept.priority-donation-note' : 'email.trans-dept.orphaned-donation-note';
                     $orphaned_donation_note = $this->get_template_part( $template );
+                }
+
+                // Record Orphaned Donation for By-Pass links
+                if( isset( $donor['orphan_provider_id'] ) && is_numeric( $donor['orphan_provider_id'] ) ){
+                    $this->add_orphaned_donation( [ 'contact_id' => $donor['orphan_provider_id'], 'donation_id' => $donor['ID'] ] );
                 }
 
                 // Add links to check social media for this donation

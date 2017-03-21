@@ -1,6 +1,6 @@
 <?php
 class DMOrphanedDonations extends DonationManager {
-	const DBVER = '1.0.4';
+	const DBVER = '1.0.5';
 
 	private static $instance = null;
 
@@ -368,7 +368,7 @@ class DMOrphanedDonations extends DonationManager {
 	 * Checks to see if we need to update the DB tables.
 	 */
 	static function db_tables_check() {
-		if ( get_site_option( 'db_db_version' ) != DMOrphanedDonations::DBVER )
+		if ( get_option( 'dm_db_version' ) != DMOrphanedDonations::DBVER )
 			DMOrphanedDonations::db_tables_install();
 	}
 
@@ -420,6 +420,7 @@ class DMOrphanedDonations extends DonationManager {
 						email_address varchar(100) NOT NULL DEFAULT \'\',
 						receive_emails tinyint(1) unsigned NOT NULL DEFAULT \'1\',
 						priority tinyint(1) unsigned NOT NULL DEFAULT \'0\',
+						show_in_results tinyint(1) unsigned NOT NULL DEFAULT \'0\',
 						unsubscribe_hash varchar(32) DEFAULT NULL,
 						PRIMARY KEY  (ID)
 				) ' . $charset_collate. ';';

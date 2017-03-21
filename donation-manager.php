@@ -1040,7 +1040,7 @@ class DonationManager {
                     $default_org = $this->get_default_organization();
                     // Add orphaned pick up providers
                     if( ! isset( $default_org[0]['providers'] ) ){
-                        $default_org[0]['providers'] = $this->get_orphaned_donation_contacts( array( 'pcode' => $pickup_code, 'radius' => ORPHANED_PICKUP_RADIUS, 'priority' => 0, 'fields' => 'store_name,email_address,zipcode,priority', 'duplicates' => false ) );
+                        $default_org[0]['providers'] = $this->get_orphaned_donation_contacts( [ 'pcode' => $pickup_code, 'radius' => ORPHANED_PICKUP_RADIUS, 'priority' => 0, 'fields' => 'store_name,email_address,zipcode,priority', 'duplicates' => false, 'show_in_results' => 1 ] );
                     }
 
                     $organizations[] = $default_org[0];
@@ -1581,7 +1581,7 @@ class DonationManager {
                     'trans_dept_id' => $org[0]['trans_dept_id'],
                 );
                 // Get list of Orphaned Pick Up Providers
-                $providers = $this->get_orphaned_donation_contacts( array( 'pcode' => $pickup_code, 'radius' => ORPHANED_PICKUP_RADIUS, 'priority' => 0, 'fields' => 'store_name,email_address,zipcode,priority', 'duplicates' => false ) );
+                $providers = $this->get_orphaned_donation_contacts( array( 'pcode' => $pickup_code, 'radius' => ORPHANED_PICKUP_RADIUS, 'priority' => 0, 'fields' => 'store_name,email_address,zipcode,priority', 'duplicates' => false, 'show_in_results' => 1 ) );
                 if( 0 < count( $providers ) )
                     $default_org['providers'] = $providers;
 
@@ -1638,6 +1638,7 @@ class DonationManager {
             'priority' => 0,
             'fields' => 'email_address',
             'duplicates' => true,
+            'show_in_results' => null,
         ), $args );
 
         // Validate $args['priority'], ensuring it is only `0` or `1`.
@@ -1680,8 +1681,13 @@ class DonationManager {
 
         // Get all email addresses for contacts in our group of zipcodes
         $sql = 'SELECT ID,' . $args['fields'] . ' FROM ' . $wpdb->prefix . 'dm_contacts WHERE receive_emails=1 AND priority=' . $args['priority'] . ' AND zipcode IN (' . $zipcodes . ')';
+
+        if( isset( $args['show_in_results'] ) && ! is_null( $args['show_in_results'] ) && in_array( $args['show_in_results'], [0,1] ) )
+            $sql.= ' AND show_in_results=' . $args['show_in_results'];
+
         if( ! is_null( $args['limit'] ) && is_numeric( $args['limit'] ) )
             $sql.= ' LIMIT ' . $args['limit'];
+
         $contacts = $wpdb->get_results( $sql, ARRAY_A );
 
         if( ! $contacts )

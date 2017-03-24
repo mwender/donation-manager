@@ -1023,10 +1023,10 @@ class DMOrphanedDonations extends DonationManager {
 			foreach( $contacts as $contact ){
 				$show_in_results = '<input type="checkbox" class="show-in-results" value="1" name="show_in_results[' . $contact['ID']. ']" ' . checked( $contact['show_in_results'], 1, false ) . ' />';
 				$class = ( $x % 2 )? 'alternate' : '';
-				$table_rows.= '<tr class="' . $class . '" id="contact_' . $contact['ID'] . '" data-id="' . $contact['ID'] . '"><td>' . $contact['ID'] . '</td><td>' . $contact['store_name'] . '</td><td>' . $contact['email_address'] . '</td><td>' . $contact['zipcode'] . '</td><td>' . $contact['priority'] . '</td><td>' . $show_in_results . '</td><td><a href="#" class="delete-contact button button-small">Delete</a></td></tr>';
+				$table_rows.= '<tr class="' . $class . '" id="contact_' . $contact['ID'] . '" data-id="' . $contact['ID'] . '"><td>' . $contact['ID'] . '</td><td><a href="' . $contact['by-pass-link'] . '" target="_blank">' . $contact['store_name'] . '</a></td><td>' . $contact['email_address'] . '</td><td>' . $contact['zipcode'] . '</td><td>' . $contact['priority'] . '</td><td>' . $show_in_results . '</td><td><a href="#" class="delete-contact button button-small">Delete</a></td></tr>';
 				$x++;
 			}
-			$table = '<table class="widefat"><thead><tr><td>ID</td><td>Store Name</td><td>Email</td><td>Zip Code</td><td>Priority</td><td>Show</td><td>&nbsp;</td></tr></thead><tbody>'.$table_rows.'</tbody></table>';
+			$table = '<table class="widefat"><thead><tr><td>ID</td><td>Store Name <span style="color: #090; font-size: .9em">(Click store name to open by-pass link)</span></td><td>Email</td><td>Zip Code</td><td>Priority</td><td>Show</td><td>&nbsp;</td></tr></thead><tbody>'.$table_rows.'</tbody></table>';
 			$response->output = $table;
 			break;
 		}

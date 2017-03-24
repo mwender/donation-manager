@@ -43,7 +43,7 @@ class DMOrphanedDonations extends DonationManager {
 		wp_enqueue_style( 'datatables', 'https://cdn.datatables.net/r/dt/dt-1.10.9,fh-3.0.0/datatables.min.css' );
 		wp_register_script( 'datatables', 'https://cdn.datatables.net/r/dt/dt-1.10.9,fh-3.0.0/datatables.min.js', array( 'jquery' ) );
 
-		wp_enqueue_script( 'dm-orphaned-donations', plugins_url( '../js/orphaned-donations.js', __FILE__ ), array( 'jquery', 'media-upload', 'thickbox', 'jquery-ui-progressbar', 'datatables' ), filemtime( plugin_dir_path( __FILE__ ) . '../js/orphaned-donations.js' ), false );
+		wp_enqueue_script( 'dm-orphaned-donations', plugins_url( '../js/orphaned-donations.js', __FILE__ ), array( 'jquery', 'media-upload', 'thickbox', 'jquery-ui-progressbar', 'datatables', 'jquery-color' ), filemtime( plugin_dir_path( __FILE__ ) . '../js/orphaned-donations.js' ), false );
 
 
 		$month_options = array( '<option value="">All dates</option>' );
@@ -250,6 +250,7 @@ class DMOrphanedDonations extends DonationManager {
 			'unsubscribe_hash' => null,
 			'receive_emails' => true,
 			'priority' => false,
+			'show_in_results' => false,
 		);
 
 		$args = wp_parse_args( $args, $defaults );
@@ -261,6 +262,8 @@ class DMOrphanedDonations extends DonationManager {
 		$receive_emails = ( true == $args['receive_emails'] || 1 == $args['receive_emails'] )? 1 : 0;
 
 		$priority = ( true == $args['priority'] || 1 == $args['priority'] )? 1 : 0;
+
+		$show_in_results = ( true == $args['show_in_results'] )? 1 : 0;
 
 		$emails = array();
 		if ( stristr( $args['email'], ',' ) ) {
@@ -288,12 +291,15 @@ class DMOrphanedDonations extends DonationManager {
 				'unsubscribe_hash' => $unsubscribe_hash,
 				'receive_emails' => $receive_emails,
 				'priority' => $priority,
+				'show_in_results' => $show_in_results,
 			);
+
 			$format = array(
 				'%s',
 				'%s',
 				'%s',
 				'%s',
+				'%d',
 				'%d',
 				'%d',
 			);
@@ -678,6 +684,8 @@ class DMOrphanedDonations extends DonationManager {
 		if( isset( $_POST['searchfield'] ) ){
 			$response->searchfield = $_POST['searchfield'];
 		}
+		if( ! isset( $priority ) )
+			$priority = 'all';
 
 		// SQL: Count the total number of records
 		$count_sql = $this->_get_orphaned_donation_pickup_providers_query( array( 'orderby' => $response->orderby, 'sort' => $response->sort, 'search' => $response->search, 'priority' => $priority, 'searchfield' => $response->searchfield ) );
@@ -692,6 +700,7 @@ class DMOrphanedDonations extends DonationManager {
 
 		// SQL: Get the stores
 		$stores_sql = $this->_get_orphaned_donation_pickup_providers_query( array( 'orderby' => $response->orderby, 'sort' => $response->sort, 'limit' => $response->limit, 'offset' => $response->offset, 'search' => $response->search, 'priority' => $priority, 'searchfield' => $response->searchfield ) );
+
 		$stores = $wpdb->get_results( $stores_sql );
 
 		$response->stores = $stores;
@@ -858,6 +867,33 @@ class DMOrphanedDonations extends DonationManager {
 	}
 
 	/**
+	 * Updates a row in the `dm_contacts` table
+	 *
+	 * @param      int 	 	$id     The row ID
+	 * @param      string   $field  The column name
+	 * @param      mixed   	$value  The column value
+	 *
+	 * @return     boolean  Returns TRUE if contact updated.
+	 */
+	public static function update_contact( $id = null, $field = null, $value = null ){
+		if( is_null( $id ) || is_null( $field ) || is_null( $value ) )
+			return false;
+
+		$fields = ['store_name','zipcode','email_address','receive_emails','priority','show_in_results'];
+		if( ! in_array( $field, $fields ) )
+			return false;
+
+		global $wpdb;
+
+		$sql = 'UPDATE ' . $wpdb->prefix . 'dm_contacts SET ' . $field . '=%s WHERE ID=%d';
+
+		$rows_affected = $wpdb->query( $wpdb->prepare( $sql, $value, $id ) );
+
+		$status = ( 1 == $rows_affected )? true : false ;
+		return $status;
+	}
+
+	/**
 	 * Unsubscribes an orphaned donation contact email
 	 *
 	 * @since 1.2.2
@@ -879,6 +915,9 @@ class DMOrphanedDonations extends DonationManager {
 		return $rows_affected;
 	}
 
+	/**
+	 * Hooked to `wp_ajax_orphaned_utilities_ajax`
+	 */
 	public function utilities_callback() {
 		// Restrict access to WordPress `administrator` role
 		if ( ! current_user_can( 'activate_plugins' ) )
@@ -899,10 +938,23 @@ class DMOrphanedDonations extends DonationManager {
 			$args['email'] = $_POST['email_address'];
 			$args['store_name'] = $_POST['store_name'];
 			$args['priority'] = $_POST['priority'];
+			$args['show_in_results'] = ( 1 == $_POST['show_in_results'] )? 1 : 0;
 
 			$message = $this->contact_update( $args );
 			$response->output = '<pre>' . $message . '</pre>';
 			break;
+
+		case 'delete_contact':
+			if( ! isset( $_POST['ID'] ) || ! is_numeric( $_POST['ID'] ) )
+				return false;
+
+			$args['ID'] = $_POST['ID'];
+			$sql = 'DELETE FROM ' . $wpdb->prefix . 'dm_contacts WHERE ID=%d';
+			$success = $wpdb->query( $wpdb->prepare( $sql, $args['ID'] ) );
+			$response->ID = $args['ID'];
+			$response->success = $success;
+			break;
+
 		case 'search_replace_email':
 			$search = $_POST['search'];
 			$replace = $_POST['replace'];
@@ -934,6 +986,7 @@ class DMOrphanedDonations extends DonationManager {
 
 			$response->output = '<pre>$search = '.$search.'<br />$replace = '.$replace.'<br />$wpdb->last_result = ' . print_r( $wpdb->last_result, true ) . '<br />$wpdb->num_rows = ' . $wpdb->num_rows . '<br />$wpdb->last_query = ' . $wpdb->last_query . $message . '</pre>';
 			break;
+
 		case 'subscribe':
 		case 'unsubscribe':
 			$email = $_POST['email'];
@@ -945,15 +998,36 @@ class DMOrphanedDonations extends DonationManager {
 			$response->action = $cb_action;
 			$response->output = '<pre>$email = ' . $email . '<br />' . $rows_affected . ' contacts ' . $cb_action . 'd.</pre>';
 			break;
+
+		case 'update_contact':
+			$id = $_POST['ID'];
+			$field = $_POST['field'];
+			$value = $_POST['value'];
+			$rows_affected = $this->update_contact( $id, $field, $value );
+			$response->ID = $id;
+			$response->field = $field;
+			$response->value = $value;
+			break;
+
 		default:
 			$posted_radius = $_POST['radius'];
 			$radius = ( is_numeric( $posted_radius ) )? $posted_radius : ORPHANED_PICKUP_RADIUS;
 			if( empty( $radius ) )
 				$radius = 15; // Ensure radius is set
 			$priority = $_POST['priority'];
-			$contacts = $this->get_orphaned_donation_contacts( array( 'pcode' => $pcode, 'radius' => $radius, 'priority' => $priority, 'fields' => 'store_name,email_address,zipcode,priority' ) );
+			$contacts = $this->get_orphaned_donation_contacts( array( 'pcode' => $pcode, 'radius' => $radius, 'priority' => $priority, 'fields' => 'store_name,email_address,zipcode,priority,show_in_results' ) );
 			$orphaned_donation_routing = get_option( 'donation_settings_orphaned_donation_routing' );
-			$response->output = ( ! is_wp_error( $contacts ) )? '<pre>$orphaned_donation_routing = ' . $orphaned_donation_routing . '<br />Results for `' . $pcode . '` within a ' . $radius . ' mile radius.<br />' . count( $contacts ) . ' result(s):<br />'.print_r( $contacts, true ).'</pre>' : $contacts->get_error_message();
+			//$response->output = ( ! is_wp_error( $contacts ) )? '<pre>$orphaned_donation_routing = ' . $orphaned_donation_routing . '<br />Results for `' . $pcode . '` within a ' . $radius . ' mile radius.<br />' . count( $contacts ) . ' result(s):<br />'.print_r( $contacts, true ).'</pre>' : $contacts->get_error_message();
+			$x = 0;
+			$table_rows = '';
+			foreach( $contacts as $contact ){
+				$show_in_results = '<input type="checkbox" class="show-in-results" value="1" name="show_in_results[' . $contact['ID']. ']" ' . checked( $contact['show_in_results'], 1, false ) . ' />';
+				$class = ( $x % 2 )? 'alternate' : '';
+				$table_rows.= '<tr class="' . $class . '" id="contact_' . $contact['ID'] . '" data-id="' . $contact['ID'] . '"><td>' . $contact['ID'] . '</td><td>' . $contact['store_name'] . '</td><td>' . $contact['email_address'] . '</td><td>' . $contact['zipcode'] . '</td><td>' . $contact['priority'] . '</td><td>' . $show_in_results . '</td><td><a href="#" class="delete-contact button button-small">Delete</a></td></tr>';
+				$x++;
+			}
+			$table = '<table class="widefat"><thead><tr><td>ID</td><td>Store Name</td><td>Email</td><td>Zip Code</td><td>Priority</td><td>Show</td><td>&nbsp;</td></tr></thead><tbody>'.$table_rows.'</tbody></table>';
+			$response->output = $table;
 			break;
 		}
 

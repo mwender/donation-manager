@@ -33,6 +33,7 @@
 					<option value="0">Non-Profit</option>
 					<option value="1">Priority/For-Profit $$$</option>
 				</select></td>
+			<td><label><input type="checkbox" name="contact-show_in_results" id="contact-show_in_results" value="1" /> Show in results</label></td>
 			<td><button class="button" id="add-contact" type="submit">Add Contact</button></td>
 		</tr>
 	</table>

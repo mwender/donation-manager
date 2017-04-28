@@ -13,8 +13,8 @@
     </mj-section>
     <mj-section background-color="#ffffff" padding-bottom="0">
         <mj-column>
-            <mj-text color="#0082C8" font-weight="600" align="center" font-size="24px" line-height="28px" padding="0 25px 20px 25px">
-                Next, we'll call to confirm your pick up date.
+            <mj-text color="#0082C8" font-weight="600" align="center" font-size="20px" line-height="28px" padding="0 25px 20px 25px">
+                Next, we'll contact you to confirm your pick up date.
             </mj-text>
         </mj-column>
     </mj-section>
@@ -29,7 +29,7 @@
                 We must contact you to finalize your pickup!
             </mj-text>
             <mj-text>
-                The date(s) and time(s) you selected for your donation are only <em>preferred</em> pickup times. You will not be on our pickup schedule until our schedulers are able to contact you directly.
+                The date(s) and time(s) you selected for your donation are only <em>preferred</em> pickup times. You will not be on our pickup schedule until our schedulers are able to contact you by the preferred method (email or call) you selected during the online process.
             </mj-text>
             <mj-text>
                 If you have any questions throughout the process please do not hesitate to contact:

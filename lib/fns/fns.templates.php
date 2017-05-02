@@ -52,7 +52,7 @@ function render_template( $filename = '', $data = [] ){
 	if( 'true' == $template['compile'] ){
 		$hbs_template = file_get_contents( $template['filename'] );
 		$phpStr = \LightnCandy\LightnCandy::compile( $hbs_template, [
-			'flags' => \LightnCandy\LightnCandy::FLAG_SPVARS | \LightnCandy\LightnCandy::FLAG_PARENT
+			'flags' => \LightnCandy\LightnCandy::FLAG_SPVARS | \LightnCandy\LightnCandy::FLAG_PARENT | \LightnCandy\LightnCandy::FLAG_ELSE
 		] );
 		if ( ! is_writable( dirname( $template['filename_compiled'] ) ) )
 			\wp_die( 'I can not write to the directory.' );

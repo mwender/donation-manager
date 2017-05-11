@@ -55,8 +55,8 @@ module.exports = function(grunt) {
           expand: true,
           cwd: 'lib/mjml/',
           src: ['**/*.mjml'],
-          dest: 'lib/html/',
-          ext: '.html',
+          dest: 'lib/templates/',
+          ext: '.hbs',
           extDot: 'last'
         }]
       }

@@ -330,6 +330,28 @@ class DonationManager {
                 }
             }
 
+            // The following doesn't validate on my local machine. Is this due to a
+            // CORS issue?
+            write_log( 'user_photo_id = ' . $_POST['user_photo_id'] );
+            write_log( 'image_public_id = ' . $_POST['image_public_id'] );
+            if( $allow_user_photo_uploads = get_post_meta( $_SESSION['donor']['org_id'], 'allow_user_photo_uploads', true ) )
+            {
+                if( isset( $_POST['user_photo_id'] ) && ! empty( $_POST['user_photo_id'] ) ){
+                    $preloaded = new \Cloudinary\PreloadedFile( $_POST['user_photo_id'] );
+                    $_SESSION['donor']['image']['user_photo_id'] = $_POST['user_photo_id'];
+                    if( $preloaded->is_valid() ){
+                        $_SESSION['donor']['image']['identifier'] = $preloaded->identifier();
+                    } else {
+                        write_log('Invalid upload signature.');
+                        preg_match( '/image\/upload\/[0-9A-Za-z]+\/([0-9A-Za-z]+\.[a-z]+)#/', $_POST['user_photo_id'], $matches );
+                        write_log( $matches );
+                        $_SESSION['donor']['image']['identifier'] = $matches[1];
+                    }
+                }
+                if( isset( $_POST['image_public_id'] ) && ! empty( $_POST['image_public_id'] ) )
+                    $_SESSION['donor']['image']['public_id'] = $_POST['image_public_id'];
+            }
+
             $step = 'contact-details';
             if( $form->validate( $_POST ) ){
                 if( isset( $_POST['donor']['answers'] ) ) {
@@ -706,6 +728,8 @@ class DonationManager {
                 $template = $args['template'];
         }
 
+        $allow_user_photo_uploads = get_post_meta( $_SESSION['donor']['org_id'], 'allow_user_photo_uploads', true );
+
         switch( $form ) {
 
             case 'contact-details':
@@ -793,6 +817,21 @@ class DonationManager {
                     'donor_phone' => $donor_phone,
                     'preferred_code' => $donor_preferred_code,
                 ];
+
+                if( $allow_user_photo_uploads )
+                {
+                    $uploaded_image = cl_image_tag( $_SESSION['donor']['image']['public_id'], [
+                        'format' => 'jpg',
+                        'cloud_name' => CLOUDINARY_CLOUD_NAME,
+                        'crop' => 'fill',
+                        'width' => 200,
+                        'height' => 120,
+                        'style' => 'margin-bottom: 20px; border: 1px solid #eee;',
+                        ] );
+                    $hbs_vars['uploaded_image'] = $uploaded_image;
+                }
+
+
                 if( empty( $template ) )
                     $template = 'form4.contact-details-form';
                 $html = \DonationManager\lib\fns\templates\render_template( $template, $hbs_vars );
@@ -880,8 +919,45 @@ class DonationManager {
                     'questions' => $questions,
                     'additional_details' => $additional_details,
                     'nextpage' => $nextpage,
-                    'provide_additional_details' => $provide_additional_details
+                    'provide_additional_details' => $provide_additional_details,
                 ];
+
+                // jQuery/Cloudinary Photo Upload
+                if( $allow_user_photo_uploads )
+                {
+                    wp_enqueue_script( 'blueimp-jquery-ui-widget', plugin_dir_url( __FILE__ ) . 'lib/components/vendor/blueimp-file-upload/js/vendor/jquery.ui.widget.js', ['jquery'], '2.3.0' );
+                    wp_enqueue_script( 'blueimp-iframe-transport', plugin_dir_url( __FILE__ ) . 'lib/components/vendor/blueimp-file-upload/js/jquery.iframe-transport.js', ['jquery'], '2.3.0' );
+                    wp_enqueue_script( 'blueimp-file-upload', plugin_dir_url( __FILE__ ) . 'lib/components/vendor/blueimp-file-upload/js/jquery.fileupload.js', ['jquery'], '2.3.0' );
+                    wp_enqueue_script( 'cloudinary-file-upload', plugin_dir_url( __FILE__ ) . 'lib/components/vendor/cloudinary-jquery-file-upload/cloudinary-jquery-file-upload.js', ['jquery'], '2.3.0' );
+
+                    \Cloudinary::config([
+                        'cloud_name' => CLOUDINARY_CLOUD_NAME,
+                        'api_key' => CLOUDINARY_API_KEY,
+                        'api_secret' => CLOUDINARY_API_SECRET,
+                    ]);
+
+                    add_action( 'wp_footer', function(){
+                        $params = array();
+                        foreach (\Cloudinary::$JS_CONFIG_PARAMS as $param) {
+                            $value = \Cloudinary::config_get($param);
+                            if ($value) $params[$param] = $value;
+                        }
+                        $params = json_encode( $params );
+                        $script = str_replace( '{{params}}', $params, file_get_contents( trailingslashit( DONMAN_DIR ) . 'lib/js/cloudinary.js' ) );
+                        echo '<script type="text/javascript">' . $script . '</script>';
+
+                        $dm_styles = str_replace( '{{plugin_uri}}', DONMAN_URL, file_get_contents( trailingslashit( DONMAN_DIR ) . 'lib/css/styles.css' ) );
+                        echo '<style type="text/css">' . $dm_styles . '</style>';
+                    }, 9999 );
+
+                    // Generate a signed file upload field
+                    $file_upload_input = cl_image_upload_tag( 'user_photo_id', [
+                        'callback' => site_url() . '/cloudinary_cors.html',
+                    ]);
+
+                    $hbs_vars['file_upload_input'] = $file_upload_input;
+                }
+
                 if( empty( $template ) )
                     $template = 'form3.screening-questions-form';
                 $html = \DonationManager\lib\fns\templates\render_template( $template, $hbs_vars );
@@ -1143,17 +1219,20 @@ class DonationManager {
             case 'thank-you':
                 $this->add_html( '<p>Thank you for donating! We will contact you to finalize your pickup date. Below is a copy of your donation receipt which you will also receive via email.</p>' );
 
-                // Social Sharing
-                $organization_name = get_the_title( $_SESSION['donor']['org_id'] );
-                $donation_id_hashtag = '#id' . $_SESSION['donor']['ID'];
-                $socialshare_copy = \DonationManager\lib\fns\helpers\get_socialshare_copy( $organization_name, $donation_id_hashtag );
+                if( ! get_post_meta( $_SESSION['donor']['org_id'], 'allow_user_photo_uploads', true ) )
+                {
+                    // Social Sharing
+                    $organization_name = get_the_title( $_SESSION['donor']['org_id'] );
+                    $donation_id_hashtag = '#id' . $_SESSION['donor']['ID'];
+                    $socialshare_copy = \DonationManager\lib\fns\helpers\get_socialshare_copy( $organization_name, $donation_id_hashtag );
 
-                $twitter_image = '<img alt="Twitter" style="width: 48px; height: 48px;" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGAAAABgBAMAAAAQtmoLAAAABGdBTUEAALGPC/xhBQAAAAFzUkdCAK7OHOkAAAAnUExURUdwTACz/wCz/wCz/wCx/wCz/wCz/wCv/wC0/wCy/wCv/wCz/wCz/zsxIToAAAAMdFJOUwCF79lbpkAQML8gcD9NoN0AAAJ+SURBVFjD7Ve9SxxBFN/zLt6iFp5GVGIT8EDMFhbGQLLFaVARLCRFRLBYIRIMFquSXhALIYWmO7nisLBKYRVCSONuTvx4f1T25nb2ZnffzLypguCv2Y95v3mf82bGsp7wKFD+bCS+9R0gODskzz4MDOEo//NJLT8EMYLBzp+de/ZYlhCOIEHIrFqBUzZRFZcvgYBJy7IjA732QAHWUMKqSIDleRfgjg0U4a9WQYxpNvINoIYQdhFCR24CMBVlNy9/3RlqRK+DOUIBURD5uhgNOdFrK0f4gSkoDbVtYR9vsoTNnHywNOIwU4TMCC4AitDiBHjQB5UbEr+fpwjPUPngUCAEVyKhByVMsTGH2+epg5Q42uDfraY6zzyUE4AwMELLt3gtJb88FYE7WRSt/K0geGjVvGtqCWUnHYrnTQ1B8DrOyNlPb0BFKAINCcF2DAmZ5a4j2DVZaWYRT98bjBFVcALA6xcU+Tv12kJKibtMjBFvMthyx5E0rz9Ewr1ycSGYUa93tO8lcSWh27EbNEJ3/V6Q5MNuh+g3SwM1E7faviiLKlXFlW67ycKX7eG6Wo3x3sRnhm1XTThNSZ9UKuMutWW0sU9en+RE3KQJffTalrTX3G7YzBAONISHbFB17XVGc5rC92fKzi+zKMKCSYyYF4pMhz52xivI/Z7Cj517Lq2OBKvGHXVTRU6Gm+oORguVQsFXMFOw55gpwOUD6W3jGA/RW1lIhyUdFU2ydTkiSXOQ93ijXq/Ly2g9P3mvqr3MoRcLedG9Miy6l74kQiWcMetLU2Z/QOLzUXnHW8w6Uq1pbpF2KhPVX4SLZ9/8RseXeuUL/XZrm12Gn/Df8A8mnQeNdhIkTQAAAABJRU5ErkJggg==" />';
+                    $twitter_image = '<img alt="Twitter" style="width: 48px; height: 48px;" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGAAAABgBAMAAAAQtmoLAAAABGdBTUEAALGPC/xhBQAAAAFzUkdCAK7OHOkAAAAnUExURUdwTACz/wCz/wCz/wCx/wCz/wCz/wCv/wC0/wCy/wCv/wCz/wCz/zsxIToAAAAMdFJOUwCF79lbpkAQML8gcD9NoN0AAAJ+SURBVFjD7Ve9SxxBFN/zLt6iFp5GVGIT8EDMFhbGQLLFaVARLCRFRLBYIRIMFquSXhALIYWmO7nisLBKYRVCSONuTvx4f1T25nb2ZnffzLypguCv2Y95v3mf82bGsp7wKFD+bCS+9R0gODskzz4MDOEo//NJLT8EMYLBzp+de/ZYlhCOIEHIrFqBUzZRFZcvgYBJy7IjA732QAHWUMKqSIDleRfgjg0U4a9WQYxpNvINoIYQdhFCR24CMBVlNy9/3RlqRK+DOUIBURD5uhgNOdFrK0f4gSkoDbVtYR9vsoTNnHywNOIwU4TMCC4AitDiBHjQB5UbEr+fpwjPUPngUCAEVyKhByVMsTGH2+epg5Q42uDfraY6zzyUE4AwMELLt3gtJb88FYE7WRSt/K0geGjVvGtqCWUnHYrnTQ1B8DrOyNlPb0BFKAINCcF2DAmZ5a4j2DVZaWYRT98bjBFVcALA6xcU+Tv12kJKibtMjBFvMthyx5E0rz9Ewr1ycSGYUa93tO8lcSWh27EbNEJ3/V6Q5MNuh+g3SwM1E7faviiLKlXFlW67ycKX7eG6Wo3x3sRnhm1XTThNSZ9UKuMutWW0sU9en+RE3KQJffTalrTX3G7YzBAONISHbFB17XVGc5rC92fKzi+zKMKCSYyYF4pMhz52xivI/Z7Cj517Lq2OBKvGHXVTRU6Gm+oORguVQsFXMFOw55gpwOUD6W3jGA/RW1lIhyUdFU2ydTkiSXOQ93ijXq/Ly2g9P3mvqr3MoRcLedG9Miy6l74kQiWcMetLU2Z/QOLzUXnHW8w6Uq1pbpF2KhPVX4SLZ9/8RseXeuUL/XZrm12Gn/Df8A8mnQeNdhIkTQAAAABJRU5ErkJggg==" />';
 
-                $social_post_text = '<div class="hidden-print" style="margin-bottom: 30px"><hr><h3>' . $twitter_image . ' Need faster service?</h3><h4>Tweet your donation with your Donation ID hashtag!</h4><p style="margin-bottom: 10px;">Tweet a photo of your donation along with your Donation ID hashtag. Some organizations respond faster when you do! Click to copy-and-paste:</p><textarea class="form-control" rows="3" onclick="this.setSelectionRange(0, this.value.length)" style="background-color: #eee;">' . $socialshare_copy . '</textarea><p class="help-block small">NOTE: Be sure to include a photo of your donation and the donation ID hashtag with your tweet (i.e. ' . $donation_id_hashtag . ').</p><hr></div>';
+                    $social_post_text = '<div class="hidden-print" style="margin-bottom: 30px"><hr><h3>' . $twitter_image . ' Need faster service?</h3><h4>Tweet your donation with your Donation ID hashtag!</h4><p style="margin-bottom: 10px;">Tweet a photo of your donation along with your Donation ID hashtag. Some organizations respond faster when you do! Click to copy-and-paste:</p><textarea class="form-control" rows="3" onclick="this.setSelectionRange(0, this.value.length)" style="background-color: #eee;">' . $socialshare_copy . '</textarea><p class="help-block small">NOTE: Be sure to include a photo of your donation and the donation ID hashtag with your tweet (i.e. ' . $donation_id_hashtag . ').</p><hr></div>';
 
-                if( false != $socialshare_copy )
-                    $this->add_html( $social_post_text );
+                    if( false != $socialshare_copy )
+                        $this->add_html( $social_post_text );
+                }
 
                 // Retrieve the donation receipt
                 $donationreceipt = $this->get_donation_receipt( $_SESSION['donor'] );
@@ -2351,7 +2430,8 @@ class DonationManager {
             'pickuptime3' => 'pickuptime3',
             'preferred_code' => 'preferred_code',
             'legacy_id' => 'legacy_id',
-            'referer' => 'referer'
+            'referer' => 'referer',
+            'image_public_id' => '',
         );
         foreach( $post_meta as $meta_key => $donation_key ){
             switch( $meta_key ){
@@ -2365,6 +2445,10 @@ class DonationManager {
                 case 'donor_zip':
                     $key = str_replace( 'donor_', '', $meta_key );
                     $meta_value = $donation['address'][$key];
+                break;
+
+                case 'image_public_id':
+                    $meta_value = $donation['image']['public_id'];
                 break;
 
                 case 'referer':
@@ -2473,6 +2557,9 @@ class DonationManager {
         // Retrieve the donation receipt
         $donationreceipt = $this->get_property( 'donationreceipt' );
 
+        // Does this org allow user photo uploads?
+        $allow_user_photo_uploads = get_post_meta( $_SESSION['donor']['org_id'], 'allow_user_photo_uploads', true );
+
         $headers = array();
 
         switch( $type ){
@@ -2513,19 +2600,26 @@ class DonationManager {
                     $orphaned_donation_note = $this->get_template_part( $template, array( 'total_notified' => count( $tc['orphaned_donation_contacts'] ) ) );
                 }
 
-                // Social Sharing
-                //$organization_name = $organization_name;
-                $donation_id_hashtag = '#id' . $donor['ID'];
-                $socialshare_copy = \DonationManager\lib\fns\helpers\get_socialshare_copy( $organization_name, $donation_id_hashtag );
-
-                $html = $this->get_template_part( 'email.donor-confirmation', array(
+                // Handlebars Email Template
+                $hbs_vars = [
                     'organization_name' => $organization_name,
                     'donationreceipt' => $donationreceipt,
                     'trans_contact' => $trans_contact,
                     'orphaned_donation_note' => $orphaned_donation_note,
-                    'socialshare_copy' => $socialshare_copy,
-                    'donation_id_hashtag' => $donation_id_hashtag,
-                ));
+                    'allow_user_photo_uploads' => $allow_user_photo_uploads,
+                ];
+
+                // Social Sharing
+                if( ! $allow_user_photo_uploads )
+                {
+                    $donation_id_hashtag = '#id' . $donor['ID'];
+                    $socialshare_copy = \DonationManager\lib\fns\helpers\get_socialshare_copy( $organization_name, $donation_id_hashtag );
+                    $hbs_vars['donation_id_hashtag'] = $donation_id_hashtag;
+                    $hbs_vars['socialshare_copy'] = $socialshare_copy;
+                }
+
+                $html = DonationManager\lib\fns\templates\render_template( 'email.donor-confirmation', $hbs_vars );
+
                 $recipients = array( $donor['address']['name']['first'] . ' ' . $donor['address']['name']['last'] . ' <' . $donor['email'] . '>' );
                 $subject = 'Thank You for Donating to ' . $organization_name;
 
@@ -2588,18 +2682,43 @@ class DonationManager {
                 }
 
                 // Add links to check social media for this donation
-                // <li><a href="http://www.instagram.com/explore/tags/' . $donation_id_hashtag . '">Check Instagram</a></li>
-                $donation_id_hashtag = 'id' . $donor['ID'];
-                $social_links = '<strong>DONATION PHOTO:</strong><br>This donor *may* have tweeted a photo of this donation. <strong><a href="https://twitter.com/hashtag/' . $donation_id_hashtag . '">Click here</a></strong> to check Twitter.';
-                //$donationreceipt = $donationreceipt . $social_links;
+                if( ! $allow_user_photo_uploads )
+                {
+                    // <li><a href="http://www.instagram.com/explore/tags/' . $donation_id_hashtag . '">Check Instagram</a></li>
+                    $donation_id_hashtag = 'id' . $donor['ID'];
+                    $social_links = '<strong>DONATION PHOTO:</strong><br>This donor *may* have tweeted a photo of this donation. <strong><a href="https://twitter.com/hashtag/' . $donation_id_hashtag . '">Click here</a></strong> to check Twitter.';
+                    //$donationreceipt = $donationreceipt . $social_links;
+                }
 
-                $html = $this->get_template_part( 'email.trans-dept-notification', array(
+                // User Uploaded Photos
+                $user_uploaded_image = '';
+                if( isset( $donor['image']['public_id'] ) && ! empty( $donor['image']['public_id'] ) )
+                {
+                    // TODO: Add validation via Cloudinary
+                    $user_uploaded_image = cloudinary_url( $donor['image']['public_id'], [
+                        'secure' => true,
+                        'width' => 800,
+                        'height' => 600,
+                        'crop' => 'fit',
+                        'cloud_name' => CLOUDINARY_CLOUD_NAME,
+                        'format' => 'jpg',
+                    ]);
+                    write_log( '$user_uploaded_image = ' . $user_uploaded_image );
+                }
+
+                // HANDLEBARS TEMPLATE
+                $hbs_vars = [
                     'donor_name' => $donor['address']['name']['first'] . ' ' .$donor['address']['name']['last'],
                     'contact_info' => str_replace( '<a href', '<a style="color: #6f6f6f; text-decoration: none;" href', $contact_info ),
                     'donationreceipt' => $donationreceipt,
                     'orphaned_donation_note' => $orphaned_donation_note,
-                    'social_links' => $social_links,
-                ));
+                ];
+                if( isset( $social_links ) && ! empty( $social_links ) )
+                    $hbs_vars['social_links'] = $social_links;
+                if( isset( $user_uploaded_image ) && ! empty( $user_uploaded_image ) )
+                    $hbs_vars['user_uploaded_image'] = $user_uploaded_image;
+
+                $html = DonationManager\lib\fns\templates\render_template( 'email.trans-dept-notification', $hbs_vars );
 
                 if( isset( $cc_emails ) && is_array( $cc_emails ) )
                     $recipients = array_merge( $recipients, $cc_emails );

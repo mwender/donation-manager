@@ -10,6 +10,7 @@
     ],
     "require": {
         "rlanvin/php-form": "dev-master",
-        "zordius/lightncandy": "dev-master"
+        "zordius/lightncandy": "dev-master",
+        "cloudinary/cloudinary_php": "^1.7"
     }
 }

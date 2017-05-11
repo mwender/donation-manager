@@ -3,21 +3,26 @@
         <mj-column width="100%">
             <mj-table padding="0">
                     <tr>
-                        <td width="55%" style="font-size: 28px; line-height: .8; font-weight: 600; padding-left: 0; color: #6f6f6f;">Donation Notification<br><span style="font-size: 14px; line-height: 18px; font-weight: normal; color: #000;">From: {donor_name}, {contact_info}</span></td>
+                        <td width="55%" style="font-size: 28px; line-height: .8; font-weight: 600; padding-left: 0; color: #6f6f6f;">Donation Notification<br><span style="font-size: 14px; line-height: 18px; font-weight: normal; color: #000;">From: {{donor_name}}, {{{contact_info}}}</span></td>
                         <td width="45%" align="right"><img width="260" style="width: 260px;" src="https://www.pickupmydonation.com/wp-content/plugins/donation-manager/lib/images/pickupmydonation.1200x143.png"/></td>
                     </tr>
             </mj-table>
         </mj-column>
     </mj-section>
     <mj-section background-color="#fff" padding="20px" padding-bottom="0">
-        <mj-column background-color="#fffdd8">
-            <mj-text padding="10">{social_links}</mj-text>
+        <mj-column background-color="#<mj-raw>{{#if user_uploaded_image}}</mj-raw>ffffff<mj-raw>{{else}}</mj-raw>fffdd8<mj-raw>{{/if}}</mj-raw>">
+            <mj-raw>{{#if user_uploaded_image}}</mj-raw>
+                <mj-text padding="10px 0" font-weight="600">DONATION PHOTO:</mj-text>
+                <mj-image src="{{user_uploaded_image}}" border="1px solid #eee" padding="0" />
+            <mj-raw>{{else}}</mj-raw>
+                <mj-text padding="10">{{{social_links}}}</mj-text>
+            <mj-raw>{{/if}}</mj-raw>
         </mj-column>
     </mj-section>
     <mj-section background-color="#fff" padding="20px">
         <mj-column background-color="#e6e7e9">
-            <mj-text padding="0">{orphaned_donation_note}</mj-text>
-            <mj-text>{donationreceipt}</mj-text>
+            <mj-text padding="0">{{{orphaned_donation_note}}}</mj-text>
+            <mj-text>{{{donationreceipt}}}</mj-text>
         </mj-column>
     </mj-section>
     <mj-section background-color="#363636">

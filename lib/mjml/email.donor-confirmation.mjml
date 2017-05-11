@@ -1,8 +1,8 @@
 <mj-body background-color="#eeebeb">
     <mj-section padding="0">
     	<mj-column>
-            <mj-text padding="0">{orphaned_donation_note}</mj-text>
-    		<mj-text color="#6f6f6f" font-size="28px" line-height="32px" font-weight="600" align="center" padding-bottom="0" padding-top="20px">{organization_name}</mj-text>
+            <mj-text padding="0">{{{orphaned_donation_note}}}</mj-text>
+    		<mj-text color="#6f6f6f" font-size="28px" line-height="32px" font-weight="600" align="center" padding-bottom="0" padding-top="20px">{{organization_name}}</mj-text>
     	</mj-column>
     </mj-section>
     <mj-section padding-bottom="0">
@@ -35,37 +35,39 @@
                 If you have any questions throughout the process please do not hesitate to contact:
             </mj-text>
             <mj-text align="center">
-                {trans_contact}
+                {{{trans_contact}}}
             </mj-text>
         </mj-column>
     </mj-section>
-    <mj-section background-color="#fff" padding="20px 20px 0 20px">
-        <mj-column background-color="#b2e8ff" width="68px" padding="0px">
-            <mj-image src="https://www.pickupmydonation.com/wp-content/plugins/donation-manager/lib/images/twitter.96x96.png" padding="16px 0px 2px 20px"></mj-image>
-        </mj-column>
-        <mj-column background-color="#b2e8ff" width="492px">
-            <mj-text color="#4f4f4f" font-weight="600" padding="27px 0px 15px 6px" font-size="24px" line-height="24px">
-                Need faster service?
-            </mj-text>
-        </mj-column>
-    </mj-section>
-    <mj-section background-color="#fff" padding="0 20px 0 20px">
-        <mj-column background-color="#b2e8ff">
-            <mj-text color="#6f6f6f" font-weight="600" padding="0 20px 0 20px" font-size="18px" line-height="22px">
-                Tweet your donation with your Donation ID hashtag!
-            </mj-text>
-            <mj-text padding="10px 20px 10px 20px">Tweet a photo of your donation along with your Donation ID hashtag. Some organizations respond faster when you do! Here's something to get you started:</mj-text>
-            <mj-text padding="10px 20px" color="#3f3f3f" font-size="16px" line-height="24px">
-                {socialshare_copy}
-            </mj-text>
-            <mj-text padding="10px 20px 20px 20px" color="#6f6f6f">
-                NOTE: Be sure to include a photo of your donation and the donation ID hashtag with your tweet (i.e. {donation_id_hashtag}).
-            </mj-text>
-        </mj-column>
-    </mj-section>
+    <mj-raw>{{#unless allow_user_photo_uploads}}</mj-raw>
+        <mj-section background-color="#fff" padding="20px 20px 0 20px">
+            <mj-column background-color="#b2e8ff" width="68px" padding="0px">
+                <mj-image src="https://www.pickupmydonation.com/wp-content/plugins/donation-manager/lib/images/twitter.96x96.png" padding="16px 0px 2px 20px"></mj-image>
+            </mj-column>
+            <mj-column background-color="#b2e8ff" width="492px">
+                <mj-text color="#4f4f4f" font-weight="600" padding="27px 0px 15px 6px" font-size="24px" line-height="24px">
+                    Need faster service?
+                </mj-text>
+            </mj-column>
+        </mj-section>
+        <mj-section background-color="#fff" padding="0 20px 0 20px">
+            <mj-column background-color="#b2e8ff">
+                <mj-text color="#6f6f6f" font-weight="600" padding="0 20px 0 20px" font-size="18px" line-height="22px">
+                    Tweet your donation with your Donation ID hashtag!
+                </mj-text>
+                <mj-text padding="10px 20px 10px 20px">Tweet a photo of your donation along with your Donation ID hashtag. Some organizations respond faster when you do! Here's something to get you started:</mj-text>
+                <mj-text padding="10px 20px" color="#3f3f3f" font-size="16px" line-height="24px">
+                    {{socialshare_copy}}
+                </mj-text>
+                <mj-text padding="10px 20px 20px 20px" color="#6f6f6f">
+                    NOTE: Be sure to include a photo of your donation and the donation ID hashtag with your tweet (i.e. {{donation_id_hashtag}}).
+                </mj-text>
+            </mj-column>
+        </mj-section>
+    <mj-raw>{{/unless}}</mj-raw>
     <mj-section background-color="#fff" padding="20px">
         <mj-column background-color="#e6e7e9">
-            <mj-text>{donationreceipt}</mj-text>
+            <mj-text>{{{donationreceipt}}}</mj-text>
         </mj-column>
     </mj-section>
     <mj-section background-color="#fff" padding="0 20px">

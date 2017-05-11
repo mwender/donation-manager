@@ -26,6 +26,8 @@
   ],
   "dependencies": {
     "gl-datepicker": "*",
-    "jquery-file-download": "*"
+    "jquery-file-download": "*",
+    "cloudinary": "cloudinary_js#^2.3.0",
+    "cloudinary-jquery-file-upload": "^2.3.0"
   }
 }

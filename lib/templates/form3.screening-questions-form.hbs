@@ -14,6 +14,15 @@
 		<textarea class="form-control" rows="4" name="donor[additional_details]">{{additional_details}}</textarea>
 		<span class="help-block">Please be considerate of the costs associated with large item pick ups to our organization. We will gladly and thankully pick up items that will help us further the mission of our organization. However we must respectfully deny items that create an additional disposal liability.</span>
 	</div>
+	{{#if file_upload_input}}
+	<div id="donation-photo">
+		<h3>A photo of your donation:</h3>
+		{{{file_upload_input}}}
+		<div class="progress_bar" style=""></div>
+		<div class="preview"></div>
+		<input type="hidden" name="image_public_id" id="image_public_id" value="" />
+	</div>
+	{{/if}}
 	<p class="text-right"><button type="submit" class="btn btn-primary">Continue to Step 3</button></p>
 	<input type="hidden" name="nextpage" value="{{nextpage}}" />
 	<input type="hidden" name="provide_additional_details" value="{{provide_additional_details}}" />

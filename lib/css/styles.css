@@ -1,0 +1,9 @@
+/* Form Styling */
+.progress_bar{
+  background: #fce0c8 url({{plugin_uri}}lib/images/pmd-progress-bar.gif) repeat-x;
+  border: 1px solid #ddd;
+  height: 24px;
+  display: none;
+  text-align: center;
+  line-height: 24px;
+}

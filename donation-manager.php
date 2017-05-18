@@ -336,6 +336,10 @@ class DonationManager {
             write_log( 'image_public_id = ' . $_POST['image_public_id'] );
             if( $allow_user_photo_uploads = get_post_meta( $_SESSION['donor']['org_id'], 'allow_user_photo_uploads', true ) )
             {
+                $form->addRules([
+                    'user_photo_id' => ['required']
+                ]);
+
                 if( isset( $_POST['user_photo_id'] ) && ! empty( $_POST['user_photo_id'] ) ){
                     $preloaded = new \Cloudinary\PreloadedFile( $_POST['user_photo_id'] );
                     $_SESSION['donor']['image']['user_photo_id'] = $_POST['user_photo_id'];
@@ -383,8 +387,22 @@ class DonationManager {
                     }
                 }
             } else {
-                $html = '<div class="alert alert-danger"><p>Please answer each screening question.</p></div>';
-                $this->add_html( $html );
+                $errors = $form->getErrors();
+                write_log(str_repeat('-',50));
+                write_log('$errors = ');
+                write_log($errors);
+                $error_msg = [];
+                foreach ( $errors as $field => $array ) {
+                    switch( $field ){
+                        case 'answered':
+                            $error_msg[] = 'Please answer each screening question.';
+                        break;
+                        case 'user_photo_id':
+                           $error_msg[] = 'A photo of your donation is required.';
+                        break;
+                    }
+                }
+                $this->add_html( '<div class="alert alert-danger">Please correct these errors:<ul><li>' . implode( '</li><li>', $error_msg ) . '</li></ul></div>' );
             }
         }
 

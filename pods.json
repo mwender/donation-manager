@@ -1,7 +1,7 @@
 {
   "meta": {
-    "version": "2.6.8",
-    "build": 1494516352
+    "version": "2.6.9",
+    "build": 1500038340
   },
   "pods": {
     "85": {
@@ -43,7 +43,8 @@
           "roles_allowed": [
             "administrator"
           ],
-          "number_repeatable": "0"
+          "number_repeatable": "0",
+          "number_format_soft": 0
         },
         "pickup": {
           "id": 87,
@@ -160,14 +161,14 @@
             "administrator"
           ],
           "unique": "0",
+          "pick_post_status": "publish",
           "pick_select_text": "",
           "pick_table_id": "",
           "pick_table_index": "",
           "pick_display": "",
           "pick_where": "",
           "pick_orderby": "",
-          "pick_groupby": "",
-          "pick_post_status": "publish"
+          "pick_groupby": ""
         },
         "default_trans_dept": {
           "id": 72,
@@ -198,14 +199,14 @@
             "administrator"
           ],
           "unique": "0",
+          "pick_post_status": "publish",
           "pick_select_text": "",
           "pick_table_id": "",
           "pick_table_index": "",
           "pick_display": "",
           "pick_where": "",
           "pick_orderby": "",
-          "pick_groupby": "",
-          "pick_post_status": "publish"
+          "pick_groupby": ""
         },
         "orphaned_donation_routing": {
           "id": 65482,
@@ -263,14 +264,14 @@
             "administrator"
           ],
           "unique": "0",
+          "pick_post_status": "publish",
           "pick_select_text": "",
           "pick_table_id": "",
           "pick_table_index": "",
           "pick_display": "",
           "pick_where": "",
           "pick_orderby": "",
-          "pick_groupby": "",
-          "pick_post_status": "publish"
+          "pick_groupby": ""
         },
         "default_screening_questions": {
           "id": 111,
@@ -301,14 +302,14 @@
             "administrator"
           ],
           "unique": "0",
+          "pick_post_status": "publish",
           "pick_select_text": "",
           "pick_table_id": "",
           "pick_table_index": "",
           "pick_display": "",
           "pick_where": "",
           "pick_orderby": "",
-          "pick_groupby": "",
-          "pick_post_status": "publish"
+          "pick_groupby": ""
         },
         "default_pickup_times": {
           "id": 141,
@@ -339,14 +340,14 @@
             "administrator"
           ],
           "unique": "0",
+          "pick_post_status": "publish",
           "pick_select_text": "",
           "pick_table_id": "",
           "pick_table_index": "",
           "pick_display": "",
           "pick_where": "",
           "pick_orderby": "",
-          "pick_groupby": "",
-          "pick_post_status": "publish"
+          "pick_groupby": ""
         },
         "default_pickup_locations": {
           "id": 143,
@@ -377,14 +378,14 @@
             "administrator"
           ],
           "unique": "0",
+          "pick_post_status": "publish",
           "pick_select_text": "",
           "pick_table_id": "",
           "pick_table_index": "",
           "pick_display": "",
           "pick_where": "",
           "pick_orderby": "",
-          "pick_groupby": "",
-          "pick_post_status": "publish"
+          "pick_groupby": ""
         },
         "no_pickup_message": {
           "id": 113,
@@ -496,14 +497,14 @@
             "administrator"
           ],
           "unique": "0",
+          "pick_post_status": "publish",
           "pick_select_text": "",
           "pick_table_id": "",
           "pick_table_index": "",
           "pick_display": "",
           "pick_where": "",
           "pick_orderby": "",
-          "pick_groupby": "",
-          "pick_post_status": "publish"
+          "pick_groupby": ""
         },
         "trans_dept": {
           "id": 41,
@@ -534,14 +535,14 @@
             "administrator"
           ],
           "unique": "0",
+          "pick_post_status": "publish",
           "pick_select_text": "",
           "pick_table_id": "",
           "pick_table_index": "",
           "pick_display": "",
           "pick_where": "",
           "pick_orderby": "",
-          "pick_groupby": "",
-          "pick_post_status": "publish"
+          "pick_groupby": ""
         },
         "donor_name": {
           "id": 42,
@@ -1158,6 +1159,41 @@
       "object": "",
       "alias": "",
       "fields": {
+        "website": {
+          "id": 145636,
+          "name": "website",
+          "label": "Website",
+          "description": "URL to organization's website",
+          "help": "",
+          "class": "",
+          "type": "website",
+          "weight": 0,
+          "pick_object": "",
+          "pick_val": "",
+          "sister_id": "",
+          "required": "0",
+          "website_format": "normal",
+          "website_clickable": "0",
+          "website_new_window": "0",
+          "website_max_length": "255",
+          "website_html5": "0",
+          "pick_post_status": [
+            "publish"
+          ],
+          "admin_only": "0",
+          "restrict_role": "0",
+          "restrict_capability": "0",
+          "hidden": "0",
+          "read_only": "0",
+          "roles_allowed": [
+            "administrator"
+          ],
+          "rest_read": "0",
+          "rest_write": "0",
+          "rest_pick_response": "array",
+          "rest_pick_depth": "2",
+          "website_repeatable": 0
+        },
         "priority_pickup": {
           "id": 68409,
           "name": "priority_pickup",
@@ -1166,7 +1202,7 @@
           "help": "",
           "class": "",
           "type": "boolean",
-          "weight": 0,
+          "weight": 1,
           "pick_object": "",
           "pick_val": "",
           "sister_id": "",
@@ -1192,7 +1228,7 @@
           "help": "",
           "class": "",
           "type": "pick",
-          "weight": 1,
+          "weight": 2,
           "pick_object": "custom-simple",
           "pick_val": "",
           "sister_id": "",
@@ -1232,7 +1268,7 @@
           "help": "",
           "class": "",
           "type": "boolean",
-          "weight": 2,
+          "weight": 3,
           "pick_object": "",
           "pick_val": "",
           "sister_id": "",
@@ -1259,7 +1295,7 @@
           "help": "",
           "class": "",
           "type": "pick",
-          "weight": 3,
+          "weight": 4,
           "pick_object": "days_of_week",
           "pick_val": "",
           "sister_id": "",
@@ -1297,7 +1333,7 @@
           "help": "",
           "class": "",
           "type": "pick",
-          "weight": 4,
+          "weight": 5,
           "pick_object": "custom-simple",
           "pick_val": "",
           "sister_id": "",
@@ -1337,7 +1373,7 @@
           "help": "",
           "class": "",
           "type": "pick",
-          "weight": 5,
+          "weight": 6,
           "pick_object": "post_type",
           "pick_val": "trans_dept",
           "sister_id": "34",
@@ -1375,7 +1411,7 @@
           "help": "",
           "class": "",
           "type": "wysiwyg",
-          "weight": 6,
+          "weight": 7,
           "pick_object": "",
           "pick_val": "",
           "sister_id": "",
@@ -1407,7 +1443,7 @@
           "help": "",
           "class": "",
           "type": "boolean",
-          "weight": 7,
+          "weight": 8,
           "pick_object": "",
           "pick_val": "",
           "sister_id": "",
@@ -1427,14 +1463,14 @@
           "unique": "0"
         },
         "allow_user_photo_uploads": {
-          "id": 133205,
+          "id": 141352,
           "name": "allow_user_photo_uploads",
           "label": "Allow user photo uploads?",
           "description": "Provide users with a field for uploading a photo of their donation?",
           "help": "",
           "class": "",
           "type": "boolean",
-          "weight": 8,
+          "weight": 9,
           "pick_object": "",
           "pick_val": "",
           "sister_id": "",
@@ -1456,7 +1492,8 @@
           "rest_read": "0",
           "rest_write": "0",
           "rest_pick_response": "array",
-          "rest_pick_depth": "2"
+          "rest_pick_depth": "2",
+          "unique": "0"
         }
       },
       "show_in_menu": "1",
@@ -1579,7 +1616,8 @@
           "roles_allowed": [
             "administrator"
           ],
-          "number_repeatable": "0"
+          "number_repeatable": "0",
+          "number_format_soft": 0
         }
       },
       "show_in_menu": "1",
@@ -1628,7 +1666,7 @@
           "pick_val": "",
           "sister_id": "",
           "required": "0",
-          "unique": "1",
+          "unique": "0",
           "number_format_type": "number",
           "number_format": "i18n",
           "number_decimals": "0",
@@ -1644,7 +1682,15 @@
           "roles_allowed": [
             "administrator"
           ],
-          "number_repeatable": "0"
+          "number_repeatable": "0",
+          "pick_post_status": [
+            "publish"
+          ],
+          "rest_read": "0",
+          "rest_write": "0",
+          "rest_pick_response": "array",
+          "rest_pick_depth": "2",
+          "number_format_soft": 0
         }
       },
       "show_in_menu": "1",
@@ -1668,7 +1714,16 @@
       "menu_position": "0",
       "show_in_nav_menus": "0",
       "show_tagcloud": "0",
-      "show_admin_column": "0"
+      "show_admin_column": "0",
+      "capability_type": "default",
+      "capability_type_custom": "pickup_time",
+      "built_in_post_types_custom_css": "0",
+      "built_in_post_types_customize_changeset": "0",
+      "built_in_post_types_redirect_rule": "0",
+      "rest_enable": "0",
+      "rest_base": "pickup_time",
+      "read_all": "0",
+      "write_all": "0"
     },
     "110": {
       "id": 110,
@@ -1709,7 +1764,8 @@
           "roles_allowed": [
             "administrator"
           ],
-          "number_repeatable": "0"
+          "number_repeatable": "0",
+          "number_format_soft": 0
         }
       },
       "show_in_menu": "1",
@@ -1774,14 +1830,14 @@
             "administrator"
           ],
           "unique": "0",
+          "pick_post_status": "publish",
           "pick_select_text": "",
           "pick_table_id": "",
           "pick_table_index": "",
           "pick_display": "",
           "pick_where": "",
           "pick_orderby": "",
-          "pick_groupby": "",
-          "pick_post_status": "publish"
+          "pick_groupby": ""
         },
         "address": {
           "id": 121,
@@ -2005,14 +2061,14 @@
             "administrator"
           ],
           "unique": "0",
+          "pick_post_status": "publish",
           "pick_select_text": "",
           "pick_table_id": "",
           "pick_table_index": "",
           "pick_display": "",
           "pick_where": "",
           "pick_orderby": "",
-          "pick_groupby": "",
-          "pick_post_status": "publish"
+          "pick_groupby": ""
         },
         "contact_title": {
           "id": 114,

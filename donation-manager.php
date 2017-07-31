@@ -2528,10 +2528,6 @@ class DonationManager {
      * `PickUpMyDonation <noreply@pickupmydonation.com>`. The
      * Reply-To contact is the Transportation Department contact.
      *
-     * @see Function/method/class relied on
-     * @link URL short description.
-     * @global type $varname short description.
-     *
      * @since 1.0.0
      *
      * @param string $type Specifies email `type` (e.g. donor_confirmation).
@@ -2932,10 +2928,10 @@ $DonationManager = DonationManager::get_instance();
 register_activation_hook( __FILE__, array( $DonationManager, 'activate' ) );
 
 // Include function files
-require_once 'lib/fns/fns.admin.php';
-require_once 'lib/fns/fns.debug.php';
-require_once 'lib/fns/fns.helpers.php';
-require_once 'lib/fns/fns.templates.php';
+require_once 'lib/fns/admin.php';
+require_once 'lib/fns/debug.php';
+require_once 'lib/fns/helpers.php';
+require_once 'lib/fns/templates.php';
 
 // Include our Orphaned Donations Class
 require 'lib/classes/orphaned-donations.php';
@@ -2952,7 +2948,7 @@ require 'lib/classes/shortcodes.php';
 $DMShortcodes = DMShortcodes::get_instance();
 
 if ( defined( 'WP_CLI' ) && WP_CLI ) {
-    require_once 'lib/fns/fns.stats.php';
+    require_once 'lib/fns/stats.php';
 }
 
 $mailtrap = dirname( __FILE__ ) . '/mailtrap.php';

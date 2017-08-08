@@ -401,6 +401,15 @@ class DMReports extends DonationManager {
 		wp_send_json( $response );
     }
 
+    /**
+     * Gets the donations for an organization.
+     *
+     * @param      int            $orgID       The organization ID
+     * @param      str            $month       The month in `Y-m` format
+     * @param      boolean        $count_only  Default: false. Only return the donation count for the given org and month
+     *
+     * @return     array|int      The donations.
+     */
     private function get_donations( $orgID = null, $month = null, $count_only = false ){
     	// TODO: Rewrite to set $month to last month if `null`
     	if( is_null( $orgID ) || is_null( $month ) )

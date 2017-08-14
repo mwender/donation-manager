@@ -595,6 +595,12 @@ class DMReports extends DonationManager {
         if( is_null( $args['to'] ) )
             return false;
 
+        $_last_donation_report = get_post_meta( $args['org_id'], '_last_donation_report', true );
+        if( $args['month'] == $_last_donation_report ){
+            \WP_CLI::line('Report already sent to ' . get_the_title( $args['org_id'] ) . ' for ' . $args['month'] . '.' );
+            return false;
+        }
+
         $eol = PHP_EOL;
 
         add_filter( 'wp_mail_content_type', 'DonationManager\lib\fns\helpers\get_content_type' );
@@ -637,7 +643,10 @@ class DMReports extends DonationManager {
 
         $html = DonationManager\lib\fns\templates\render_template( 'email.monthly-donor-report', $hbs_vars );
 
-        wp_mail( $args['to'], $human_month . ' Donation Report - PickUpMyDonation.com', $html, $headers, $args['attachment_file'] );
+        $status = wp_mail( $args['to'], $human_month . ' Donation Report - PickUpMyDonation.com', $html, $headers, $args['attachment_file'] );
+
+        if( true == $status )
+            update_post_meta( $args['org_id'], '_last_donation_report', $args['month'] );
 
         remove_filter( 'wp_mail_content_type', 'DonationManager\lib\fns\helpers\get_content_type' );
     }

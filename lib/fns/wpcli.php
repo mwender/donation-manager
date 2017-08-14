@@ -1,5 +1,5 @@
 <?php
-namespace DonationManager\lib\fns\stats;
+namespace DonationManager\lib\fns\wpcli;
 
 /**
  * Interacts with the Donation Manager plugin.
@@ -7,6 +7,70 @@ namespace DonationManager\lib\fns\stats;
  * @since 1.4.6
  */
 Class DonManCLI extends \WP_CLI_Command {
+
+  /**
+   * Sends donation reports to organizations
+   *
+   * ## OPTIONS
+   *
+   * [--month=<month>]
+   * : Month of the report in 'Y-m' format (e.g. 2017-01).
+   */
+  function sendreports( $args, $assoc_args ){
+
+    $month = ( isset( $assoc_args['month'] ) )? $assoc_args['month'] : '' ;
+
+    // Default to last month if $month isn't in Y-m format:
+    if( ! preg_match( '/^2[0-9]{3}-[0-9]{1,2}/', $month ) )
+      $month = date( 'Y-m', strtotime( 'last day of previous month' ) );
+
+    \WP_CLI::line( 'Sending reports for `' . $month . '`...' );
+
+    if( ! isset( $DMReports ) )
+      $DMReports = \DMReports::get_instance();
+
+    $orgs = $DMReports->get_all_orgs();
+
+    foreach( $orgs as $key => $org_id ){
+      // Continue if we don't have any `contact_emails` for the org
+      $contact_emails = strip_tags( get_post_meta( $org_id, 'contact_emails', true ) );
+      if( empty( $contact_emails ) )
+        continue;
+
+      $email_array = explode( "\n", $contact_emails );
+
+      foreach( $email_array as $key => $email ){
+        if( ! is_email( trim( $email ) ) ){
+          unset( $email_array[$key] );
+        } else {
+          $email_array[$key] = trim( $email );
+        }
+      }
+      if( 0 == count( $email_array ) )
+        continue;
+
+      $donations = $DMReports->get_donations( $org_id, $month );
+      $donation_count = count( $donations );
+
+      // Only send report emails to orgs with 5 or more donations during the month
+      if( is_array( $donations ) && 5 <= $donation_count ){
+        // Build a donation report CSV
+        $csv = '"Date/Time Modified","DonorName","DonorAddress","DonorCity","DonorState","DonorZip","DonorPhone","DonorEmail","DonationAddress","DonationCity","DonationState","DonationZip","DonationDescription","PickupDate1","PickupDate2","PickupDate3","PreferredDonorCode"' . "\n" . implode( "\n", $donations );
+        $filename = $month . '_' . sanitize_file_name( get_the_title( $org_id ) ) . '.csv';
+        $attachment_id = \DonationManager\lib\fns\filesystem\save_report_csv( $filename, $csv );
+        $attachment_file = get_attached_file( $attachment_id );
+
+        // Send the report
+        $args = [ 'org_id' => $org_id, 'month' => $month, 'attachment_file' => $attachment_file, 'donation_count' => $donation_count, 'to' => $email_array ];
+        $DMReports->send_donation_report( $args );
+
+        // Clean up
+        wp_delete_attachment( $attachment_id, true );
+      } else {
+        \WP_CLI::line( $donation_count . ' donations found for `' . get_the_title( $org_id ) . '`. No report sent.' );
+      }
+    }
+  }
 
   /**
    * Writes donation stats to a JSON file.
@@ -93,7 +157,7 @@ function donations_by_interval( $interval = null ){
  * @return string Dollar value of donations.
  */
 function get_donations_value( $donations = 0 ){
-  $value = $donations * 230;
+  $value = $donations * AVERGAGE_DONATION_VALUE;
   return $value;
 }
 ?>

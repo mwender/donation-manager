@@ -74,12 +74,13 @@ switch( $switch ){
 			$response->fileurl = site_url( '/getattachment/' . $attach_id );
 		}
 	break;
+
+	/**
+	 * Creates the `all_donations` CSV and returns response.status = continue
+	 * for reports.orgs.js. Then, reports.orgs.js calls `build_file` until all donations
+	 * have been written to the CSV and response.status = end.
+	 */
 	case 'create_file':
-		/**
-		 * Creates the `all_donations` CSV and returns response.status = continue
-		 * for reports.orgs.js. Then, reports.orgs.js calls `build_file` until all donations
-		 * have been written to the CSV and response.status = end.
-		 */
 		$upload_dir = wp_upload_dir();
 		$response->upload_dir = $upload_dir;
 		$reports_dir = trailingslashit( $upload_dir['basedir'] . '/reports' . $upload_dir['subdir'] );
@@ -166,18 +167,11 @@ switch( $switch ){
 		}
 	break;
 
+	/**
+	 * Retrieves Post IDs of all organizations
+	 */
 	case 'get_orgs':
-		if( false === ( $organizations = get_transient( 'get_orgs' ) ) ){
-			$orgs = $this->get_rows( 'organization' );
-			$organizations = array();
-			if( $orgs ){
-				foreach( $orgs as $post ){
-					$organizations[] = $post->ID;
-				}
-			}
-			set_transient( 'get_orgs', $organizations, 6 * HOUR_IN_SECONDS );
-		}
-		$response->orgs = $organizations;
+		$response->orgs = $this->get_all_orgs();
 	break;
 
 	case 'get_org_report':

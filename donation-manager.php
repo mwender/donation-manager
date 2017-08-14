@@ -4,7 +4,7 @@
 	Plugin URI: http://www.pickupmydonation.com
 	Description: Online donation manager built for ReNew Management, Inc and PickUpMyDonation.com. This plugin displays the donation form and handles donation submissions.
 	Author: Michael Wender
-	Version: 1.6.0
+	Version: 1.7.0
 	Author URI: http://michaelwender.com
  */
 /*  Copyright 2014-17  Michael Wender  (email : michael@michaelwender.com)
@@ -28,6 +28,7 @@ define( 'DONATION_TIMEOUT', 3 * MINUTE_IN_SECONDS );
 define( 'NON_PROFIT_BUTTON_TEXT', 'Click here for Free Pick Up' );
 define( 'PRIORITY_BUTTON_TEXT', 'Click here for Priority Pick Up' );
 define( 'ORPHANED_PICKUP_RADIUS', 15 ); // radius in miles for zipcode search
+define( 'AVERGAGE_DONATION_VALUE', 230 ); // average value of a donation is $230
 require 'vendor/autoload.php';
 
 class DonationManager {
@@ -2785,6 +2786,7 @@ class DonationManager {
             });
         }
 
+        // TODO: `return_content_type` can be replaced with DonationManager\lib\fns\helpers\get_content_type
         add_filter( 'wp_mail_content_type', array( $this, 'return_content_type' ) );
 
         $subject = html_entity_decode( $subject, ENT_COMPAT, 'UTF-8' );
@@ -2932,13 +2934,14 @@ require_once 'lib/fns/admin.php';
 require_once 'lib/fns/debug.php';
 require_once 'lib/fns/helpers.php';
 require_once 'lib/fns/templates.php';
+require_once 'lib/fns/filesystem.php';
 
 // Include our Orphaned Donations Class
 require 'lib/classes/orphaned-donations.php';
 $DMOrphanedDonations = DMOrphanedDonations::get_instance();
 
 // Include our Reporting Class
-require 'lib/classes/donation-reports.php';
+require_once 'lib/classes/donation-reports.php';
 $DMReports = DMReports::get_instance();
 register_activation_hook( __FILE__, array( $DMReports, 'flush_rewrites' ) );
 register_deactivation_hook( __FILE__, array( $DMReports, 'flush_rewrites' ) );
@@ -2948,7 +2951,7 @@ require 'lib/classes/shortcodes.php';
 $DMShortcodes = DMShortcodes::get_instance();
 
 if ( defined( 'WP_CLI' ) && WP_CLI ) {
-    require_once 'lib/fns/stats.php';
+    require_once 'lib/fns/wpcli.php';
 }
 
 $mailtrap = dirname( __FILE__ ) . '/mailtrap.php';

@@ -2,6 +2,15 @@
 namespace DonationManager\lib\fns\helpers;
 
 /**
+ * Returns content type for use in filter `wp_mail_content_type`.
+ *
+ * @return     string  The content type.
+ */
+function get_content_type(){
+    return 'text/html';
+}
+
+/**
  * Gets the posted variable.
  *
  * Returns the following:

@@ -328,11 +328,11 @@ class DMReports extends DonationManager {
     			'DonationCity' => $DonationCity,
     			'DonationState' => $DonationState,
     			'DonationZip' => $DonationZip,
-    			'DonationDesc' => htmlentities( $custom_fields['pickup_description'][0] ),
+    			'DonationDesc' => html_entity_decode( $custom_fields['pickup_description'][0] ),
     			'PickupDate1' => $custom_fields['pickupdate1'][0],
     			'PickupDate2' => $custom_fields['pickupdate2'][0],
     			'PickupDate3' => $custom_fields['pickupdate3'][0],
-    			'Organization' => htmlentities( $org_name ),
+    			'Organization' => html_entity_decode( $org_name ),
     			'Referer' => esc_url( $custom_fields['referer'][0] ),
 			);
 
@@ -410,10 +410,13 @@ class DMReports extends DonationManager {
      *
      * @return     array|int      The donations.
      */
-    private function get_donations( $orgID = null, $month = null, $count_only = false ){
-    	// TODO: Rewrite to set $month to last month if `null`
-    	if( is_null( $orgID ) || is_null( $month ) )
+    public function get_donations( $orgID = null, $month = null, $count_only = false ){
+
+    	if( is_null( $orgID ) )
     		return;
+
+        if( is_null( $month ) )
+            $month = date( 'Y-m', strtotime( 'last day of previous month' ) );
 
     	$transient_name = 'donations_' . $orgID . '_' . $month;
 
@@ -462,6 +465,12 @@ class DMReports extends DonationManager {
 	    		$DonationState = ( empty( $custom_fields['pickup_state'][0] ) )? $custom_fields['donor_state'][0] : $custom_fields['pickup_state'][0];
 	    		$DonationZip = ( empty( $custom_fields['pickup_zip'][0] ) )? $custom_fields['donor_zip'][0] : $custom_fields['pickup_zip'][0];
 
+                $pickupdate1 = ( empty( $custom_fields['pickupdate1'] ) )? '' : $custom_fields['pickupdate1'][0];
+                $pickupdate2 = ( empty( $custom_fields['pickupdate2'] ) )? '' : $custom_fields['pickupdate2'][0];
+                $pickupdate3 = ( empty( $custom_fields['pickupdate3'] ) )? '' : $custom_fields['pickupdate3'][0];
+
+                $preferred_code = ( empty( $custom_fields['preferred_code'] ) )? '' : $custom_fields['preferred_code'][0] ;
+
 	    		$donation_row = array(
 	    			'Date' => $donation->post_date,
 	    			'DonorName' => $custom_fields['donor_name'][0],
@@ -475,11 +484,11 @@ class DMReports extends DonationManager {
 	    			'DonationCity' => $DonationCity,
 	    			'DonationState' => $DonationState,
 	    			'DonationZip' => $DonationZip,
-	    			'DonationDesc' => $custom_fields['pickup_description'][0],
-	    			'PickupDate1' => $custom_fields['pickupdate1'][0],
-	    			'PickupDate2' => $custom_fields['pickupdate2'][0],
-	    			'PickupDate3' => $custom_fields['pickupdate3'][0],
-	    			'PreferredDonorCode' => $custom_fields['preferred_code'][0],
+	    			'DonationDesc' => html_entity_decode( $custom_fields['pickup_description'][0] ),
+	    			'PickupDate1' => $pickupdate1,
+	    			'PickupDate2' => $pickupdate2,
+	    			'PickupDate3' => $pickupdate3,
+	    			'PreferredDonorCode' => $preferred_code,
 				);
 
 				$donation_rows[] = '"' . implode( '","', $donation_row ) . '"';
@@ -490,6 +499,32 @@ class DMReports extends DonationManager {
     	return $donation_rows;
     }
 
+    /**
+     * Returns Post IDs of all orgs.
+     *
+     * @return     array  All org Post IDs.
+     */
+    public function get_all_orgs(){
+        if( false === ( $organizations = get_transient( 'get_orgs' ) ) ){
+            $orgs = $this->get_rows( 'organization' );
+            $organizations = array();
+            if( $orgs ){
+                foreach( $orgs as $post ){
+                    $organizations[] = $post->ID;
+                }
+            }
+            set_transient( 'get_orgs', $organizations, 6 * HOUR_IN_SECONDS );
+        }
+        return $organizations;
+    }
+
+    /**
+     * Retrieves all objects for a given post_type
+     *
+     * @param      string   $post_type  The post type
+     *
+     * @return     array  The post_type objects.
+     */
     private function get_rows( $post_type = 'organization' ){
     	if( is_null( $post_type ) )
     		return false;
@@ -546,6 +581,65 @@ class DMReports extends DonationManager {
 		}
 
 		return $options;
+    }
+
+    function send_donation_report( $atts ){
+        $args = shortcode_atts( [
+         'org_id' => null,
+         'month' => null,
+         'attachment_file' => null,
+         'donation_count' => 0,
+         'to' => null,
+        ], $atts );
+
+        if( is_null( $args['to'] ) )
+            return false;
+
+        $eol = PHP_EOL;
+
+        add_filter( 'wp_mail_content_type', 'DonationManager\lib\fns\helpers\get_content_type' );
+
+        add_filter( 'wp_mail_from', function( $email ){
+            return 'contact@pickupmydonation.com';
+        } );
+        add_filter( 'wp_mail_from_name', function( $name ){
+            return 'PickUpMyDonation.com';
+        });
+
+        $human_month = date( 'F Y', strtotime( $args['month'] ) );
+        $organization = get_the_title( $args['org_id'] );
+        $donation_value = '$' . number_format( AVERGAGE_DONATION_VALUE * intval( $args['donation_count'] ) );
+
+        $headers = array();
+        $headers[] = 'Sender: PickUpMyDonation.com <contact@pickupmydonation.com>';
+        $headers[] = 'Reply-To: PickUpMyDonation.com <contact@pickupmydonation.com>';
+
+        $donation_word = ( 1 < $args['donation_count'] )? 'donations' : 'donation';
+
+        $message[] = sprintf(
+            'Via your online donation form at <a href="https://www.pickupmydonation.com">PickUpMyDonation.com</a>, <em>%1$s</em> received <strong>%2$d</strong> %3$s with an estimated value of <strong>%5$s</strong> during the month of %4$s.',
+            $organization,
+            $args['donation_count'],
+            $donation_word,
+            $human_month,
+            $donation_value
+        );
+        $message[] = 'Please find your monthly PickUpMyDonation.com donation report attached.';
+
+        // Handlebars Email Template
+        $hbs_vars = [
+            'donation_report_note' => implode( '<br /><br />' . $eol, $message ),
+            'month' => $human_month,
+            'organization' => $organization,
+            'donation_value' => $donation_value,
+            'donation_count' => $args['donation_count'],
+        ];
+
+        $html = DonationManager\lib\fns\templates\render_template( 'email.monthly-donor-report', $hbs_vars );
+
+        wp_mail( $args['to'], $human_month . ' Donation Report - PickUpMyDonation.com', $html, $headers, $args['attachment_file'] );
+
+        remove_filter( 'wp_mail_content_type', 'DonationManager\lib\fns\helpers\get_content_type' );
     }
 }
 ?>

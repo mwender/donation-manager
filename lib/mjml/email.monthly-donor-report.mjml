@@ -1,0 +1,50 @@
+<mj-body background-color="#eeebeb">
+    <mj-section padding-bottom="10px">
+        <mj-column width="100%">
+            <mj-image width="550" src="https://www.pickupmydonation.com/wp-content/plugins/donation-manager/lib/images/pickupmydonation.1200x143.png" />
+        </mj-column>
+    </mj-section>
+    <mj-section background-color="#fff" padding="20px">
+        <mj-column>
+            <mj-text font-size="28" font-weight="600">
+              {{month}} Donation Report<br>
+              <span style="font-size: 14px; line-height: 18px; font-weight: normal; color: #666;">Prepared for {{organization}}</span>
+            </mj-text>
+        </mj-column>
+    </mj-section>
+    <mj-section background-color="#fff" padding="0 40px 20px 40px">
+      <mj-column>
+            <mj-text container-background-color="#f68428" color="#ffffff" align="center" font-size="18" font-weight="600" line-height="24px">{{organization}}, {{month}}:<br>
+            <span style="font-size: 52px; line-height: 58px;">{{donation_value}}</span><br>
+            <span style="font-size: 24px; line-height: 32px;">{{donation_count}} donations</span></mj-text>
+      </mj-column>
+    </mj-section>
+    <mj-section background-color="#fff" padding="0 20px 20px 20px">
+        <mj-column>
+            <mj-text>{{{donation_report_note}}}</mj-text>
+        </mj-column>
+    </mj-section>
+    <mj-section background-color="#363636">
+        <mj-column>
+            <mj-social
+                mode="horizontal"
+                display="twitter:url facebook:url instagram:url"
+                facebook-href="https://www.facebook.com/PickUpMyDonationcom"
+                facebook-content=""
+                facebook-icon-color="transparent"
+                twitter-href="https://twitter.com/pickupdonations"
+                twitter-content=""
+                twitter-icon-color="transparent"
+                instagram-href="https://www.instagram.com/pickupdonations/"
+                instagram-content=""
+                instagram-icon-color="transparent"
+                icon-size="30px"
+                base-url="https://www.pickupmydonation.com/wp-content/plugins/donation-manager/lib/images/"
+            />
+            <mj-text align="center" color="#fff">
+                    &copy; 2012 &ndash; 2017 PickUpMyDonation.com. All rights reserved.<br>
+                    <a href="mailto:contact@pickupmydonation.com?subject=Remove%20My%20Email&amp;body=Unsubscribe%20me%20from%20further%20mailings." style="color: #f68428; text-decoration: none;">Unsubscribe from these emails.</a>
+            </mj-text>
+        </mj-column>
+    </mj-section>
+</mj-body>

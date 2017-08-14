@@ -1,7 +1,7 @@
 {
   "meta": {
-    "version": "2.6.9",
-    "build": 1500038340
+    "version": "2.6.10",
+    "build": 1502738927
   },
   "pods": {
     "85": {
@@ -44,7 +44,7 @@
             "administrator"
           ],
           "number_repeatable": "0",
-          "number_format_soft": 0
+          "number_format_soft": "0"
         },
         "pickup": {
           "id": 87,
@@ -1159,15 +1159,54 @@
       "object": "",
       "alias": "",
       "fields": {
+        "contact_emails": {
+          "id": 152733,
+          "name": "contact_emails",
+          "label": "Contact Emails",
+          "description": "Enter email addresses, one per line. Monthly donation reports are sent to any email addresses entered here.",
+          "help": "",
+          "class": "",
+          "type": "paragraph",
+          "weight": 0,
+          "pick_object": "",
+          "pick_val": "",
+          "sister_id": "",
+          "required": "0",
+          "paragraph_allow_html": "0",
+          "paragraph_oembed": "0",
+          "paragraph_wptexturize": "0",
+          "paragraph_convert_chars": "0",
+          "paragraph_wpautop": "0",
+          "paragraph_allow_shortcode": "0",
+          "paragraph_allowed_html_tags": "strong em a ul ol li b i",
+          "paragraph_max_length": "0",
+          "pick_post_status": [
+            "publish"
+          ],
+          "admin_only": "0",
+          "restrict_role": "0",
+          "restrict_capability": "0",
+          "hidden": "0",
+          "read_only": "0",
+          "roles_allowed": [
+            "administrator"
+          ],
+          "rest_read": "0",
+          "rest_write": "0",
+          "rest_pick_response": "array",
+          "rest_pick_depth": "2",
+          "unique": "0",
+          "paragraph_repeatable": "0"
+        },
         "website": {
-          "id": 145636,
+          "id": 149059,
           "name": "website",
           "label": "Website",
           "description": "URL to organization's website",
           "help": "",
           "class": "",
           "type": "website",
-          "weight": 0,
+          "weight": 1,
           "pick_object": "",
           "pick_val": "",
           "sister_id": "",
@@ -1192,7 +1231,8 @@
           "rest_write": "0",
           "rest_pick_response": "array",
           "rest_pick_depth": "2",
-          "website_repeatable": 0
+          "website_repeatable": "0",
+          "unique": "0"
         },
         "priority_pickup": {
           "id": 68409,
@@ -1202,7 +1242,7 @@
           "help": "",
           "class": "",
           "type": "boolean",
-          "weight": 1,
+          "weight": 2,
           "pick_object": "",
           "pick_val": "",
           "sister_id": "",
@@ -1228,7 +1268,7 @@
           "help": "",
           "class": "",
           "type": "pick",
-          "weight": 2,
+          "weight": 3,
           "pick_object": "custom-simple",
           "pick_val": "",
           "sister_id": "",
@@ -1268,7 +1308,7 @@
           "help": "",
           "class": "",
           "type": "boolean",
-          "weight": 3,
+          "weight": 4,
           "pick_object": "",
           "pick_val": "",
           "sister_id": "",
@@ -1295,7 +1335,7 @@
           "help": "",
           "class": "",
           "type": "pick",
-          "weight": 4,
+          "weight": 5,
           "pick_object": "days_of_week",
           "pick_val": "",
           "sister_id": "",
@@ -1333,7 +1373,7 @@
           "help": "",
           "class": "",
           "type": "pick",
-          "weight": 5,
+          "weight": 6,
           "pick_object": "custom-simple",
           "pick_val": "",
           "sister_id": "",
@@ -1373,7 +1413,7 @@
           "help": "",
           "class": "",
           "type": "pick",
-          "weight": 6,
+          "weight": 7,
           "pick_object": "post_type",
           "pick_val": "trans_dept",
           "sister_id": "34",
@@ -1411,7 +1451,7 @@
           "help": "",
           "class": "",
           "type": "wysiwyg",
-          "weight": 7,
+          "weight": 8,
           "pick_object": "",
           "pick_val": "",
           "sister_id": "",
@@ -1443,7 +1483,7 @@
           "help": "",
           "class": "",
           "type": "boolean",
-          "weight": 8,
+          "weight": 9,
           "pick_object": "",
           "pick_val": "",
           "sister_id": "",
@@ -1470,7 +1510,7 @@
           "help": "",
           "class": "",
           "type": "boolean",
-          "weight": 9,
+          "weight": 10,
           "pick_object": "",
           "pick_val": "",
           "sister_id": "",
@@ -1542,7 +1582,8 @@
       "rest_enable": "0",
       "rest_base": "organization",
       "read_all": "0",
-      "write_all": "0"
+      "write_all": "0",
+      "built_in_taxonomies_yst_prominent_words": "0"
     },
     "37": {
       "id": 37,
@@ -1617,7 +1658,7 @@
             "administrator"
           ],
           "number_repeatable": "0",
-          "number_format_soft": 0
+          "number_format_soft": "0"
         }
       },
       "show_in_menu": "1",
@@ -1690,7 +1731,7 @@
           "rest_write": "0",
           "rest_pick_response": "array",
           "rest_pick_depth": "2",
-          "number_format_soft": 0
+          "number_format_soft": "0"
         }
       },
       "show_in_menu": "1",
@@ -1765,7 +1806,7 @@
             "administrator"
           ],
           "number_repeatable": "0",
-          "number_format_soft": 0
+          "number_format_soft": "0"
         }
       },
       "show_in_menu": "1",

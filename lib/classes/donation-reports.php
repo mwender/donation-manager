@@ -619,18 +619,19 @@ class DMReports extends DonationManager {
         $headers = array();
         $headers[] = 'Sender: PickUpMyDonation.com <contact@pickupmydonation.com>';
         $headers[] = 'Reply-To: PickUpMyDonation.com <contact@pickupmydonation.com>';
+        $headers[] = 'CC: misty@pickupmydonation.com';
 
         $donation_word = ( 1 < $args['donation_count'] )? 'donations' : 'donation';
 
         $message[] = sprintf(
-            'Via your online donation form at <a href="https://www.pickupmydonation.com">PickUpMyDonation.com</a>, <em>%1$s</em> received <strong>%2$d</strong> %3$s with an estimated value of <strong>%5$s</strong> during the month of %4$s.',
+            '<em>%1$s</em> received <strong>%2$d</strong> %3$s with an estimated value of <strong>%5$s</strong> during the month of %4$s from <a href="https://www.pickupmydonation.com">PickUpMyDonation.com</a>. Please find your monthly donation report attached.',
             $organization,
             $args['donation_count'],
             $donation_word,
             $human_month,
             $donation_value
         );
-        $message[] = 'Please find your monthly PickUpMyDonation.com donation report attached.';
+        $message[] = 'Thank you for the confidence you place in us to help you increase donations.  Know that we continue to work hard to grow the brand on your behalf, and we always welcome any ideas that will make PickUpMyDonation.com work better for you.';
 
         // Handlebars Email Template
         $hbs_vars = [

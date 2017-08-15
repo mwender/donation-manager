@@ -21,7 +21,7 @@
     </mj-section>
     <mj-section background-color="#fff" padding="0 20px 20px 20px">
         <mj-column>
-            <mj-text>{{{donation_report_note}}}</mj-text>
+            <mj-text font-size="16px" line-height="25px">{{{donation_report_note}}}</mj-text>
         </mj-column>
     </mj-section>
     <mj-section background-color="#363636">
@@ -42,8 +42,7 @@
                 base-url="https://www.pickupmydonation.com/wp-content/plugins/donation-manager/lib/images/"
             />
             <mj-text align="center" color="#fff">
-                    &copy; 2012 &ndash; 2017 PickUpMyDonation.com. All rights reserved.<br>
-                    <a href="mailto:contact@pickupmydonation.com?subject=Remove%20My%20Email&amp;body=Unsubscribe%20me%20from%20further%20mailings." style="color: #f68428; text-decoration: none;">Unsubscribe from these emails.</a>
+                    &copy; 2012 &ndash; 2017 PickUpMyDonation.com. All rights reserved.
             </mj-text>
         </mj-column>
     </mj-section>

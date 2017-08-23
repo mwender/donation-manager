@@ -1023,7 +1023,7 @@ class DonationManager {
                         'key' => $key,
                         'value' => $opt['value'],
                         'checked' => $checked,
-                        'name' => $opt['name'],
+                        'name' => html_entity_decode( $opt['name'] ),
                         'desc' => $opt['desc'],
                         'pickup' => $opt['pickup'],
                         'skip_questions' => $opt['skip_questions'],

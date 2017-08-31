@@ -9,12 +9,23 @@ class Organization extends DonationManager
             return new WP_Error( 'noid', 'Org ID is null!' );
 
         if( ! is_int( $id ) )
-            return new WP_Error( 'notanint', 'Org ID must be an integer!' );
+            return new WP_Error( 'notint', 'Org ID must be an integer!' );
 
         $this->id = $id;
         $this->name = get_the_title( $id );
     }
 
+    /**
+     * Gets the donation count for a given month.
+     *
+     * Checks for the count stored in a custom field named
+     * `_YYYY-MM_donation_count`. Returns that value if
+     * found. Otherwise, we run `get_posts()`.
+     *
+     * @param      string  $month  The month in `YYYY-MM` format.
+     *
+     * @return     mixed  If donation count is an int, returns the int. Otherwise returns `...`.
+     */
     public function get_donation_count( $month = null ){
         if( is_null( $month ) || ! preg_match( '/[0-9]{4}-[0-9]{1,2}/', $month ) )
             $month = date( 'Y-m', strtotime( 'last day of previous month' ) );
@@ -22,11 +33,25 @@ class Organization extends DonationManager
         $meta_key = '_' . $month . '_donation_count';
 
         $donation_count = get_post_meta( $this->id, $meta_key, true );
-        error_log( '$donation_count = ' . $donation_count );
-        if( $donation_count || '0' == $donation_count ){
-            error_log( strtoupper( $this->name ) . ' meta_field found, returning $donation_count = ' . $donation_count );
+
+        return ( $donation_count || '0' == $donation_count )? $donation_count : '...' ;
+    }
+
+    /**
+     * Saves the donation count for a given month.
+     *
+     * @param      string  $month  The month in `YYYY-MM` format.
+     *
+     * @return     int  The donation count.
+     */
+    public function save_donation_count( $month = null ){
+         if( is_null( $month ) || ! preg_match( '/[0-9]{4}-[0-9]{1,2}/', $month ) )
+            $month = date( 'Y-m', strtotime( 'last day of previous month' ) );
+
+        $meta_key = '_' . $month . '_donation_count';
+        $donation_count = get_post_meta( $this->id, $meta_key, true );
+        if( $donation_count || '0' == $donation_count )
             return $donation_count;
-        }
 
         $args = array(
             'post_type' => 'donation',
@@ -52,7 +77,7 @@ class Organization extends DonationManager
         $donations = get_posts( $args );
         $donation_count = ( ! $donations )? 0 : count( $donations );
         update_post_meta( $this->id, $meta_key, $donation_count );
-        return $donation_count;
 
+        return intval( $donation_count );
     }
 }

@@ -4,9 +4,44 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "hash": "abc2cf8e81b379dd1314c22caa9bc434",
-    "content-hash": "9216ba7caced11c6d7f54f5d6997751e",
+    "content-hash": "2cc9ef2e889982dd71a676ce9972d74f",
     "packages": [
+        {
+            "name": "a5hleyrich/wp-background-processing",
+            "version": "1.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/A5hleyRich/wp-background-processing.git",
+                "reference": "15a8a79130a15366d9d550d078f14232ed83d3ba"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/A5hleyRich/wp-background-processing/zipball/15a8a79130a15366d9d550d078f14232ed83d3ba",
+                "reference": "15a8a79130a15366d9d550d078f14232ed83d3ba",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=5.2"
+            },
+            "type": "library",
+            "autoload": {
+                "classmap": [
+                    "classes/"
+                ]
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "GPLv2+"
+            ],
+            "authors": [
+                {
+                    "name": "Ashley Rich",
+                    "email": "hello@ashleyrich.com"
+                }
+            ],
+            "description": "WP Background Processing can be used to fire off non-blocking asynchronous requests or as a background processing tool, allowing you to queue tasks.",
+            "time": "2016-08-07T10:26:07+00:00"
+        },
         {
             "name": "cloudinary/cloudinary_php",
             "version": "1.7.2",
@@ -57,7 +92,7 @@
                 "image management",
                 "sdk"
             ],
-            "time": "2017-04-03 08:28:38"
+            "time": "2017-04-03T08:28:38+00:00"
         },
         {
             "name": "rlanvin/php-form",

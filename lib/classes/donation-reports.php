@@ -89,7 +89,7 @@ class DMReports extends DonationManager {
     		default:
 		    	wp_register_script( 'dm-reports-orgs-js', plugins_url( '../js/reports.orgs.js', __FILE__ ), array( 'jquery' ), filemtime( plugin_dir_path( __FILE__ ) . '../js/reports.orgs.js' ) );
 		    	wp_enqueue_script( 'dm-reports-orgs-js' );
-		    	wp_localize_script( 'dm-reports-orgs-js', 'ajax_object', array( 'ajax_url' => admin_url( 'admin-ajax.php' ), 'site_url' => site_url( '/download/' ), 'permalink_url' => admin_url( 'options-permalink.php' ) ) );
+		    	wp_localize_script( 'dm-reports-orgs-js', 'ajax_object', [ 'ajax_url' => admin_url( 'admin-ajax.php' ), 'restapi_url' => get_rest_url( null, 'donman/v2/donations/month'), 'site_url' => site_url( '/download/' ), 'permalink_url' => admin_url( 'options-permalink.php' ), 'nonce' => wp_create_nonce( 'wp_rest' ) ] );
 		    	wp_enqueue_script( 'jquery-file-download', plugins_url( '../components/vendor/jquery-file-download/src/Scripts/jquery.fileDownload.js', __FILE__ ), array( 'jquery', 'jquery-ui-dialog', 'jquery-ui-progressbar' ) );
 		    	wp_enqueue_style( 'wp-jquery-ui-dialog' );
 			break;
@@ -153,7 +153,7 @@ class DMReports extends DonationManager {
 		$access_type = get_filesystem_method();
 		$response->access_type = $access_type;
 
-		$context = ( $_POST['context'] )? $_POST['context'] : 'organizations';
+		$context = ( isset( $_POST['context'] ) && ! empty( $_POST['context'] ) )? $_POST['context'] : 'organizations';
 		$response->context = $context;
     	$file = plugin_dir_path( __FILE__ ) . '../fns/callback-donation-report.' . $context . '.php';
 
@@ -313,7 +313,11 @@ class DMReports extends DonationManager {
     		$DonationState = ( empty( $custom_fields['pickup_state'][0] ) )? $custom_fields['donor_state'][0] : $custom_fields['pickup_state'][0];
     		$DonationZip = ( empty( $custom_fields['pickup_zip'][0] ) )? $custom_fields['donor_zip'][0] : $custom_fields['pickup_zip'][0];
     		$organization = $custom_fields['organization'][0];
-    		$org_name = ( is_numeric( $organization ) )? get_the_title( $organization ) : '--';
+    		$PickupDate1 = ( ! empty( $custom_fields['pickupdate1'][0] ) )? $custom_fields['pickupdate1'][0] : '';
+            $PickupDate2 = ( ! empty( $custom_fields['pickupdate2'][0] ) )? $custom_fields['pickupdate2'][0] : '';
+            $PickupDate3 = ( ! empty( $custom_fields['pickupdate3'][0] ) )? $custom_fields['pickupdate3'][0] : '';
+            $org_name = ( is_numeric( $organization ) )? get_the_title( $organization ) : '--';
+            $Referer = ( ! empty( $custom_fields['referer'][0] ) )? esc_url( $custom_fields['referer'][0] ) : '';
 
     		$donation_row = array(
     			'Date' => $donation->post_date,
@@ -329,11 +333,11 @@ class DMReports extends DonationManager {
     			'DonationState' => $DonationState,
     			'DonationZip' => $DonationZip,
     			'DonationDesc' => html_entity_decode( $custom_fields['pickup_description'][0] ),
-    			'PickupDate1' => $custom_fields['pickupdate1'][0],
-    			'PickupDate2' => $custom_fields['pickupdate2'][0],
-    			'PickupDate3' => $custom_fields['pickupdate3'][0],
+    			'PickupDate1' => $PickupDate1,
+    			'PickupDate2' => $PickupDate2,
+    			'PickupDate3' => $PickupDate3,
     			'Organization' => html_entity_decode( $org_name ),
-    			'Referer' => esc_url( $custom_fields['referer'][0] ),
+    			'Referer' => $Referer,
 			);
 
 			$donation_rows[] = '"' . implode( '","', $donation_row ) . '"';
@@ -568,8 +572,8 @@ class DMReports extends DonationManager {
 				$option_display = date( 'Y - F', $timestamp );
 
 				if( $year == $current_year && $current_month == $month ){
-					$option_display = date( 'M Y', $timestamp );
-					$options[] = '<option value="'.$option_value.'">Current Month ('.$option_display.')</option>';
+					//$option_display = date( 'M Y', $timestamp );
+					//$options[] = '<option value="'.$option_value.'">Current Month ('.$option_display.')</option>';
 					continue;
 				} else if( $year == $current_year && $current_month < $month ){
 					continue;

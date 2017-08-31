@@ -171,6 +171,11 @@ switch( $switch ){
 	 * Retrieves Post IDs of all organizations
 	 */
 	case 'get_orgs':
+		/**
+		 * 08/31/2017 (15:30) - This case may be deprecated as I believe
+		 * it was only used inside lib/js/reports.orgs.js::getOrgs()
+		 * which I'm deleting after documenting this.
+		 */
 		$response->orgs = $this->get_all_orgs();
 	break;
 

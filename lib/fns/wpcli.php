@@ -15,10 +15,14 @@ Class DonManCLI extends \WP_CLI_Command {
    *
    * [--month=<month>]
    * : Month of the report in 'Y-m' format (e.g. 2017-01).
+   *
+   * [--provider=<provider>]
+   * : Generate reports for `exclusive` or `nonexclusive` providers (default: exclusive).
    */
   function sendreports( $args, $assoc_args ){
 
     $month = ( isset( $assoc_args['month'] ) )? $assoc_args['month'] : '' ;
+    $provider = ( isset( $assoc_args['provider'] ) )? $assoc_args['provider'] : 'exclusive' ;
 
     // Default to last month if $month isn't in Y-m format:
     if( ! preg_match( '/^2[0-9]{3}-[0-9]{1,2}/', $month ) )

@@ -59,6 +59,8 @@
 							<p><select name="all-donations-report-month" id="all-donations-report-month">
 								<?php
 								echo '<option value="alldonations">All donations</option>';
+								if( ! isset( $last_month ) )
+									$last_month = '';
 								echo implode( '', $this->get_select_month_options( $last_month ) ); ?>
 							</select></p>
 							<?php submit_button( 'Download', 'secondary', 'export-all-donations', false  ) ?>

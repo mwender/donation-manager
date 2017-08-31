@@ -11,6 +11,7 @@
     "require": {
         "rlanvin/php-form": "dev-master",
         "zordius/lightncandy": "dev-master",
-        "cloudinary/cloudinary_php": "^1.7"
+        "cloudinary/cloudinary_php": "^1.7",
+        "a5hleyrich/wp-background-processing": "^1.0"
     }
 }

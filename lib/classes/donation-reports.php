@@ -641,7 +641,7 @@ class DMReports extends DonationManager {
         $hbs_vars = [
             'donation_report_note' => implode( '<br /><br />' . $eol, $message ),
             'month' => $human_month,
-            'organization' => $organization,
+            'organization' => html_entity_decode( $organization ),
             'donation_value' => $donation_value,
             'donation_count' => $args['donation_count'],
         ];

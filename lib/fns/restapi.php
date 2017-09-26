@@ -43,7 +43,7 @@ function get_donations_by_month( $data ){
     // Make $month default to last month
     $month = ( isset( $data['month'] ) )? $data['month'] : null ;
     if( is_null( $month ) || ! preg_match( '/[0-9]{4}-[0-9]{1,2}/', $month ) )
-        $month = date( 'Y-m', strtotime( 'last day of previous month' ) );
+        $month = date( 'Y-m', strtotime( 'first day of this month' ) );
 
     $formatted_date = date( 'M Y', strtotime( $month ) );
     $response['formatted_date'] = $formatted_date;
@@ -84,6 +84,32 @@ function get_donations_by_month( $data ){
         add_option( $key_name, current_time( 'mysql' ), null, 'no' );
         $BackgroundDonationCountProcess->save()->dispatch();
         $response['alert'] = 'We\'re generating counts in the background for the `' . $formatted_date . ' Donations` column. In the meantime, you can download reports for individual organizations.';
+    } else {
+        // Check if month is different, then regenerate
+        $last_report_timestamp = strtotime( $donation_counts_exist );
+        $report_month = date( 'Y-m', $last_report_timestamp );
+
+        $current_timestamp = current_time( 'timestamp' );
+        $current_month = date( 'Y-m', $current_timestamp );
+
+        if( $report_month == $current_month ){
+            if( ( $current_timestamp - $last_report_timestamp ) > DAY_IN_SECONDS ){
+                error_log( 'Donation counts were generated over 24hrs ago. Regenerating counts...' );
+                update_option( $key_name, current_time( 'mysql' ), null, 'no' );
+                $BackgroundDonationCountProcess->save()->dispatch();
+                $response['alert'] = 'Current month donation counts were stale. We\'re regenerating them in the background. In the meantime, you can download reports for individual organizations.';
+            }
+        } else if ( $report_month == $month && $current_month != $report_month ){
+            // Donation count totals are stale whenever we find a report that
+            // was generated in the same month as the report, and we're past
+            // that month.
+            error_log( 'Donation counts were generated during the same month, and we\'re now past that month. Regenerating counts...' );
+            update_option( $key_name, current_time( 'mysql' ), null, 'no' );
+            $BackgroundDonationCountProcess->save()->dispatch();
+            $response['alert'] = 'Donation counts for `' . $formatted_date . '` were stale. We\'re regenerating them in the background. In the meantime, you can download reports for individual organizations.';
+        }
+
+
     }
 
     $response['orgs'] = $org_array;

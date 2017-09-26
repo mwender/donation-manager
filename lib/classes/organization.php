@@ -20,7 +20,7 @@ class Organization extends DonationManager
      *
      * Checks for the count stored in a custom field named
      * `_YYYY-MM_donation_count`. Returns that value if
-     * found. Otherwise, we run `get_posts()`.
+     * found.
      *
      * @param      string  $month  The month in `YYYY-MM` format.
      *
@@ -49,10 +49,11 @@ class Organization extends DonationManager
             $month = date( 'Y-m', strtotime( 'last day of previous month' ) );
 
         $meta_key = '_' . $month . '_donation_count';
+        /*
         $donation_count = get_post_meta( $this->id, $meta_key, true );
         if( $donation_count || '0' == $donation_count )
             return $donation_count;
-
+        /**/
         $args = array(
             'post_type' => 'donation',
             'posts_per_page' => -1,

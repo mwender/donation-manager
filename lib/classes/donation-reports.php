@@ -572,8 +572,8 @@ class DMReports extends DonationManager {
 				$option_display = date( 'Y - F', $timestamp );
 
 				if( $year == $current_year && $current_month == $month ){
-					//$option_display = date( 'M Y', $timestamp );
-					//$options[] = '<option value="'.$option_value.'">Current Month ('.$option_display.')</option>';
+					$option_display = date( 'M Y', $timestamp );
+					$options[] = '<option value="'.$option_value.'">Current Month ('.$option_display.')</option>';
 					continue;
 				} else if( $year == $current_year && $current_month < $month ){
 					continue;

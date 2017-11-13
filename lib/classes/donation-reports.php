@@ -504,6 +504,26 @@ class DMReports extends DonationManager {
     }
 
     /**
+     * Returns an array of all network member store_name[s].
+     *
+     * @return     array  All network member store_name[s].
+     */
+    public function get_all_network_members(){
+        if( false === ( $network_members = get_transient( 'get_network_members' ) ) ){
+            global $wpdb;
+            $contacts =  $wpdb->get_results('SELECT DISTINCT store_name FROM ' . $wpdb->prefix . 'dm_contacts WHERE receive_emails=1');
+            $network_members = [];
+            if( $contacts ){
+                foreach ($contacts as $contact ) {
+                    $network_members[] = $contact->store_name;
+                }
+            }
+            set_transient( 'get_network_members', $network_members, 6 * HOUR_IN_SECONDS );
+        }
+        return $network_members;
+    }
+
+    /**
      * Returns Post IDs of all orgs.
      *
      * @return     array  All org Post IDs.
@@ -665,6 +685,74 @@ class DMReports extends DonationManager {
 
         if( true == $status )
             update_post_meta( $args['org_id'], '_last_donation_report', $args['month'] );
+
+        remove_filter( 'wp_mail_content_type', 'DonationManager\lib\fns\helpers\get_content_type' );
+    }
+
+    public function send_network_member_report( $atts ){
+        $args = shortcode_atts( [
+         'ID' => null,
+         'email_address' => null,
+         'month' => null,
+         'donation_count' => null,
+        ], $atts );
+
+        if( is_null( $args['email_address'] ) )
+            return false;
+
+        $network_member = new \NetworkMember( $args['ID'] );
+        $last_donation_report = $network_member->get_last_donation_report();
+        $network_member_name = $network_member->get_member_name();
+
+        if( $args['month'] == $last_donation_report ){
+            \WP_CLI::line('Report already sent to ' . $network_member_name . ' for ' . $args['month'] . '.' );
+            return false;
+        }
+
+        $eol = PHP_EOL;
+
+        add_filter( 'wp_mail_content_type', 'DonationManager\lib\fns\helpers\get_content_type' );
+
+        add_filter( 'wp_mail_from', function( $email ){
+            return 'contact@pickupmydonation.com';
+        } );
+        add_filter( 'wp_mail_from_name', function( $name ){
+            return 'PickUpMyDonation.com';
+        });
+
+        $human_month = date( 'F Y', strtotime( $args['month'] ) );
+        $donation_value = '$' . number_format( AVERGAGE_DONATION_VALUE * intval( $args['donation_count'] ) );
+
+        $headers = array();
+        $headers[] = 'Sender: PickUpMyDonation.com <contact@pickupmydonation.com>';
+        $headers[] = 'Reply-To: PickUpMyDonation.com <contact@pickupmydonation.com>';
+        $headers[] = 'CC: misty@pickupmydonation.com';
+
+        $message[] = sprintf(
+            'Your organization received <strong>%1$d</strong> donations with an estimated value of <strong>%2$s</strong> during the month of <strong>%3$s</strong> from PickUpMyDonation.com.',
+            $args['donation_count'],
+            $donation_value,
+            $human_month
+        );
+
+        $message[] = 'PickUpMyDonation.com enables online donation scheduling for donors all over the United States. When a donor inputs her zip code, we identify you as a pick up provider and then confirm the donation is worth the effort to pick it up.';
+        $message[] = 'We would like to discuss ways to increase high value donations for you and your non-profit. <strong>Reply now</strong> to learn how we can customize the service for you for less than the value of a single pick up, or if you would like these donations sent to another contact from your organization in the future.';
+
+        // Handlebars Email Template
+        $hbs_vars = [
+            'donation_report_note' => implode( '<br /><br />' . $eol, $message ),
+            'month' => $human_month,
+            'organization' => $network_member_name,
+            'donation_value' => $donation_value,
+            'donation_count' => $args['donation_count'],
+        ];
+
+        $html = DonationManager\lib\fns\templates\render_template( 'email.monthly-donor-report', $hbs_vars );
+
+        $status = wp_mail( $args['email_address'], $human_month . ' Donation Report - PickUpMyDonation.com', $html, $headers );
+
+        if( true == $status )
+            $network_member->save_donation_report( $args['month'] );
 
         remove_filter( 'wp_mail_content_type', 'DonationManager\lib\fns\helpers\get_content_type' );
     }

@@ -2938,6 +2938,7 @@ require_once 'lib/fns/templates.php';
 require_once 'lib/fns/filesystem.php';
 
 // Include class files
+require_once 'lib/classes/network-member.php';
 require_once 'lib/classes/organization.php';
 require_once 'lib/classes/background-processes.php';
 $BackgroundDonationCountProcess = new DM_Donation_Count_Process();

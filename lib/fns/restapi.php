@@ -8,6 +8,8 @@ namespace DonationManager\restapi;
  * Register WP REST API routes
  */
 function init_rest_api(){
+
+    // Get all orgs and their donation counts for a given month
     register_rest_route( 'donman/v2', '/donations/month=(?P<month>[0-9]{4}-[0-9]{1,2})', [
         'methods' => 'GET',
         'callback' => __NAMESPACE__ . '\\get_donations_by_month',
@@ -16,6 +18,7 @@ function init_rest_api(){
         },
     ] );
 
+    // Get all orgs and their donation counts for the current month
     register_rest_route( 'donman/v2', '/donations/month', [
         'methods' => 'GET',
         'callback' => __NAMESPACE__ . '\\get_donations_by_month',

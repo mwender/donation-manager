@@ -2,6 +2,10 @@
 
 Donation Manager is a WordPress plugin which handles a multi-form donation process. This plugin requires the [PODS Plugin for WordPress](http://pods.io).
 
+__11/13/2017 - Version 1.8.0__
+
+- Automated Monthly Donor Reports for Network Members
+
 __09/26/2017 - Version 1.7.2__
 
 - Restoring "Current Month" Donation reports

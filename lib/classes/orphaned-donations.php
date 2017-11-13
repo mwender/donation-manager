@@ -1,6 +1,6 @@
 <?php
 class DMOrphanedDonations extends DonationManager {
-	const DBVER = '1.0.5';
+	const DBVER = '1.0.6';
 
 	private static $instance = null;
 
@@ -234,7 +234,6 @@ class DMOrphanedDonations extends DonationManager {
 	 *      @type string $store_name Name of store associated with contact.
 	 *      @type string $zipcode Zipcode.
 	 *      @type string $email Contact's email address.
-	 *      @type string $unsubscribe_hash Hash used to check if we have permission to unsubscribe this. Optional.
 	 *      @type bool $receive_emails `true` or `false`. Optional.
 	 *      @type bool $priority `true` or `false`. Defaults to `false`. Optional.
 	 * }
@@ -247,7 +246,6 @@ class DMOrphanedDonations extends DonationManager {
 			'store_name' => null,
 			'zipcode' => null,
 			'email' => null,
-			'unsubscribe_hash' => null,
 			'receive_emails' => true,
 			'priority' => false,
 			'show_in_results' => false,
@@ -281,21 +279,17 @@ class DMOrphanedDonations extends DonationManager {
 		$contact = $this->contact_exists( array( 'store_name' => $args['store_name'], 'zipcode' => $args['zipcode'], 'email' => $args['email'] ) );
 
 		if ( false == $contact ) {
-			$unsubscribe_hash = wp_hash( $args['email'] . current_time( 'timestamp' ) );
-
 			$args['store_name'] = stripslashes_deep( $args['store_name'] );
 			$data = array(
 				'store_name' => $args['store_name'],
 				'zipcode' => $args['zipcode'],
 				'email_address' => $args['email'],
-				'unsubscribe_hash' => $unsubscribe_hash,
 				'receive_emails' => $receive_emails,
 				'priority' => $priority,
 				'show_in_results' => $show_in_results,
 			);
 
 			$format = array(
-				'%s',
 				'%s',
 				'%s',
 				'%s',
@@ -427,7 +421,7 @@ class DMOrphanedDonations extends DonationManager {
 						receive_emails tinyint(1) unsigned NOT NULL DEFAULT \'1\',
 						priority tinyint(1) unsigned NOT NULL DEFAULT \'0\',
 						show_in_results tinyint(1) unsigned NOT NULL DEFAULT \'0\',
-						unsubscribe_hash varchar(32) DEFAULT NULL,
+						last_donation_report varchar(16) DEFAULT NULL,
 						PRIMARY KEY  (ID)
 				) ' . $charset_collate. ';';
 
@@ -513,7 +507,7 @@ class DMOrphanedDonations extends DonationManager {
 	 * }
 	 * @return string SQL for querying orphaned donations.
 	 */
-	private function _get_orphaned_donations_query( $args ) {
+	public function _get_orphaned_donations_query( $args ) {
 		global $wpdb;
 
 		$args = wp_parse_args( $args, array(

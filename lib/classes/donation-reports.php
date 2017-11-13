@@ -587,6 +587,19 @@ class DMReports extends DonationManager {
 		return $options;
     }
 
+    /**
+     * Sends a donation report to Exclusive Pick Up providers
+     *
+     * @param      array   $atts {
+     *   @type int      $org_id             Organization CPT ID.
+     *   @type string   $month              Month in `Y-m` format.
+     *   @type string   $attachment_file    CSV file.
+     *   @type int      $donation_count     No. of donations.
+     *   @type string   $to                 Email address to receive this report.
+     * }
+     *
+     * @return     null
+     */
     function send_donation_report( $atts ){
         $args = shortcode_atts( [
          'org_id' => null,

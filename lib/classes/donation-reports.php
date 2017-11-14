@@ -749,6 +749,7 @@ class DMReports extends DonationManager {
 
         $message[] = 'PickUpMyDonation.com enables online donation scheduling for donors all over the United States. When a donor inputs her zip code, we identify you as a pick up provider and then confirm the donation is worth the effort to pick it up.';
         $message[] = 'We would like to discuss ways to increase high value donations for you and your non-profit. <strong>Reply now</strong> to learn how we can customize the service for you for less than the value of a single pick up, or if you would like these donations sent to another contact from your organization in the future.';
+        $message[] = 'For more details on this report, see this post: <strong><a href="https://www.pickupmydonation.com/network-member-monthly-reports/">NEW: Network Member Monthly Reports</a></strong>';
 
         // Handlebars Email Template
         $hbs_vars = [

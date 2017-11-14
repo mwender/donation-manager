@@ -689,9 +689,21 @@ class DMReports extends DonationManager {
         remove_filter( 'wp_mail_content_type', 'DonationManager\lib\fns\helpers\get_content_type' );
     }
 
+    /**
+     * Sends a network member report.
+     *
+     * @param      array   $atts {
+     *  @type array     $ID             Array of dm_contact IDs.
+     *  @type string    $email_address  Email address we're sending the report to.
+     *  @type string    $month          Month in `Y-m` format (e.g. 2017-03).
+     *  @type int       $donation_count No. of donations received during the month.
+     * }
+     *
+     * @return     boolean  Returns `true` upon success.
+     */
     public function send_network_member_report( $atts ){
         $args = shortcode_atts( [
-         'ID' => null,
+         'ID' => array(),
          'email_address' => null,
          'month' => null,
          'donation_count' => null,
@@ -700,12 +712,12 @@ class DMReports extends DonationManager {
         if( is_null( $args['email_address'] ) )
             return false;
 
-        $network_member = new \NetworkMember( $args['ID'] );
+        $network_member = new \NetworkMember( $args['ID'][0] );
         $last_donation_report = $network_member->get_last_donation_report();
         $network_member_name = $network_member->get_member_name();
 
         if( $args['month'] == $last_donation_report ){
-            \WP_CLI::line('Report already sent to ' . $network_member_name . ' for ' . $args['month'] . '.' );
+            \WP_CLI::line('INFO: Report already sent to ' . $network_member_name . ' for ' . $args['month'] . '.' );
             return false;
         }
 
@@ -751,10 +763,16 @@ class DMReports extends DonationManager {
 
         $status = wp_mail( $args['email_address'], $human_month . ' Donation Report - PickUpMyDonation.com', $html, $headers );
 
-        if( true == $status )
-            $network_member->save_donation_report( $args['month'] );
+        if( true == $status ){
+            foreach ($args['ID'] as $id ) {
+                $network_member = new \NetworkMember( intval( $id ) );
+                $network_member->save_donation_report( $args['month'] );
+            }
+        }
 
         remove_filter( 'wp_mail_content_type', 'DonationManager\lib\fns\helpers\get_content_type' );
+
+        return $status;
     }
 }
 ?>

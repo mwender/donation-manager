@@ -67,47 +67,45 @@ Class DonManCLI extends \WP_CLI_Command {
         'filterby' => 'store_name'
       ]);
 
-      error_log( 'Getting data for `' . $network_member . '`' );
-      //error_log( $network_member_sql );
+      \WP_CLI::line( 'Getting data for `' . $network_member . '`' );
+
       $network_member_data = $wpdb->get_results( $network_member_sql );
       if( 0 < count( $network_member_data ) ){
         $total_donations = 0;
         $receipients = [];
         foreach ( $network_member_data as $zipcode_data ) {
           /*
-           Setup array as $network_member_data[ID] = [email_address,total_donations];
+           Setup array as $network_member_data[email_address] = [total_donations=>donation_count,ID=>array()];
            */
-          if( array_key_exists( $zipcode_data->ID, $receipients ) ){
-            $receipients[$zipcode_data->ID] = [
-              'email_address'   => $zipcode_data->email_address,
-              'total_donations' => $receipients['total_donations'] + $zipcode_data->total_donations,
-            ];
+          if( array_key_exists( $zipcode_data->email_address, $receipients ) ){
+            $receipients[$zipcode_data->email_address]['total_donations'] = $receipients[$zipcode_data->email_address]['total_donations'] + $zipcode_data->total_donations;
+            $receipients[$zipcode_data->email_address]['ID'][] = intval( $zipcode_data->ID );
           } else {
-            $receipients[$zipcode_data->ID] = [
-              'email_address'   => $zipcode_data->email_address,
-              'total_donations' => $zipcode_data->total_donations,
-            ];
+            $receipients[$zipcode_data->email_address]['total_donations'] = $zipcode_data->total_donations;
+            $receipients[$zipcode_data->email_address]['ID'][] = intval( $zipcode_data->ID );
           }
         }
-        error_log( print_r( $receipients, true ) );
+
         // Remove receipients with < 5 donations
-        foreach ( $receipients as $ID => $data ) {
+        foreach ( $receipients as $email_address => $data ) {
           if( 4 >= $data['total_donations'] )
-            unset( $receipients[$ID] );
+            unset( $receipients[$email_address] );
         }
-        error_log( 'Filtered receipients: ' . print_r( $receipients, true ) );
+
         // Send the reports
         if( 0 < count( $receipients ) ){
           // Send the report
-          foreach ( $receipients as $ID => $receipient ) {
+          foreach ( $receipients as $email_address => $data ) {
             $args = [
-              'ID' => $ID,
-              'email_address' => $receipient['email_address'],
-              'donation_count' => $receipient['total_donations'],
-              'month' => date( 'F Y',strtotime( $month ) )
+              'ID' => $data['ID'],
+              'email_address' => $email_address,
+              'donation_count' => $data['total_donations'],
+              'month' => $month,
             ];
             $DMReports->send_network_member_report( $args );
           }
+        } else {
+          \WP_CLI::line('No reports for `' . $network_member . '` as no recipients received > 4 donations.');
         }
       }
     }

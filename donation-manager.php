@@ -2958,7 +2958,7 @@ require 'lib/classes/shortcodes.php';
 $DMShortcodes = DMShortcodes::get_instance();
 
 if ( defined( 'WP_CLI' ) && WP_CLI ) {
-    require_once 'lib/fns/wpcli.php';
+    require_once 'lib/classes/wpcli.php';
 }
 
 $mailtrap = dirname( __FILE__ ) . '/mailtrap.php';

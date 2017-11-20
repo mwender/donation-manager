@@ -1,6 +1,4 @@
 <?php
-namespace DonationManager\lib\fns\wpcli;
-
 /**
  * Interacts with the Donation Manager plugin.
  *
@@ -19,7 +17,7 @@ Class DonManCLI extends \WP_CLI_Command {
    * [--provider=<provider>]
    * : Generate reports for `exclusive` or `nonexclusive` providers (default: exclusive).
    */
-  function sendreports( $args, $assoc_args ){
+  public function sendreports( $args, $assoc_args ){
 
     $month = ( isset( $assoc_args['month'] ) )? $assoc_args['month'] : '' ;
     $provider = ( isset( $assoc_args['provider'] ) )? $assoc_args['provider'] : 'exclusive' ;
@@ -181,16 +179,16 @@ Class DonManCLI extends \WP_CLI_Command {
 
     $stats->donations->alltime = new \stdClass();
     $stats->donations->alltime->number = intval( $total_donations->publish );
-    $stats->donations->alltime->value = get_donations_value( $stats->donations->alltime->number );
+    $stats->donations->alltime->value = DonationManager\lib\fns\helpers\get_donations_value( $stats->donations->alltime->number );
     \WP_CLI::log( '- All Time: ' . number_format( $stats->donations->alltime->number ) . ' total donations valued at $' . number_format( $stats->donations->alltime->value ) . '.' );
 
     $stats->donations->thisyear = new \stdClass();
-    $stats->donations->thisyear->number = intval( donations_by_interval( 'this_year' ) );
-    $stats->donations->thisyear->value = get_donations_value( $stats->donations->thisyear->number );
+    $stats->donations->thisyear->number = intval( DonationManager\lib\fns\helpers\get_donations_by_interval( 'this_year' ) );
+    $stats->donations->thisyear->value = DonationManager\lib\fns\helpers\get_donations_value( $stats->donations->thisyear->number );
 
     $stats->donations->lastmonth = new \stdClass();
-    $stats->donations->lastmonth->number = intval( donations_by_interval( 'last_month' ) );
-    $stats->donations->lastmonth->value = get_donations_value( $stats->donations->lastmonth->number );
+    $stats->donations->lastmonth->number = intval( DonationManager\lib\fns\helpers\get_donations_by_interval( 'last_month' ) );
+    $stats->donations->lastmonth->value = DonationManager\lib\fns\helpers\get_donations_value( $stats->donations->lastmonth->number );
 
     \WP_CLI::log( '- This Year: ' . number_format( $stats->donations->thisyear->number ) . ' donations valued at $' . number_format( $stats->donations->thisyear->value ) . '.' );
     \WP_CLI::log( '- Last Month: ' . number_format( $stats->donations->lastmonth->number ) . ' donations valued at $' . number_format( $stats->donations->lastmonth->value ) . '.' );
@@ -203,55 +201,3 @@ Class DonManCLI extends \WP_CLI_Command {
   }
 } // Class DonManCLI extends \WP_CLI_Command
 \WP_CLI::add_command( 'donman', __NAMESPACE__ . '\\DonManCLI' );
-
-/**
- * Returns donations from a specified interval.
- *
- * @since 1.4.6
- *
- * @param string $interval Time interval (e.g. `last_month`).
- * @return int Number of donations for a given time interval.
- */
-function donations_by_interval( $interval = null ){
-  if( is_null( $interval ) )
-    return false;
-
-  global $wpdb;
-
-  switch ( $interval ) {
-    case 'this_year':
-      $current_time = \current_time( 'Y-m-d' ) . ' first day of this year';
-      $dt = \date_create( $current_time );
-      $year = $dt->format( 'Y' );
-      $format = "SELECT count(ID) FROM {$wpdb->posts} WHERE post_type='donation' AND post_status='publish' AND YEAR(post_date)=%d";
-      $sql = $wpdb->prepare( $format, $year );
-      break;
-
-    case 'last_month':
-      $current_time = \current_time( 'Y-m-d' ) . ' first day of last month';
-      $dt = \date_create( $current_time );
-      $year = $dt->format( 'Y' );
-      $month = $dt->format( 'm' );
-      $format = "SELECT count(ID) FROM {$wpdb->posts} WHERE post_type='donation' AND post_status='publish' AND YEAR(post_date)=%d AND MONTH(post_date)=%d";
-      $sql = $wpdb->prepare( $format, $year, $month );
-      break;
-  }
-
-  $donations = $wpdb->get_var( $sql );
-
-  return $donations;
-}
-
-/**
- * Multiplies a donation number by a value and returns the dollar amount.
- *
- * @since 1.4.6
- *
- * @param int $donations Number of donations.
- * @return string Dollar value of donations.
- */
-function get_donations_value( $donations = 0 ){
-  $value = $donations * AVERGAGE_DONATION_VALUE;
-  return $value;
-}
-?>

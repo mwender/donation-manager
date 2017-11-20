@@ -11,6 +11,57 @@ function get_content_type(){
 }
 
 /**
+ * Returns donations from a specified interval.
+ *
+ * @since 1.4.6
+ *
+ * @param string $interval Time interval (e.g. `last_month`).
+ * @return int Number of donations for a given time interval.
+ */
+function get_donations_by_interval( $interval = null ){
+  if( is_null( $interval ) )
+    return false;
+
+  global $wpdb;
+
+  switch ( $interval ) {
+    case 'this_year':
+      $current_time = \current_time( 'Y-m-d' ) . ' first day of this year';
+      $dt = \date_create( $current_time );
+      $year = $dt->format( 'Y' );
+      $format = "SELECT count(ID) FROM {$wpdb->posts} WHERE post_type='donation' AND post_status='publish' AND YEAR(post_date)=%d";
+      $sql = $wpdb->prepare( $format, $year );
+      break;
+
+    case 'last_month':
+      $current_time = \current_time( 'Y-m-d' ) . ' first day of last month';
+      $dt = \date_create( $current_time );
+      $year = $dt->format( 'Y' );
+      $month = $dt->format( 'm' );
+      $format = "SELECT count(ID) FROM {$wpdb->posts} WHERE post_type='donation' AND post_status='publish' AND YEAR(post_date)=%d AND MONTH(post_date)=%d";
+      $sql = $wpdb->prepare( $format, $year, $month );
+      break;
+  }
+
+  $donations = $wpdb->get_var( $sql );
+
+  return $donations;
+}
+
+/**
+ * Multiplies a donation number by a value and returns the dollar amount.
+ *
+ * @since 1.4.6
+ *
+ * @param int $donations Number of donations.
+ * @return string Dollar value of donations.
+ */
+function get_donations_value( $donations = 0 ){
+  $value = $donations * AVERGAGE_DONATION_VALUE;
+  return $value;
+}
+
+/**
  * Gets the posted variable.
  *
  * Returns the following:

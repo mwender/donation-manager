@@ -46,7 +46,7 @@ Class DonManCLI extends \WP_CLI_Command {
    *
    * @param      string  $month  The month in `Y-m` format
    */
-  public function send_network_member_reports( $month = null ){
+  private function send_network_member_reports( $month = null ){
     if( is_null( $month ) )
       return;
 
@@ -116,7 +116,7 @@ Class DonManCLI extends \WP_CLI_Command {
    *
    * @param      string  $month  The month in 'Y-m' format (e.g. 2017-01)
    */
-  public function send_org_reports( $month = null ){
+  private function send_org_reports( $month = null ){
     if( is_null( $month ) )
       return;
 

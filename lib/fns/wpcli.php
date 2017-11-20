@@ -171,7 +171,7 @@ Class DonManCLI extends \WP_CLI_Command {
    *
    * @subcommand writestats
    */
-  function write_stats(){
+  public function write_stats(){
     $stats = new \stdClass();
     $stats->donations = new \stdClass();
 
@@ -201,7 +201,7 @@ Class DonManCLI extends \WP_CLI_Command {
 
     \WP_CLI::success('Donation stats written to ' . DONMAN_DIR . '/stats.json.');
   }
-}
+} // Class DonManCLI extends \WP_CLI_Command
 \WP_CLI::add_command( 'donman', __NAMESPACE__ . '\\DonManCLI' );
 
 /**

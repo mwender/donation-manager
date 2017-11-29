@@ -16,6 +16,7 @@ Class DonManCLI_Fixzips extends \WP_CLI_Command {
   public $not_assigned = [];
   public $not_found = [];
   public $no_orgs = [];
+  public $onlyerrors = false;
   public $same_orgs = [];
   public $wrong_priority_org = [];
   public $wrong_trans_dept = [];
@@ -34,6 +35,9 @@ Class DonManCLI_Fixzips extends \WP_CLI_Command {
    *
    * [--fix]
    * : Fix zip code errors.
+   *
+   * [--onlyerrors]
+   * : Only show errors.
    *
    * ## EXAMPLES
    *
@@ -65,6 +69,10 @@ Class DonManCLI_Fixzips extends \WP_CLI_Command {
     // Are we fixing errors?
     if( isset( $assoc_args['fix'] ) )
       $this->fix_errors = true;
+
+    // Are we only showing errors?
+    if( isset( $assoc_args['onlyerrors'] ) )
+      $this->onlyerrors = true;
 
     // Run the report
     $this->import_csv();
@@ -195,6 +203,7 @@ Class DonManCLI_Fixzips extends \WP_CLI_Command {
     $zip_code_rows = [];
     foreach( $this->zip_codes as $zip_code => $franchisee ) {
       $args = [];
+      $args['onlyerrors'] = $this->onlyerrors;
       $args['zip_code'] = $zip_code;
       $id = ( isset( $this->franchisees_map ) && is_array( $this->franchisees_map ) )? $this->franchisees_map[$franchisee] : null ;
       $args['trans_dept_id'] = ( $this->trans_dept_exists( $id ) )? $id : null ;
@@ -209,19 +218,22 @@ Class DonManCLI_Fixzips extends \WP_CLI_Command {
       $args['franchisee'] = $franchisee;
 
       $zip_code_row = $this->get_zip_associations( $args );
-      $zip_code_row['franchisee'] = $franchisee;
-      if( ! is_null( $args['trans_dept_id'] ) ){
-        $franchisee_and_id = $franchisee . '[' . $args['trans_dept_id'] . ']';
-        if( ! in_array( $franchisee_and_id, $this->franchisees ) )
-          $this->franchisees[] = $franchisee_and_id;
+      if( false != $zip_code_row && is_array( $zip_code_row ) ){
+        $zip_code_row['franchisee'] = $franchisee;
+        if( ! is_null( $args['trans_dept_id'] ) ){
+          $franchisee_and_id = $franchisee . '[' . $args['trans_dept_id'] . ']';
+          if( ! in_array( $franchisee_and_id, $this->franchisees ) )
+            $this->franchisees[] = $franchisee_and_id;
+        }
+        $zip_code_rows[] = $zip_code_row;
       }
-      $zip_code_rows[] = $zip_code_row;
       $progress->tick();
+
     }
     $progress->finish();
 
     WP_CLI\Utils\format_items('table', $zip_code_rows, 'zipcode,trans_dept,notes,franchisee' );
-    WP_CLI::success('Table displayed with ' . $total_rows . ' rows.');
+    WP_CLI::success('Table displayed with ' . count( $zip_code_rows ) . ' rows.');
   }
 
   /**
@@ -286,6 +298,7 @@ Class DonManCLI_Fixzips extends \WP_CLI_Command {
           'trans_dept_id' => null,
           'org_name' => null,
           'franchisee' => null,
+          'onlyerrors' => true,
       ];
       $args = wp_parse_args( $args, $defaults );
 
@@ -345,7 +358,8 @@ Class DonManCLI_Fixzips extends \WP_CLI_Command {
                          * The wrong organization for the given zip code
                          */
                         if( ! empty( $args['org_name'] ) && $org_name != $args['org_name'] ){
-                          $notes[] = 'Wrong priority org for zip code';//, $org_name=`'.$org_name.'`;$args[org_name]=`'.$args['org_name'].'`';
+                          $notes[] = 'Wrong priority org for zip code';
+
                           if( $this->fix_errors ){
                             $status1 = wp_remove_object_terms( $post_id, intval($term['term_id']), 'pickup_code' );
                             $status2 = wp_add_object_terms( $args['trans_dept_id'], intval($term['term_id']), 'pickup_code' );
@@ -366,7 +380,9 @@ Class DonManCLI_Fixzips extends \WP_CLI_Command {
                     } else {
                       $org_name = '-no parent org-';
                       $this->no_orgs[] = $args['zip_code'];
+
                       $notes[] = 'No parent for trans_dept: ' . $post_id;
+
                       // TODO: This isn't working
                       if( $this->fix_errors && ! is_null( $args['trans_dept_id'] ) ){
                         // Assign Parent Organization
@@ -478,8 +494,8 @@ Class DonManCLI_Fixzips extends \WP_CLI_Command {
                     $this->assign_zip_code( ['pickup_code' => $args['zip_code'],'trans_dept_id' => $args['trans_dept_id'] ] );
               }
           } else {
-              $notes[] = $args['zip_code'] . ' exists, but is not assigned.';
-              if( $this->fix_errors )
+              $notes[] = $args['zip_code'] . ' exists. Assigned to donations, but no trans_dept.';
+              if( $this->fix_errors && ! empty( $args['trans_dept_id'] ) )
                 $this->assign_zip_code( ['pickup_code' => $args['zip_code'],'trans_dept_id' => $args['trans_dept_id'] ] );
           }
       } else {
@@ -497,6 +513,12 @@ Class DonManCLI_Fixzips extends \WP_CLI_Command {
 
       $data['notes'] = implode( ', ', $notes );
 
+      // If $data['notes'] is empty, then there are no
+      // errors for this zip code. We'll return `false`
+      // if we're only returning errors.
+      if( empty( $data['notes'] ) && true == $args['onlyerrors'] )
+        return false;
+
       return $data;
   }
 
@@ -509,7 +531,7 @@ Class DonManCLI_Fixzips extends \WP_CLI_Command {
     if( ( $handle = fopen($this->csv,'r')) !== FALSE ){
       while ( ( $csv_data = fgetcsv( $handle, 1000, ',' ) ) !== FALSE ) {
         $cols = count( $csv_data );
-        if( stristr( strtolower( $csv_data[0] ), 'count' ) )
+        if( stristr( strtolower( $csv_data[0] ), 'count' ) || stristr( strtolower( $csv_data[1] ), 'Franchisee_Name' ) )
           continue;
 
         $franchisee = $csv_data[1];

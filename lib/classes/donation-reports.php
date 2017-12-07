@@ -741,7 +741,7 @@ class DMReports extends DonationManager {
         $headers[] = 'CC: misty@pickupmydonation.com';
 
         $message[] = sprintf(
-            'Your organization received <strong>%1$d</strong> donations with an estimated value of <strong>%2$s</strong> during the month of <strong>%3$s</strong> from PickUpMyDonation.com.',
+            'Your organization received <strong>%1$d</strong> donation requests with an estimated value of <strong>%2$s</strong> during the month of <strong>%3$s</strong> from PickUpMyDonation.com.',
             $args['donation_count'],
             $donation_value,
             $human_month

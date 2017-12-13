@@ -18,6 +18,8 @@ Class DonManCLI_Fixzips extends \WP_CLI_Command {
   public $no_orgs = [];
   public $onlyerrors = false;
   public $same_orgs = [];
+  public $unmapped_trans_depts = [];
+  public $us_only = false;
   public $wrong_priority_org = [];
   public $wrong_trans_dept = [];
   public $zip_codes = [];
@@ -39,6 +41,9 @@ Class DonManCLI_Fixzips extends \WP_CLI_Command {
    * [--onlyerrors]
    * : Only show errors.
    *
+   * [--usonly]
+   * : Only process US Zip Codes.
+   *
    * ## EXAMPLES
    *
    *  wp dmzipcodes fixzips zipcodes.csv franchisees.php --fix
@@ -56,12 +61,11 @@ Class DonManCLI_Fixzips extends \WP_CLI_Command {
     $this->csv = $csv;
 
     // Setup $this->franchisees_map
-    //$franchisees_map = ( isset( $assoc_args['franchisees'] ) )? $assoc_args['franchisees'] : '' ;
     if( ! empty( $franchisees_map ) ){
       if( ! file_exists( $franchisees_map ) )
         WP_CLI::error( 'Specifed franchisees map file (' . basename( $franchisees_map ) . ') not found!' );
-      WP_CLI::line('$franchisees_map = ' . $franchisees_map );
-      //die();
+
+      WP_CLI::line('NOTE: Working with this Franchisees Map file: ' . $franchisees_map );
       include_once( $franchisees_map );
       $this->franchisees_map = $franchisees_map;
     }
@@ -74,6 +78,12 @@ Class DonManCLI_Fixzips extends \WP_CLI_Command {
     if( isset( $assoc_args['onlyerrors'] ) )
       $this->onlyerrors = true;
 
+    // Are we only processing US Zip Codes?
+    if( isset( $assoc_args['usonly'] ) ){
+      $this->us_only = true;
+      WP_CLI::line('--usonly - Only processing numeric zip codes (i.e. US Zip Codes).');
+    }
+
     // Run the report
     $this->import_csv();
     $this->display_table();
@@ -83,9 +93,12 @@ Class DonManCLI_Fixzips extends \WP_CLI_Command {
   /**
    * Assigns a zip code to a trans_dept
    *
-   * @param      <type>   $args   The arguments
+   * @param      array   $args{
+   *    @type int $trans_dept_id  Transportation Department ID.
+   *    @type int $pickup_code    Pickup Code/Zip Code.
+   * }
    *
-   * @return     boolean  ( description_of_the_return_value )
+   * @return     boolean  Returns TRUE if $pickup_code is assigned to a trans dept.
    */
   private function assign_zip_code( $args ){
       $defaults = [
@@ -170,11 +183,19 @@ Class DonManCLI_Fixzips extends \WP_CLI_Command {
       }
     }
 
+    $unmapped_trans_depts = array_unique( $this->unmapped_trans_depts );
+    if( 0 < count( $unmapped_trans_depts ) ){
+      WP_CLI::line('* ' . count( $unmapped_trans_depts ) . ' unmapped trans_depts were found. Please check your franchisees map, and check the admin to make sure a trans_dept exists inside PMD.');
+      foreach( $unmapped_trans_depts as $trans_dept ){
+        WP_CLI::line('-- ' . $trans_dept );
+      }
+    }
+
     if( 0 < $this->fix_count )
       WP_CLI::success( $this->fix_count . ' fixes were performed.' );
 
     if( 0 < count( $this->franchisees ) ){
-      WP_CLI::line( 'Franchisees: ' );
+      WP_CLI::line( 'Mapped Franchisees: ' );
       foreach ($this->franchisees as $franchisee ) {
         WP_CLI::line( '-- ' . $franchisee );
       }
@@ -205,8 +226,17 @@ Class DonManCLI_Fixzips extends \WP_CLI_Command {
       $args = [];
       $args['onlyerrors'] = $this->onlyerrors;
       $args['zip_code'] = $zip_code;
-      $id = ( isset( $this->franchisees_map ) && is_array( $this->franchisees_map ) )? $this->franchisees_map[$franchisee] : null ;
+      $id = (
+        isset( $this->franchisees_map )
+        && is_array( $this->franchisees_map )
+        && array_key_exists( $franchisee, $this->franchisees_map )
+      )? $this->franchisees_map[$franchisee] : null ;
+
       $args['trans_dept_id'] = ( $this->trans_dept_exists( $id ) )? $id : null ;
+      if( is_null( $args['trans_dept_id'] ) ){
+        //WP_CLI::line('Unable to find trans_dept_id for `' . $franchisee . '`.');
+        $this->unmapped_trans_depts[] = $franchisee;
+      }
 
       // Get ORG Name and send along to get_zip_associations()
       if( ! is_null( $id ) ){
@@ -287,9 +317,15 @@ Class DonManCLI_Fixzips extends \WP_CLI_Command {
   /**
    * Get a zip code's associations
    *
-   * @param      <type>         $args   The arguments
+   * @param      array $args{
+   *    @type string  $zip_code       Zip/Postal/Pickup code.
+   *    @type int     $trans_dept_id  Trans dept ID.
+   *    @type string  $org_name       Name of trans dept's parent org.
+   *    @type string  $franchisee     Name of franchisee associated with $zip_code.
+   *    @type bool    $onlyerrors     Set to TRUE if only showing errors in final report.
+   * }
    *
-   * @return     array|boolean  The zip associations.
+   * @return     array|boolean  Returns array of zipcode, trans_dept, notes, and franchisee when zip code associations are found.
    */
   private function get_zip_associations( $args ){
 
@@ -319,8 +355,6 @@ Class DonManCLI_Fixzips extends \WP_CLI_Command {
       }
 
       $term = term_exists( $args['zip_code'], 'pickup_code' );
-
-      //WP_CLI::line('$term = ' . print_r($term,true) . "\n" . '$last_query = ' . $wpdb->last_query );
 
       $notes = [];
 
@@ -490,7 +524,7 @@ Class DonManCLI_Fixzips extends \WP_CLI_Command {
                    */
                   $notes[] = $args['zip_code'] . ' not assigned!';
                   $this->not_assigned[] = $args['zip_code'];
-                  if( $this->fix_errors )
+                  if( $this->fix_errors && ! empty( $args['trans_dept_id'] ) )
                     $this->assign_zip_code( ['pickup_code' => $args['zip_code'],'trans_dept_id' => $args['trans_dept_id'] ] );
               }
           } else {

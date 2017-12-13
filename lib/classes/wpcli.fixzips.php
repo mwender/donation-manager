@@ -531,21 +531,23 @@ Class DonManCLI_Fixzips extends \WP_CLI_Command {
     if( ( $handle = fopen($this->csv,'r')) !== FALSE ){
       while ( ( $csv_data = fgetcsv( $handle, 1000, ',' ) ) !== FALSE ) {
         $cols = count( $csv_data );
-        if( stristr( strtolower( $csv_data[0] ), 'count' ) || stristr( strtolower( $csv_data[1] ), 'Franchisee_Name' ) )
+        if( stristr( strtolower( $csv_data[0] ), 'count' ) || stristr( strtolower( $csv_data[0] ), 'Franchisee_Name' ) )
           continue;
 
-        $franchisee = $csv_data[1];
-        $zip_code = $csv_data[2];
-        /*
-        if( 0 < count( $this->franchisees_map ) ){
-          if( isset( $this->franchisees_map[$csv_data[1]] ) )
-            $franchisee.= ' (' . $this->franchisees_map[$csv_data[1]] . ')';
-        }
-        */
+        $franchisee = trim($csv_data[0]);
+        $zip_code = $csv_data[1];
+
+        // Zero pad LEFT zip codes less than 5 digits
+        if( 5 > strlen( $zip_code ) && is_numeric( $zip_code ) )
+          $zip_code = str_pad( $zip_code, 5, '0', STR_PAD_LEFT );
+
+        if( true == $this->us_only && ! is_numeric( $zip_code ) )
+          continue;
 
         $zip_codes[$zip_code] = $franchisee;
       }
     }
+
     $this->zip_codes = $zip_codes;
   }
 

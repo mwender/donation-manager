@@ -126,9 +126,6 @@ function custom_save_post( $post_id ){
     if( \wp_is_post_revision( $post_id ) )
         return;
 
-    if( 'organization' == \get_post_type( $post_id ) )
-        return;
-
     // Only update valid CPTs
     $post_type = \get_post_type( $post_id );
     $valid_cpts = array( 'donation', 'store', 'trans_dept' );

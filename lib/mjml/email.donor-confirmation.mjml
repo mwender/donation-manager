@@ -11,6 +11,16 @@
             <mj-image src="https://www.pickupmydonation.com/wp-content/plugins/donation-manager/lib/images/email-header.png" padding="0"></mj-image>
         </mj-column>
     </mj-section>
+    <mj-raw>{{# if organization_logo}}</mj-raw>
+    <mj-section background-color="#ffffff" padding-bottom="0">
+        <mj-column>
+            <mj-text color="#0082C8" font-weight="600" align="center" font-size="20px" line-height="28px" padding="0 25px 10px 25px">
+                Thank you for donating to:
+            </mj-text>
+            <mj-image href="{{website}}" width="300" src="{{organization_logo}}" />
+        </mj-column>
+    </mj-section>
+    <mj-raw>{{/if}}</mj-raw>
     <mj-section background-color="#ffffff" padding-bottom="0">
         <mj-column>
             <mj-text color="#0082C8" font-weight="600" align="center" font-size="20px" line-height="28px" padding="0 25px 20px 25px">

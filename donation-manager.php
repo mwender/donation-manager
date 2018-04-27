@@ -2625,6 +2625,11 @@ class DonationManager {
                     'orphaned_donation_note' => $orphaned_donation_note,
                     'allow_user_photo_uploads' => $allow_user_photo_uploads,
                 ];
+                if( $logo_url = get_the_post_thumbnail_url( $donor['org_id'], 'donor-email' ) )
+                    $hbs_vars['organization_logo'] = site_url( $logo_url );
+
+                if( $website = get_post_meta( $donor['org_id'], 'website', true ) )
+                    $hbs_vars['website'] = $website;
 
                 // Social Sharing
                 if( ! $allow_user_photo_uploads )

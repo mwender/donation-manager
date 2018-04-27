@@ -2935,6 +2935,7 @@ register_activation_hook( __FILE__, array( $DonationManager, 'activate' ) );
 require_once 'lib/fns/admin.php';
 require_once 'lib/fns/debug.php';
 require_once 'lib/fns/helpers.php';
+require_once 'lib/fns/image-sizes.php';
 require_once 'lib/fns/restapi.php';
 require_once 'lib/fns/templates.php';
 require_once 'lib/fns/filesystem.php';

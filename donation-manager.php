@@ -25,6 +25,7 @@
 define( 'DONMAN_DIR', dirname( __FILE__ ) );
 define( 'DONMAN_URL', plugin_dir_url( __FILE__ ) );
 define( 'DONATION_TIMEOUT', 3 * MINUTE_IN_SECONDS );
+define( 'DEFAULT_ORG_BUTTON_TEXT', 'Click Here to Request a Pick Up' );
 define( 'NON_PROFIT_BUTTON_TEXT', 'Click here for Free Pick Up' );
 define( 'PRIORITY_BUTTON_TEXT', 'Click here for Priority Pick Up' );
 define( 'ORPHANED_PICKUP_RADIUS', 15 ); // radius in miles for zipcode search
@@ -746,8 +747,8 @@ class DonationManager {
             if( $template_exists )
                 $template = $args['template'];
         }
-
-        $allow_user_photo_uploads = get_post_meta( $_SESSION['donor']['org_id'], 'allow_user_photo_uploads', true );
+        if( isset( $_SESSION['donor']['org_id'] ) )
+            $allow_user_photo_uploads = get_post_meta( $_SESSION['donor']['org_id'], 'allow_user_photo_uploads', true );
 
         switch( $form ) {
 
@@ -1677,6 +1678,7 @@ class DonationManager {
                     'name' => $org[0]['name'],
                     'desc' => $org[0]['desc'],
                     'trans_dept_id' => $org[0]['trans_dept_id'],
+                    'button_text' => DEFAULT_ORG_BUTTON_TEXT,
                 );
                 // Get list of Orphaned Pick Up Providers
                 $providers = $this->get_orphaned_donation_contacts( array( 'pcode' => $pickup_code, 'radius' => ORPHANED_PICKUP_RADIUS, 'priority' => 0, 'fields' => 'store_name,email_address,zipcode,priority', 'duplicates' => false, 'show_in_results' => 1 ) );

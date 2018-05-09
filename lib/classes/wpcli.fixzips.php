@@ -91,6 +91,29 @@ Class DonManCLI_Fixzips extends \WP_CLI_Command {
   }
 
   /**
+   * Removes duplicate entries for a multi-dimensional array
+   *
+   * @param      array   $array  The array
+   * @param      string  $key    The key to test
+   *
+   * @return     array   Array with duplicates removed
+   */
+  private function array_unique_multidim($array,$key){
+    $temp_array = array();
+    $i = 0;
+    $key_array = array();
+
+    foreach($array as $val) {
+      if (!in_array($val[$key], $key_array)) {
+        $key_array[$i] = $val[$key];
+        $temp_array[$i] = $val;
+      }
+      $i++;
+    }
+    return $temp_array;
+  }
+
+  /**
    * Assigns a zip code to a trans_dept
    *
    * @param      array   $args{
@@ -203,12 +226,9 @@ Class DonManCLI_Fixzips extends \WP_CLI_Command {
 
     if( 0 < count( $this->mapping_suggestions ) ){
       WP_CLI::line( 'Mapping suggestions: ' );
-      $mapping_suggestions = array_unique( $this->mapping_suggestions );
-      if( 0 < count( $mapping_suggestions ) ){
-        foreach ($mapping_suggestions as $suggestion ) {
-          WP_CLI::line( '-- ' . $suggestion );
-        }
-      }
+      $mapping_suggestions = $this->array_unique_multidim( $this->mapping_suggestions, 'franchisee_name' );
+      if( 0 < count( $mapping_suggestions ) )
+        WP_CLI\Utils\format_items('table', $mapping_suggestions, 'org,trans_dept,id,franchisee_name' );
     }
   }
 
@@ -407,7 +427,12 @@ Class DonManCLI_Fixzips extends \WP_CLI_Command {
                           }
                         } elseif( empty( $args['org_name'] ) ) {
                           $notes[] = 'No org mapped to franchisee';
-                          $this->mapping_suggestions[] = $org_name . ' (' . $trans_dept_name . ')[' . $post_id . '] => ' . $args['franchisee'] . '?';
+                          $this->mapping_suggestions[] = [
+                            'org' => $org_name,
+                            'trans_dept' => $trans_dept_name,
+                            'id' => $post_id,
+                            'franchisee_name' => $args['franchisee'],
+                          ];
                         }
                         /**/
                       }

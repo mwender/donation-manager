@@ -190,11 +190,7 @@ Class DonManCLI_Fixzips extends \WP_CLI_Command {
 
     if( 0 < count( $this->double_priority ) ){
       WP_CLI::line('* ' . count( $this->double_priority ) . ' zip codes have 2 or more priority providers assigned to the same zip code.');
-      if( 50 >= count( $this->double_priority ) ){
-        foreach( $this->double_priority as $zipcode ){
-          WP_CLI::line('-- ' .$zipcode);
-        }
-      }
+      WP_CLI\Utils\format_items('table', $this->double_priority, 'orgs,zip_code' );
     }
 
     if( 0 < count( $this->wrong_trans_dept ) ){
@@ -382,6 +378,7 @@ Class DonManCLI_Fixzips extends \WP_CLI_Command {
               $trans_dept_ids = [];
               $orgs = [];
               $priority_count = 0;
+              $priority_orgs = [];
               foreach( $objects as $key => $post_id ) {
                   if( 'trans_dept' == get_post_type( $post_id ) ){
                     /*
@@ -402,6 +399,7 @@ Class DonManCLI_Fixzips extends \WP_CLI_Command {
                       $priority = get_post_meta( $org['ID'], 'priority_pickup', true );
                       if( true == $priority ){
                         $priority_count++;
+                        $priority_orgs[] = $org_name;
 
                         /**
                          * WRONG PRIORITY ORGANIZATION
@@ -471,7 +469,11 @@ Class DonManCLI_Fixzips extends \WP_CLI_Command {
                * The same zip code is assigned to multiple priority orgs
                */
               if( 1 < $priority_count ){
-                $this->double_priority[] = $args['zip_code'];
+                //$this->double_priority[] = $args['zip_code'];
+                $this->double_priority[] = [
+                  'orgs' => implode( ', ', $priority_orgs ),
+                  'zip_code' => $args['zip_code'],
+                ];
                 $notes[] = 'Multiple priority orgs';
               }
 

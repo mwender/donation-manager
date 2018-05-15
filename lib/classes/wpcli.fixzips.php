@@ -198,12 +198,9 @@ Class DonManCLI_Fixzips extends \WP_CLI_Command {
     }
 
     if( 0 < count( $this->wrong_trans_dept ) ){
-      WP_CLI::line('* ' . count( $this->wrong_trans_dept ) . ' zip codes have the wrong transportation department assigned.');
-      if( 50 >= count( $this->wrong_trans_dept ) ){
-        foreach( $this->wrong_trans_dept as $zipcode ){
-          WP_CLI::line('-- ' .$zipcode);
-        }
-      }
+      WP_CLI::line('* ' . count( $this->wrong_trans_dept ) . ' zip codes have the wrong transportation department assigned:');
+      if( 0 < count( $this->wrong_trans_dept ) )
+        WP_CLI\Utils\format_items('table', $this->wrong_trans_dept, 'org,trans_dept,zip_code,new_trans_dept' );
     }
 
     $unmapped_trans_depts = array_unique( $this->unmapped_trans_depts );
@@ -517,8 +514,15 @@ Class DonManCLI_Fixzips extends \WP_CLI_Command {
                   if( isset( $args['trans_dept_id'] ) && is_int( $args['trans_dept_id'] ) ){
                     foreach( $trans_dept_ids as $key => $trans_dept_id ){
                       if( $orgs[$key] == $args['org_name'] && $trans_dept_id != $args['trans_dept_id'] ){
-                        $this->wrong_trans_dept[] = $args['zip_code'];
                         $notes[] = 'Wrong trans_dept';
+
+                        $this->wrong_trans_dept[] = [
+                          'org' => $org_name,
+                          'trans_dept' => $this->filter_name( get_the_title( $trans_dept_id ) ) . ' (' . $trans_dept_id . ')',
+                          'zip_code' => $args['zip_code'],
+                          'new_trans_dept' => $this->filter_name( get_the_title( $args['trans_dept_id'] ) ) . ' (' . $args['trans_dept_id'] . ')',
+                        ];
+
 
                         // Fix the wrong trans dept for a zip code
                         if( true == $this->fix_errors ){

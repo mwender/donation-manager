@@ -48,6 +48,22 @@ Class DonManCLI_Fixzips extends \WP_CLI_Command {
    *
    *  wp dmzipcodes fixzips zipcodes.csv franchisees.php --fix
    *
+   * ## CSV FORMAT AND TIPS
+   *
+   * Format your CSV as follows:
+   *
+   * Franchisee_Name,Zip_Code
+   * AL - Birmingham - Coyne,35007
+   * AL - Birmingham - Coyne,35022
+   * AL - Birmingham - Coyne,35043
+   * CA - Los Angeles - Takhmazyan,91117
+   * CA - Los Angeles - Takhmazyan,91118
+   * CA - Los Angeles - Takhmazyan,91121
+   *
+   * When working with an Excel (.xlsx), importing the sheet into
+   * Google Sheets is a good first step to remove unwanted hidden
+   * characters.
+   *
    */
   public function fixzips( $args, $assoc_args ){
 

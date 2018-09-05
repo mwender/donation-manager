@@ -1598,6 +1598,12 @@ class DonationManager {
                 global $post;
                 setup_postdata( $post );
                 $org = get_post_meta( $post->ID, 'organization', true );
+
+                // If no `organization` is set, $org is a `string`. Therefore
+                // we must continue to the next post.
+                if( 'string' == gettype( $org ) )
+                    continue;
+
                 $priority_pickup = (bool) get_post_meta( $org['ID'], 'priority_pickup', true );
                 $alternate_donate_now_url = get_post_meta( $org['ID'], 'alternate_donate_now_url', true );
 

@@ -307,7 +307,14 @@ class DMOrphanedDonations extends DonationManager {
 				} else {
 				$message = $affected . ' contact created';
 			}
-		} elseif ( is_numeric( $contact ) ) {
+		} else {
+			$message = 'Contact already exists.';
+		}
+		/**
+		 * By commenting out the following our import will only add new contacts.
+		 **/
+		/*
+		elseif ( is_numeric( $contact ) ) {
 			// The following logic requires a `receive_emails` column in our import CSV:
 			$sql = 'UPDATE ' . $wpdb->prefix . 'dm_contacts' . ' SET receive_emails="%d" WHERE ID=' . $contact;
 			$affected = $wpdb->query( $wpdb->prepare( $sql, $receive_emails ) );
@@ -319,6 +326,7 @@ class DMOrphanedDonations extends DonationManager {
 				$message = $affected . ' rows updated';
 			}
 		}
+		*/
 
 		$message.= ' (' . $args['store_name'] . ', ' . $args['zipcode'] . ', ' . $args['email'] . ')';
 
@@ -473,6 +481,7 @@ class DMOrphanedDonations extends DonationManager {
 		if ( is_numeric( $args['offset'] ) && 0 < $args['offset'] )
 			$limit.= ' OFFSET ' . $args['offset'];
 
+		$search = '';
 		if ( ! empty( $args['search'] ) ) {
 			$searchfields = array( 'store_name', 'zipcode', 'email_address' );
 			$searchfield = ( in_array( $args['searchfield'], $searchfields ) )? $args['searchfield'] : 'email_address';

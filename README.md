@@ -2,6 +2,11 @@
 
 Donation Manager is a WordPress plugin which handles a multi-form donation process. This plugin requires the [PODS Plugin for WordPress](http://pods.io).
 
+__01/16/2019 - Version 1.8.1__
+
+- Adjusting orphaned import to not process contacts which already exist in the database.
+- Updated Donor Confirmation email with verbiage originally used in Freshdesk auto-responder.
+
 __09/05/2018 - Version 1.8.0.1__
 
 - HOTFIX: Fixing `Illegal string offset` warning during date selection screen

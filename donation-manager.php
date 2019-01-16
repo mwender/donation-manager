@@ -1257,6 +1257,12 @@ class DonationManager {
                 // Retrieve the donation receipt
                 $donationreceipt = $this->get_donation_receipt( $_SESSION['donor'] );
 
+                // Add the org logo and link to website
+                $logo_url = get_the_post_thumbnail_url( $_SESSION['donor']['org_id'], 'donor-email' );
+                $website = get_post_meta( $_SESSION['donor']['org_id'], 'website', true );
+                if( $logo_url && $website )
+                    $this->add_html('<div style="text-align: center"><h3>Thank you for donating to ' . $organization_name . '</h3><a href="' . $website . '" target="_blank"><img src="' . $logo_url . '" style="width: 300px;" /></a></div>');
+
                 $this->add_html( '<div style="max-width: 600px; margin: 0 auto;">' . $donationreceipt . '</div>' );
 
                 // Unattended donations

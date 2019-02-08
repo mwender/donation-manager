@@ -235,9 +235,9 @@ Class DonManCLI_Fixzips extends \WP_CLI_Command {
 
     if( 0 < count( $this->mapping_suggestions ) ){
       WP_CLI::line( 'Mapping suggestions: ' );
-      $mapping_suggestions = $this->array_unique_multidim( $this->mapping_suggestions, 'franchisee_name' );
+      $mapping_suggestions = $this->array_unique_multidim( $this->mapping_suggestions, 'CSV_franchisee_name' );
       if( 0 < count( $mapping_suggestions ) )
-        WP_CLI\Utils\format_items('table', $mapping_suggestions, 'org,trans_dept,id,franchisee_name' );
+        WP_CLI\Utils\format_items('table', $mapping_suggestions, 'org,PMD_trans_dept,id,CSV_franchisee_name' );
     }
   }
 
@@ -440,9 +440,9 @@ Class DonManCLI_Fixzips extends \WP_CLI_Command {
                           $notes[] = 'No org mapped to franchisee';
                           $this->mapping_suggestions[] = [
                             'org' => $org_name,
-                            'trans_dept' => $trans_dept_name,
+                            'PMD_trans_dept' => $trans_dept_name,
                             'id' => $post_id,
-                            'franchisee_name' => $args['franchisee'],
+                            'CSV_franchisee_name' => $args['franchisee'],
                           ];
                         }
                         /**/

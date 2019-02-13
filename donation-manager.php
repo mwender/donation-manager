@@ -4,7 +4,7 @@
 	Plugin URI: http://www.pickupmydonation.com
 	Description: Online donation manager built for ReNew Management, Inc and PickUpMyDonation.com. This plugin displays the donation form and handles donation submissions.
 	Author: Michael Wender
-	Version: 1.8.1
+	Version: 1.9
 	Author URI: http://michaelwender.com
  */
 /*  Copyright 2014-19  Michael Wender  (email : michael@michaelwender.com)
@@ -334,8 +334,10 @@ class DonationManager {
 
             // The following doesn't validate on my local machine. Is this due to a
             // CORS issue?
-            write_log( 'user_photo_id = ' . $_POST['user_photo_id'] );
-            write_log( 'image_public_id = ' . $_POST['image_public_id'] );
+            if( isset( $_POST['user_photo_id'] ) )
+                write_log( 'user_photo_id = ' . $_POST['user_photo_id'] );
+            if( isset( $_POST['image_public_id'] ) )
+                write_log( 'image_public_id = ' . $_POST['image_public_id'] );
             if( $allow_user_photo_uploads = get_post_meta( $_SESSION['donor']['org_id'], 'allow_user_photo_uploads', true ) )
             {
                 $form->addRules([
@@ -2204,7 +2206,7 @@ class DonationManager {
             }
         }
 
-        if( 0 < count( $ads ) ){
+        if( isset( $ads ) && 0 < count( $ads ) ){
             for( $x = 1; $x <= 3; $x++ ){
                 if( isset( $ads[$x] ) && $ads[$x] ){
                     $banner = '<img src="' . $ads[$x]['src'] . '" style="max-width: 100%;" />';
@@ -2481,7 +2483,7 @@ class DonationManager {
                 break;
 
                 case 'image_public_id':
-                    $meta_value = $donation['image']['public_id'];
+                    $meta_value = ( isset( $donation['image']['public_id'] ) )? $donation['image']['public_id'] : '';
                 break;
 
                 case 'referer':
@@ -2684,9 +2686,12 @@ class DonationManager {
                     $cc_emails = array( $tc['cc_emails'] );
                 }
 
+                if( isset( $cc_emails ) )
+                    $recipients = array_merge( $recipients, $cc_emails );
+
                 $subject = 'Scheduling Request from ' . $donor['address']['name']['first'] . ' ' .$donor['address']['name']['last'];
 
-                //* Setup BCCs for ORPHANED DONATION Contacts and adjust the SUBJECT
+                //* Setup Emails for ORPHANED DONATION Contacts and adjust the SUBJECT
                 $orphaned_donation_note = '';
                 if(
                     $orphaned_donation
@@ -2695,7 +2700,7 @@ class DonationManager {
                     && 0 < count( $tc['orphaned_donation_contacts'] )
                 ){
                     foreach( $tc['orphaned_donation_contacts'] as $contact_id => $contact_email ){
-                        $bcc_headers[] = 'Bcc: ' . $contact_email;
+                        $recipients[] = $contact_email;
                         $this->add_orphaned_donation( array( 'contact_id' => $contact_id, 'donation_id' => $donor['ID'] ) );
                     }
 
@@ -2718,10 +2723,8 @@ class DonationManager {
                 // Add links to check social media for this donation
                 if( ! $allow_user_photo_uploads )
                 {
-                    // <li><a href="http://www.instagram.com/explore/tags/' . $donation_id_hashtag . '">Check Instagram</a></li>
                     $donation_id_hashtag = 'id' . $donor['ID'];
                     $social_links = '<strong>DONATION PHOTO:</strong><br>This donor *may* have tweeted a photo of this donation. <strong><a href="https://twitter.com/hashtag/' . $donation_id_hashtag . '">Click here</a></strong> to check Twitter.';
-                    //$donationreceipt = $donationreceipt . $social_links;
                 }
 
                 // User Uploaded Photos
@@ -2752,10 +2755,18 @@ class DonationManager {
                 if( isset( $user_uploaded_image ) && ! empty( $user_uploaded_image ) )
                     $hbs_vars['user_uploaded_image'] = $user_uploaded_image;
 
-                $html = DonationManager\lib\fns\templates\render_template( 'email.trans-dept-notification', $hbs_vars );
-
-                if( isset( $cc_emails ) && is_array( $cc_emails ) )
-                    $recipients = array_merge( $recipients, $cc_emails );
+                /**
+                 * 02/13/2019 (13:00) - UNIQUE UNSUBSCRIBE LINK PER RECIPIENT
+                 *
+                 * Rather than generating one email html, if we want a unique unsubscribe link
+                 * in each, we need to generate the html for each email address.
+                 */
+                write_log('$recipients = ' . print_r( $recipients, true ) );
+                foreach ( $recipients as $email ) {
+                    $hbs_vars['email'] = $email;
+                    $discrete_html_emails[$email] = DonationManager\lib\fns\templates\render_template( 'email.trans-dept-notification', $hbs_vars );
+                }
+                /**/
 
                 // Set Reply-To our donor
                 $headers[] = 'Reply-To: ' . $donor['address']['name']['first'] . ' ' .$donor['address']['name']['last'] . ' <' . $donor['email'] . '>';
@@ -2815,19 +2826,28 @@ class DonationManager {
             // Send normal email to default contact, any cc_emails for the
             // trans dept are included in $recipients. So, we use this to
             // add national pick up providers to the orphaned distribution.
-            wp_mail( $recipients, $subject, $html, $headers );
+            if( isset( $discrete_html_emails ) && is_array( $discrete_html_emails ) && 0 < count( $discrete_html_emails ) ){
+                foreach ( $discrete_html_emails as $discrete_email => $discrete_html ) {
+                    wp_mail( $discrete_email, $subject, $discrete_html, $headers );
+                }
+            }
 
             // Send API post to CHHJ-API, College Hunks Hauling receives
             // all orphans via this:
             $donor['routing_method'] = 'api-chhj';
             $this->send_api_post( $donor );
-
-            // Add Orphaned BCC contacts to email sent to orphaned contacts
-            $orphaned_headers = array_merge( $headers, $bcc_headers );
-            write_log('Sending an Orphaned Donation request with these headers:' . "\n" . print_r( $orphaned_headers, true ) );
-            wp_mail( 'noreply@pickupmydonation.com', $subject, $html, $orphaned_headers );
         } else {
-            wp_mail( $recipients, $subject, $html, $headers );
+            if( 'trans_dept_notification' == $type ){
+                foreach ($recipients as $email ) {
+                    $hbs_vars['email'] = $email;
+                    $html = DonationManager\lib\fns\templates\render_template( 'email.trans-dept-notification', $hbs_vars );
+                    wp_mail( $email, $subject, $html, $headers );
+                }
+            } else {
+                wp_mail( $recipients, $subject, $html, $headers );
+            }
+
+
         }
 
         remove_filter( 'wp_mail_content_type', array( $this, 'return_content_type' ) );

@@ -2,6 +2,18 @@
 
 Donation Manager is a WordPress plugin which handles a multi-form donation process. This plugin requires the [PODS Plugin for WordPress](http://pods.io).
 
+## How to Compile MJML Templates
+
+As of February 2019, my method for compiling MJML email templates is as follows:
+
+1. Edit the template in the MJML App.
+2. Save out the template as HTML to `lib/html/`.
+3. Copy the template over to `lib/templates/` and replace the `.html` extension with `.hbs`.
+
+__02/13/2019 - Version 1.9__
+
+- Updating Transportation Department emails to include unsubscribe links pointing back to PickUpMyDonation.com.
+
 __01/16/2019 - Version 1.8.1__
 
 - Adjusting orphaned import to not process contacts which already exist in the database.

@@ -68,7 +68,7 @@ function get_donations_value( $donations = 0 ){
  *
  * - If $_POST[$varname] isset
  * - else if $_SESSION[$varname] isset
- * - else and empty string
+ * - else an empty string
  *
  * Check for a multi-level array value by using a
  * colon (i.e. `:`) between each level. Example:

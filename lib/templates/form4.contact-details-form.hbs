@@ -13,6 +13,13 @@
 
 	<div class="row">
 		<div class="form-group col-xs-12">
+			<label>Company <small style="color: #999;">(optional)</small></label>
+			<input type="text" class="form-control" name="donor[address][company]" value="{{donor_company}}">
+		</div>
+	</div>
+
+	<div class="row">
+		<div class="form-group col-xs-12">
 			<label>Address <span class="red">*</span></label>
 			<input type="text" class="form-control" name="donor[address][address]" value="{{donor_address}}">
 		</div>
@@ -65,7 +72,7 @@
 		</div>
 		<div class="form-group col-xs-5">
 			<label>Contact Phone <span class="red">*</span></label>
-			<input type="tel" class="form-control" name="donor[phone]" value="{{donor_phone}}">
+			<input type="tel" class="form-control" id="donor_phone" name="donor[phone]" value="{{donor_phone}}">
 		</div>
 	</div>
 	<div class="row">
@@ -75,11 +82,12 @@
 	</div>
 	<div class="row">
 		<div class="form-group col-xs-12">
-			<label>Preferred Donor Code</label>
+			<label>Preferred Donor Code <small style="color: #999;">(optional)</small></label>
 			<input type="text" class="form-control" name="donor[preferred_code]" value="{{preferred_code}}" style="max-width: 150px;">
-			<p class="help-block">Got a <em>Preferred Donor Code</em>? Enter it here (<em>optional</em>).</p>
+			<p class="help-block">Got a <em>Preferred Donor Code</em>? Enter it here.</p>
 		</div>
 	</div>
+	<p><span class="red">*</span> indicates required field.</p>
 	<p class="text-right"><button type="submit" class="btn btn-primary">Continue to Final Step</button></p>
 	<input type="hidden" name="nextpage" value="{{nextpage}}" />
 </form>

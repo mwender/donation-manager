@@ -4,7 +4,7 @@
 	Plugin URI: http://www.pickupmydonation.com
 	Description: Online donation manager built for ReNew Management, Inc and PickUpMyDonation.com. This plugin displays the donation form and handles donation submissions.
 	Author: Michael Wender
-	Version: 1.9.0
+	Version: 1.9.1
 	Author URI: http://michaelwender.com
  */
 /*  Copyright 2014-19  Michael Wender  (email : michael@michaelwender.com)
@@ -807,6 +807,7 @@ class DonationManager {
                     'donor_email' => 'donor:email',
                     'donor_phone' => 'donor:phone',
                     'donor_preferred_code' => 'donor:preferred_code',
+                    'donor_company' => 'donor:address:company'
                 ];
                 foreach( $posted_vars as $key => $var ){
                     $$key = DonationManager\lib\fns\helpers\get_posted_var( $var );
@@ -827,6 +828,7 @@ class DonationManager {
                     'checked_no' => $checked_no,
                     'checked_phone' => $checked_phone,
                     'checked_email' => $checked_email,
+                    'donor_company' => $donor_company,
                     'donor_name_first' => $first_name,
                     'donor_name_last' => $last_name,
                     'donor_address' => $address,
@@ -1333,7 +1335,8 @@ class DonationManager {
         if( isset( $_SESSION['donor']['form'] ) ){
             switch( $_SESSION['donor']['form'] ) {
                 case 'contact-details':
-                    wp_enqueue_script( 'contactdetails', plugins_url( 'lib/js/contactdetails.js', __FILE__ ), array( 'jquery' ) );
+                    wp_register_script( 'jquery-mask-plugin', plugins_url( 'lib/components/vendor/jquery-mask-plugin/dist/jquery.mask.min.js', __FILE__ ), ['jquery'] );
+                    wp_enqueue_script( 'contactdetails', plugins_url( 'lib/js/contactdetails.js', __FILE__ ), ['jquery','jquery-mask-plugin'] );
                 break;
 
                 case 'select-preferred-pickup-dates':
@@ -1535,9 +1538,15 @@ class DonationManager {
 
         $template = ( empty( $donation['pickupdate1'] ) && empty( $donation['pickuptime1'] ) )? 'email.donation-receipt_without-dates' : 'email.donation-receipt' ;
 
+        if( ! empty( $donation['address']['company'] ) ){
+            $donor_info = $donation['address']['company'] . '<br>c/o ' .$donation['address']['name']['first'] . ' ' . $donation['address']['name']['last'];
+        } else {
+            $donor_info = $donation['address']['name']['first'] . ' ' . $donation['address']['name']['last'];
+        }
+
         $donationreceipt = $this->get_template_part( $template, array(
             'id' => $donation['ID'],
-            'donor_info' => $donation['address']['name']['first'] . ' ' . $donation['address']['name']['last'] . '<br>' . $donation['address']['address'] . '<br>' . $donation['address']['city'] . ', ' . $donation['address']['state'] . ' ' . $donation['address']['zip'] . '<br>' . $donation['phone'] . '<br>' . $donation['email'],
+            'donor_info' => $donor_info . '<br>' . $donation['address']['address'] . '<br>' . $donation['address']['city'] . ', ' . $donation['address']['state'] . ' ' . $donation['address']['zip'] . '<br>' . $donation['phone'] . '<br>' . $donation['email'],
             'pickupaddress' => $donation[$pickup_add_key]['address'] . '<br>' . $donation[$pickup_add_key]['city'] . ', ' . $donation[$pickup_add_key]['state'] . ' ' . $donation[$pickup_add_key]['zip'],
             'pickupaddress_query' => urlencode( $donation[$pickup_add_key]['address'] . ', ' . $donation[$pickup_add_key]['city'] . ', ' . $donation[$pickup_add_key]['state'] . ' ' . $donation[$pickup_add_key]['zip'] ),
             'preferred_contact_method' => $donation['preferred_contact_method'] . ' - ' . $contact_info,
@@ -2448,6 +2457,7 @@ class DonationManager {
             'donor_name' => '',
             'donor_email' => 'email',
             'donor_phone' => 'phone',
+            'donor_company' => '',
             'donor_address' => '',
             'donor_city' => '',
             'donor_state' => '',
@@ -2475,6 +2485,7 @@ class DonationManager {
                 break;
 
                 case 'donor_address':
+                case 'donor_company':
                 case 'donor_city':
                 case 'donor_state':
                 case 'donor_zip':

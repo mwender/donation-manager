@@ -28,6 +28,7 @@
     "gl-datepicker": "*",
     "jquery-file-download": "*",
     "cloudinary": "cloudinary_js#^2.3.0",
-    "cloudinary-jquery-file-upload": "^2.3.0"
+    "cloudinary-jquery-file-upload": "^2.3.0",
+    "jquery-mask-plugin": "^1.14.15"
   }
 }

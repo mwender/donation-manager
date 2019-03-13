@@ -10,6 +10,11 @@ As of February 2019, my method for compiling MJML email templates is as follows:
 2. Save out the template as HTML to `lib/html/`.
 3. Copy the template over to `lib/templates/` and replace the `.html` extension with `.hbs`.
 
+__03/13/2019 - Version 1.9.1__
+
+- Adding "Company" field to donor contact details
+- Adding phone number masking (i.e. (000) 000-0000) to donor phone number field.
+
 __02/13/2019 - Version 1.9.0__
 
 - Updating Transportation Department emails to include unsubscribe links pointing back to PickUpMyDonation.com.

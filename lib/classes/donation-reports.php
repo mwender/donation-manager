@@ -211,7 +211,7 @@ class DMReports extends DonationManager {
     	$donations = $this->get_donations( $orgID, $month );
 
     	if( is_array( $donations ) ){
-	    	$csv = '"Date/Time Modified","DonorName","DonorAddress","DonorCity","DonorState","DonorZip","DonorPhone","DonorEmail","DonationAddress","DonationCity","DonationState","DonationZip","DonationDescription","PickupDate1","PickupDate2","PickupDate3","PreferredDonorCode"' . "\n" . implode( "\n", $donations );
+	    	$csv = '"Date/Time Modified","DonorName","DonorCompany","DonorAddress","DonorCity","DonorState","DonorZip","DonorPhone","DonorEmail","DonationAddress","DonationCity","DonationState","DonationZip","DonationDescription","PickupDate1","PickupDate2","PickupDate3","PreferredDonorCode"' . "\n" . implode( "\n", $donations );
     	} else {
     		$csv = 'No donations found for ' . $org->post_name . ' in ' . $month;
     	}
@@ -308,6 +308,8 @@ class DMReports extends DonationManager {
     	foreach( $donations as $donation ){
     		$custom_fields = get_post_custom( $donation->ID );
 
+            $donor_company = ( ! isset( $custom_fields['donor_company'][0] ) )? '' : $custom_fields['donor_company'][0];
+
     		$DonationAddress = ( empty( $custom_fields['pickup_address'][0] ) )? $custom_fields['donor_address'][0] : $custom_fields['pickup_address'][0];
     		$DonationCity = ( empty( $custom_fields['pickup_city'][0] ) )? $custom_fields['donor_city'][0] : $custom_fields['pickup_city'][0];
     		$DonationState = ( empty( $custom_fields['pickup_state'][0] ) )? $custom_fields['donor_state'][0] : $custom_fields['pickup_state'][0];
@@ -322,6 +324,7 @@ class DMReports extends DonationManager {
     		$donation_row = array(
     			'Date' => $donation->post_date,
     			'DonorName' => $custom_fields['donor_name'][0],
+                'DonorCompany' => $donor_company,
     			'DonorAddress' => $custom_fields['donor_address'][0],
     			'DonorCity' => $custom_fields['donor_city'][0],
     			'DonorState' => $custom_fields['donor_state'][0],
@@ -464,6 +467,8 @@ class DMReports extends DonationManager {
 	    	foreach( $donations as $donation ){
 	    		$custom_fields = get_post_custom( $donation->ID );
 
+                $donor_company = ( ! isset( $custom_fields['donor_company'][0] ) )? '' : $custom_fields['donor_company'][0];
+
 	    		$DonationAddress = ( empty( $custom_fields['pickup_address'][0] ) )? $custom_fields['donor_address'][0] : $custom_fields['pickup_address'][0];
 	    		$DonationCity = ( empty( $custom_fields['pickup_city'][0] ) )? $custom_fields['donor_city'][0] : $custom_fields['pickup_city'][0];
 	    		$DonationState = ( empty( $custom_fields['pickup_state'][0] ) )? $custom_fields['donor_state'][0] : $custom_fields['pickup_state'][0];
@@ -478,6 +483,7 @@ class DMReports extends DonationManager {
 	    		$donation_row = array(
 	    			'Date' => $donation->post_date,
 	    			'DonorName' => $custom_fields['donor_name'][0],
+                    'DonorCompany' => $donor_company,
 	    			'DonorAddress' => $custom_fields['donor_address'][0],
 	    			'DonorCity' => $custom_fields['donor_city'][0],
 	    			'DonorState' => $custom_fields['donor_state'][0],

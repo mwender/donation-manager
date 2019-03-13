@@ -10,6 +10,10 @@ As of February 2019, my method for compiling MJML email templates is as follows:
 2. Save out the template as HTML to `lib/html/`.
 3. Copy the template over to `lib/templates/` and replace the `.html` extension with `.hbs`.
 
+__03/13/2019 - Version 1.9.2__
+
+- Adding `DonorCompany` to all donation reports.
+
 __03/13/2019 - Version 1.9.1__
 
 - Adding "Company" field to donor contact details

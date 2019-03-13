@@ -147,7 +147,7 @@ Class DonManCLI extends \WP_CLI_Command {
       // Only send report emails to orgs with 5 or more donations during the month
       if( is_array( $donations ) && 5 <= $donation_count ){
         // Build a donation report CSV
-        $csv = '"Date/Time Modified","DonorName","DonorAddress","DonorCity","DonorState","DonorZip","DonorPhone","DonorEmail","DonationAddress","DonationCity","DonationState","DonationZip","DonationDescription","PickupDate1","PickupDate2","PickupDate3","PreferredDonorCode"' . "\n" . implode( "\n", $donations );
+        $csv = '"Date/Time Modified","DonorName","DonorCompany","DonorAddress","DonorCity","DonorState","DonorZip","DonorPhone","DonorEmail","DonationAddress","DonationCity","DonationState","DonationZip","DonationDescription","PickupDate1","PickupDate2","PickupDate3","PreferredDonorCode"' . "\n" . implode( "\n", $donations );
         $filename = $month . '_' . sanitize_file_name( get_the_title( $org_id ) ) . '.csv';
         $attachment_id = \DonationManager\lib\fns\filesystem\save_report_csv( $filename, $csv );
         $attachment_file = get_attached_file( $attachment_id );

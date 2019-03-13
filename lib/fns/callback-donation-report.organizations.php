@@ -120,7 +120,7 @@ switch( $switch ){
 			}
 
 			// Create the CSV file
-			$csv_columns = '"Date/Time Modified","DonorName","DonorAddress","DonorCity","DonorState","DonorZip","DonorPhone","DonorEmail","DonationAddress","DonationCity","DonationState","DonationZip","DonationDescription","PickupDate1","PickupDate2","PickupDate3","Organization","Referer"';
+			$csv_columns = '"Date/Time Modified","DonorName","DonorCompany","DonorAddress","DonorCity","DonorState","DonorZip","DonorPhone","DonorEmail","DonationAddress","DonationCity","DonationState","DonationZip","DonationDescription","PickupDate1","PickupDate2","PickupDate3","Organization","Referer"';
 
 			$month = ( isset( $_POST['month'] ) && preg_match( '/[0-9]{4}-[0-9]{2}/', $_POST['month'] ) )? $_POST['month'] : '';
 			$filename = 'all-donations';

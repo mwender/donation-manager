@@ -1427,7 +1427,7 @@ class DonationManager {
     /**
      * Retrieves the default organization as defined on the Donation Settings option screen.
      */
-    public function get_default_organization( $priority = false ) {
+    public static function get_default_organization( $priority = false ) {
         $default_organization = get_option( 'donation_settings_default_organization' );
         $default_trans_dept = get_option( 'donation_settings_default_trans_dept' );
         $organization = array();

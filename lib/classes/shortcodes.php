@@ -12,14 +12,14 @@ class DMShortcodes extends DonationManager {
 
     private function __construct() {
     	add_filter( 'wpseo_metadesc', array( $this, 'add_seo_page_metadesc' ), 11, 1 );
-		add_shortcode( 'boilerplate', array( $this, 'get_boilerplate' ) );
-		add_shortcode( 'donate-now-button', array( $this, 'get_donate_now_button' ) );
-		add_shortcode( 'list-pickup-codes', array( $this, 'get_pickup_codes' ) );
-		add_shortcode( 'organization-description', array( $this, 'get_organization_description' ) );
-		add_shortcode( 'organization-seo-page', array( $this, 'get_organization_seo_page' ) );
-		add_shortcode( 'unsubscribe-orphaned-contact', array( $this, 'unsubscribe' ) );
-		add_shortcode( 'bounced-orphaned-contact', array( $this, 'bounce_processing' ) );
-		add_shortcode( 'inbound_email_processing', array( $this, 'inbound_email_processing' ) );
+  		add_shortcode( 'boilerplate', array( $this, 'get_boilerplate' ) );
+  		add_shortcode( 'donate-now-button', array( $this, 'get_donate_now_button' ) );
+  		add_shortcode( 'list-pickup-codes', array( $this, 'get_pickup_codes' ) );
+  		add_shortcode( 'organization-description', array( $this, 'get_organization_description' ) );
+  		add_shortcode( 'organization-seo-page', array( $this, 'get_organization_seo_page' ) );
+  		add_shortcode( 'unsubscribe-orphaned-contact', array( $this, 'unsubscribe' ) );
+  		add_shortcode( 'bounced-orphaned-contact', array( $this, 'bounce_processing' ) );
+  		add_shortcode( 'inbound_email_processing', array( $this, 'inbound_email_processing' ) );
     }
 
 	/**
@@ -353,7 +353,11 @@ Our mission is to connect you with organizations who will pick up your donation.
 				            return 'PMD Replies';
 				        });
 
-						wp_mail( $to, $subject, $message );
+            // Check to see if message is empty
+            $stripped_message = trim( strip_tags( $message ) );
+
+            if( ! empty( $stripped_message) )
+  						wp_mail( $to, $subject, $message );
 					break;
 				}
 			}

@@ -35,7 +35,7 @@ class DMReports extends DonationManager {
 	 */
     public function add_rewrite_rules(){
     	add_rewrite_rule( 'download\/([0-9]{1,}|all)\/([0-9]{4}-[0-9]{2}|donations)\/?', 'index.php?orgid=$matches[1]&month=$matches[2]', 'top' );
-        add_rewrite_rule( 'download\-donorsbyzip\/([0-9-]{5,10})\/(^20|40|60{1}$)\/?', 'index.php?zipcode=$matches[1]&radius=$matches[2]', 'top' );
+        add_rewrite_rule( 'download-donorsbyzip\/([0-9-]{5,10})\/(20|40|60{1}$)\/?', 'index.php?zipcode=$matches[1]&radius=$matches[2]', 'top' );
     	add_rewrite_rule( 'getattachment\/([0-9]{1,})\/?', 'index.php?attach_id=$matches[1]', 'top' );
     }
 
@@ -237,41 +237,42 @@ class DMReports extends DonationManager {
      * @return void
      */
     function download_donorsbyzip_report(){
-        // Only editors or higher can download reports
-        if( ! current_user_can( 'publish_pages' ) )
-            return;
+      // Only editors or higher can download reports
+      if( ! current_user_can( 'publish_pages' ) )
+        return;
 
-        global $wp_query;
+      global $wp_query;
 
-        if( ! isset( $wp_query->query_vars['zipcode'] ) && ! isset( $wp_query->query_vars['radius'] ) )
-            return;
+      $zipcode = get_query_var( 'zipcode', false );
+      if( ! $zipcode )
+        wp_die('Zipcode not set!');
 
-        // 12/13/2016 (10:21) - continue here
-        $zipcode = get_query_var( 'zipcode' );
-        $radius = get_query_var( 'radius' );
+      $radius = get_query_var( 'radius', false );
+      if( ! $radius )
+        wp_die('Radius not set!');
 
-        $file = plugin_dir_path( __FILE__ ) . '../fns/callback-donation-report.donors.php';
-        $switch = 'query_zip';
-        $limit = -1; // Don't limit results returned by WP query
-        require( $file );
+      $file = plugin_dir_path( __FILE__ ) . '../fns/callback-donation-report.donors.php';
+      $switch = 'query_zip';
+      $limit = -1; // Don't limit results returned by WP query
+      require( $file );
 
-        if( is_array( $response->data ) ){
-            $csv = '"Date","ID","Name","Email","Zip Code"' . "\n";
-            foreach( $response->data as $donation ){
-                $csv.= '"' . $donation['date'] . '","' . $donation['id'] . '","' . $donation['name'] . '","' . $donation['email_address'] . '","' . $donation['zipcode'] . '"' . "\n";
-            }
-        } else {
-            $csv = 'No donations found within ' . $radius .' miles of zipcode `' . $zipcode . '`.';
+      if( is_array( $response->data ) ){
+        $csv = '"Date","ID","Name","Email","Zip Code"' . "\n";
+        foreach( $response->data as $donation ){
+          $csv.= '"' . $donation['date'] . '","' . $donation['id'] . '","' . $donation['name'] . '","' . $donation['email_address'] . '","' . $donation['zipcode'] . '"' . "\n";
         }
+      } else {
+        $csv = 'No donations found within ' . $radius .' miles of zipcode `' . $zipcode . '`.';
+      }
 
-        $filename = 'donorsbyzip_' . $zipcode . '_' . $radius . 'miles.csv';
+      $filename = 'donorsbyzip_' . $zipcode . '_' . $radius . 'miles.csv';
 
-        header('Set-Cookie: fileDownload=true; path=/');
-        header('Cache-Control: max-age=60, must-revalidate');
-        header("Content-type: text/csv");
-        header('Content-Disposition: attachment; filename="' . $filename );
-        echo $csv;
-        die();
+      header('Set-Cookie: fileDownload=true; path=/');
+      header('Cache-Control: max-age=60, must-revalidate');
+      header("Content-type: text/csv");
+      header('Content-Disposition: attachment; filename="' . $filename );
+      echo $csv;
+      die();
     }
 
     public function flush_rewrites(){

@@ -1,6 +1,5 @@
 vendor/
 lib/components/vendor
-lib/css/admin.css
 lib/templates/compiled
 node_modules/
 mailtrap.php

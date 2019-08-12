@@ -243,15 +243,13 @@ class DMReports extends DonationManager {
 
       global $wp_query;
 
-			/*
       $zipcode = get_query_var( 'zipcode', false );
-      if( ! $zipcode )
-        wp_die('Zipcode not set!');
+			if( ! $zipcode )
+				return;
 
       $radius = get_query_var( 'radius', false );
       if( ! $radius )
-				wp_die('Radius not set!');
-				*/
+				return;
 
       $file = plugin_dir_path( __FILE__ ) . '../fns/callback-donation-report.donors.php';
       $switch = 'query_zip';

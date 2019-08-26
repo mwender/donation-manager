@@ -86,7 +86,7 @@ class DMShortcodes extends DonationManager {
 			foreach( $mandrill_events as $event ){
 				switch( $event['event'] ){
 					case 'hard_bounce':
-						$rows_affected = DMOrphanedDonations::unsubscribe_email( $event['msg']['email'] );
+						$rows_affected = DMOrphanedDonations::update_email( $event['msg']['email'] );
 						$message[] = 'Unsubscribed: ' . $event['msg']['email'] . "\n" . $rows_affected . ' contacts affected.' . "\n" . 'bounce_description: ' . $event['msg']['bounce_description'] . "\n" . 'diag: ' . $event['msg']['diag'];
 					break;
 				}
@@ -405,7 +405,7 @@ Our mission is to connect you with organizations who will pick up your donation.
 		if ( ! is_email( $md_email ) )
 			return '<div class="alert alert-danger"><strong>ERROR:</strong> Not a valid email address (' . $md_email . ').</div>';
 
-		$rows_affected = DMOrphanedDonations::unsubscribe_email( $md_email );
+		$rows_affected = DMOrphanedDonations::update_email( $md_email );
 
 		$message = array();
 		$message[] = '<strong>SUCCESS:</strong> The email address <code>' . $md_email . '</code> has been unsubscribed.';

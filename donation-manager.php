@@ -2995,6 +2995,10 @@ require_once 'lib/classes/organization.php';
 require_once 'lib/classes/background-processes.php';
 $BackgroundDonationCountProcess = new DM_Donation_Count_Process();
 
+// Initialize background process for deleteing/archiving donations:
+require_once 'lib/classes/background-delete-donation-process.php';
+$GLOBALS['BackgroundDeleteDonationProcess'] = new DM_Delete_Donation_Process(); // We must set this as an explicit global in order for it to be available inside WPCLI
+
 // Include our Orphaned Donations Class
 require 'lib/classes/orphaned-donations.php';
 $DMOrphanedDonations = DMOrphanedDonations::get_instance();
@@ -3011,6 +3015,7 @@ $DMShortcodes = DMShortcodes::get_instance();
 
 if ( defined( 'WP_CLI' ) && WP_CLI ) {
     require_once 'lib/classes/wpcli.php';
+    require_once 'lib/classes/wpcli.donations.php';
     require_once 'lib/classes/wpcli.fixzips.php';
 }
 

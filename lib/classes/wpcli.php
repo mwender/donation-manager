@@ -177,6 +177,23 @@ Class DonManCLI extends \WP_CLI_Command {
 
     $total_donations = \wp_count_posts( 'donation' );
 
+    $archived_donations = get_option('archived_donations');
+    $no_of_archived_donations = 0;
+    if( is_array( $archived_donations ) ){
+      foreach( $archived_donations as $year => $year_array ){
+        if( isset( $year_array['total'] ) ){
+          $no_of_archived_donations = $no_of_archived_donations + $year_array['total'];
+        } else if( isset( $year_array['months'] ) ){
+          foreach( $year_array['months'] as $month => $total ){
+            $no_of_archived_donations = $no_of_archived_donations + $total;
+          }
+        }
+      }
+      \WP_CLI::log('- Archived Donations: ' . $no_of_archived_donations );
+      \WP_CLI::log('- Donations in the DB: ' . $total_donations->publish );
+      $total_donations->publish = $total_donations->publish + $no_of_archived_donations;
+    }
+
     $stats->donations->alltime = new \stdClass();
     $stats->donations->alltime->number = intval( $total_donations->publish );
     $stats->donations->alltime->value = DonationManager\lib\fns\helpers\get_donations_value( $stats->donations->alltime->number );

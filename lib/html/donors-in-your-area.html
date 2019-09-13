@@ -1,0 +1,58 @@
+
+  <div class="row">
+    <div class="col-sm-2">
+
+      <form id="donors-in-your-area">
+        <div class="form-group">
+          <label for="zipcode">Zipcode</label>
+          <input type="number" name="zipcode" id="zipcode" class="form-control" />
+        </div>
+
+        <div class="form-group">
+          <label for="radius">Radius</label><br />
+          <select name="radius" id="radius" class="custom-select custom-select-sm" style="width: 100%;">
+            <option value="15" selected="selected">15 miles</option>
+            <option value="30">30 miles</option>
+            <option value="45">45 miles</option>
+            <option value="60">60 miles</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="days">Date Range</label>
+          <select name="days" id="days" class="custom-select custom-select-sm" style="width: 100%;">
+            <option value="30" selected="selected">Past 30 days</option>
+            <option value="45">Past 45 days</option>
+            <option value="60">Past 60 days</option>
+            <option value="90">Past 90 days</option>
+          </select>
+        </div>
+
+        <button class="btn btn-primary btn-block" type="submit" style="margin-top: 3rem;">Search</button>
+      </form>
+
+    </div>
+    <div class="col-sm-10">
+      <div class="alert alert-warning alert-before" style="display: none;">
+        Working...
+      </div>
+
+      <div class="alert alert-info alert-donors" style="display: none;">
+        <code id="display_count"></code> donation pickups requested within <code id="display_radius"></code> miles of <code id="display_zipcode"></code> during the past <code id="display_days"></code> days:
+      </div>
+
+      <table class="table table-striped" id="donors-in-your-area-table">
+        <thead>
+          <tr>
+            <th scope="col">#</th>
+            <th scope="col" style="width: 60%">Description</th>
+            <th scope="col" style="width: 15%">Zip Code</th>
+            <th scope="col" style="width: 25%">Date</th>
+          </tr>
+        </thead>
+        <tbody>
+        </tbody>
+      </table>
+
+    </div>
+  </div>

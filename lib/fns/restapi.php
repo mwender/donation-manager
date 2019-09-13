@@ -26,8 +26,115 @@ function init_rest_api(){
             return current_user_can( 'activate_plugins' );
         },
     ] );
+
+    // Donors by Zip Code
+    register_rest_route( 'donations/v1', 'search/(?P<zipcode>([0-9]{5}))/(?P<radius>[0-9]{1,2})/(?P<days>[0-9]{1,2})', [
+        'methods'   => 'GET',
+        'callback'  => __NAMESPACE__ . '\\get_donations_by_area'
+    ]);
 }
 add_action( 'rest_api_init', __NAMESPACE__ . '\\init_rest_api' );
+
+function get_donations_by_area( $request ){
+    global $wpdb;
+
+    $error = new \WP_Error();
+
+    if( ! preg_match( '/[0-9]{5}/', $request['zipcode'] ) ){
+        $error->add( 'invalidzipcode', 'Please use only 5-digit numerical zip codes.' );
+        wp_send_json( $response, 400 );
+    }
+
+    // Get the Lat/Lon of our Zip Code
+    $sql = 'SELECT ID,Latitude,Longitude FROM ' . $wpdb->prefix . 'dm_zipcodes WHERE ZIPCode="%s" ORDER BY CityName ASC LIMIT 1';
+    $coordinates = $wpdb->get_results( $wpdb->prepare( $sql, $request['zipcode'] ) );
+
+    if( ! $coordinates ){
+        $error->add( 'nocoordinates', 'No coordinates returned for `' . $request['zipcode'] . '`.' );
+        wp_send_json( $response, 400 );
+    }
+
+    $lat = $coordinates{0}->Latitude;
+    $lon = $coordinates{0}->Longitude;
+
+    // Get all zipcodes within $args['radius'] miles of our pcode
+    $sql = 'SELECT distinct(ZipCode) FROM ' . $wpdb->prefix . 'dm_zipcodes  WHERE (3958*3.1415926*sqrt((Latitude-' . $lat . ')*(Latitude-' . $lat . ') + cos(Latitude/57.29578)*cos(' . $lat . '/57.29578)*(Longitude-' . $lon . ')*(Longitude-' . $lon . '))/180) <= %d';
+    $zipcodes = $wpdb->get_results( $wpdb->prepare( $sql, $request['radius'] ) );
+
+    if( ! $zipcodes ){
+        $error->add( 'nozipcodes', 'No zip codes returned for ' . $request['zipcode'] . '.' );
+        wp_send_json( $error, 400 );
+    }
+
+    if( $zipcodes ){
+            $zipcodes_array = array();
+            foreach( $zipcodes as $zipcode ){
+                    $zipcodes_array[] = $zipcode->ZipCode;
+            }
+            $zipcodes = implode( ',', $zipcodes_array );
+    }
+    ///
+    //$data['zipcodes'] = $zipcodes_array;
+
+    $default_org = \DonationManager::get_default_organization();
+    $default_org_id = $default_org[0]['id'];
+
+    $donation_query_args = [];
+    $donation_query_args['post_type'] = 'donation';
+    $donation_query_args['posts_per_page'] = -1;
+    $donation_query_args['meta_query'] = [
+        [
+            'key' => 'organization',
+            'value' => $default_org_id,
+        ]
+    ];
+    $donation_query_args['tax_query'] = [
+        [
+            'taxonomy' => 'pickup_code',
+            'field' => 'slug',
+            'terms' => $zipcodes_array,
+            'operator' => 'IN'
+        ]
+    ];
+    // Add DATE parameters to query
+    $days = ( ! is_numeric( $request['days'] ) || 90 < $request['days'] )? 90 : $request['days'] ;
+    $donation_query_args['date_query'] = [
+        [
+            'after' => $days . ' days ago',
+        ]
+    ];
+    $donations = \get_posts( $donation_query_args );
+
+    if( is_array( $donations ) && 0 < count( $donations ) ){
+        $y = 1;
+        foreach( $donations as $donation ){
+            $title_array = explode( ' - ', $donation->post_title );
+            $title = ( is_array( $title_array ) && 0 < count( $title_array ) )? $title_array[0] : 'Misc Items' ;
+            $data['donations'][] = [
+                'title' => $title,
+                'date' => $donation->post_date,
+                'zipcode' => get_post_meta( $donation->ID, 'donor_zip', true ),
+                'number' => $y,
+            ];
+            $y++;
+        }
+
+    }
+
+    $response = [];
+    $response['request'] = [
+        'zipcode'   => $request['zipcode'],
+        'radius'    => $request['radius'],
+        'days'      => $request['days'],
+    ];
+    $response['coordinates'] = [
+        'lat' => $lat,
+        'lon' => $lon,
+    ];
+    $response['data'] = $data;
+
+    wp_send_json( $response, 200 );
+}
 
 /**
  * Returns an array of orgs and their donation counts for a given month.

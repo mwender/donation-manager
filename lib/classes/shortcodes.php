@@ -13,7 +13,8 @@ class DMShortcodes extends DonationManager {
     private function __construct() {
     	add_filter( 'wpseo_metadesc', array( $this, 'add_seo_page_metadesc' ), 11, 1 );
   		add_shortcode( 'boilerplate', array( $this, 'get_boilerplate' ) );
-  		add_shortcode( 'donate-now-button', array( $this, 'get_donate_now_button' ) );
+			add_shortcode( 'donate-now-button', array( $this, 'get_donate_now_button' ) );
+			add_shortcode( 'donors_in_your_area', array( $this, 'get_donors_in_your_area' ) );
   		add_shortcode( 'list-pickup-codes', array( $this, 'get_pickup_codes' ) );
   		add_shortcode( 'organization-description', array( $this, 'get_organization_description' ) );
   		add_shortcode( 'organization-seo-page', array( $this, 'get_organization_seo_page' ) );
@@ -195,7 +196,23 @@ Our mission is to connect you with organizations who will pick up your donation.
 		}
 
 		return $html;
-    }
+		}
+
+		/**
+		 * Returns the `Donors in Your Area` display
+		 */
+		function get_donors_in_your_area( $atts ){
+			$args = shortcode_atts([
+				'pcode' => 30331,
+				'radius' => 15,
+				'days' => 30,
+			], $atts );
+
+			//$html = DonationManager\lib\fns\templates\render_template('donors_in_your_area', $data );
+			$html = file_get_contents( plugin_dir_path( __FILE__ ) . '../html/donors-in-your-area.html' );
+			//$html.= '<pre style="white-space: pre-wrap;">count($donations) = '.count($donations).'; $zipcodes_array = ' . implode(', ', $zipcodes_array). '</pre>';
+			return $html;
+		}
 
     function get_pickup_codes_html( $tid, $title = 'donation pick up for' ){
 		$pickup_codes = wp_get_object_terms( $tid, 'pickup_code' );

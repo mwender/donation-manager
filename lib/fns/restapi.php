@@ -38,24 +38,25 @@ add_action( 'rest_api_init', __NAMESPACE__ . '\\init_rest_api' );
 function get_donations_by_area( $request ){
     global $wpdb;
 
+    error_log('$request = ' . print_r($request,true));
+
     $error = new \WP_Error();
 
     if( ! preg_match( '/[0-9]{5}/', $request['zipcode'] ) ){
         $error->add( 'invalidzipcode', 'Please use only 5-digit numerical zip codes.' );
-        wp_send_json( $response, 400 );
+        wp_send_json( $response, 200 );
     }
 
     // Get the Lat/Lon of our Zip Code
-    $sql = 'SELECT ID,Latitude,Longitude FROM ' . $wpdb->prefix . 'dm_zipcodes WHERE ZIPCode="%s" ORDER BY CityName ASC LIMIT 1';
-    $coordinates = $wpdb->get_results( $wpdb->prepare( $sql, $request['zipcode'] ) );
+    $coordinates = \DonationManager\lib\fns\helpers\get_coordinates( $request['zipcode'] );
 
     if( ! $coordinates ){
         $error->add( 'nocoordinates', 'No coordinates returned for `' . $request['zipcode'] . '`.' );
-        wp_send_json( $response, 400 );
+        wp_send_json( $response, 200 );
     }
 
-    $lat = $coordinates{0}->Latitude;
-    $lng = $coordinates{0}->Longitude;
+    $lat = $coordinates['lat'];
+    $lng = $coordinates['lng'];
 
     // Get all zipcodes within $args['radius'] miles of our pcode
     $sql = 'SELECT distinct(ZipCode) FROM ' . $wpdb->prefix . 'dm_zipcodes  WHERE (3958*3.1415926*sqrt((Latitude-' . $lat . ')*(Latitude-' . $lat . ') + cos(Latitude/57.29578)*cos(' . $lat . '/57.29578)*(Longitude-' . $lng . ')*(Longitude-' . $lng . '))/180) <= %d';
@@ -63,7 +64,7 @@ function get_donations_by_area( $request ){
 
     if( ! $zipcodes ){
         $error->add( 'nozipcodes', 'No zip codes returned for ' . $request['zipcode'] . '.' );
-        wp_send_json( $error, 400 );
+        wp_send_json( $error, 200 );
     }
 
     if( $zipcodes ){
@@ -73,8 +74,6 @@ function get_donations_by_area( $request ){
             }
             $zipcodes = implode( ',', $zipcodes_array );
     }
-    ///
-    //$data['zipcodes'] = $zipcodes_array;
 
     $default_org = \DonationManager::get_default_organization();
     $default_org_id = $default_org[0]['id'];
@@ -106,6 +105,7 @@ function get_donations_by_area( $request ){
     $donations = \get_posts( $donation_query_args );
 
     $donations_by_zipcode = [];
+    $data['donations'] = [];
     if( is_array( $donations ) && 0 < count( $donations ) ){
         $y = 1;
         foreach( $donations as $donation ){
@@ -119,14 +119,11 @@ function get_donations_by_area( $request ){
                 'coordinates' => \DonationManager\lib\fns\helpers\get_coordinates( $donor_zip ),
                 'number' => $y,
             ];
-            //*
             if( array_key_exists( $donor_zip, $donations_by_zipcode ) ){
                 $donations_by_zipcode[$donor_zip] = $donations_by_zipcode[$donor_zip] + 1;
             } else {
                 $donations_by_zipcode[$donor_zip] = 1;
             }
-            /**/
-            //$donations_by_zipcode[$donor_zip] = ( array_key_exists( $donor_zip, $donations_by_zipcode ) )? $donations_by_zipcode[$donor_zip]++ : 1 ;
             $y++;
         }
 

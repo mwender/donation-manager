@@ -8,3 +8,4 @@ zipcodes.sql
 lib/mjml/*.bkup
 stats.json
 *.bkup
+lib/kml/zipcodes/

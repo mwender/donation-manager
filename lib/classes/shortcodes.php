@@ -208,9 +208,9 @@ Our mission is to connect you with organizations who will pick up your donation.
 				'days' => 30,
 			], $atts );
 
-			//$html = DonationManager\lib\fns\templates\render_template('donors_in_your_area', $data );
+			wp_enqueue_script( 'donors-by-zipcode' );
+
 			$html = file_get_contents( plugin_dir_path( __FILE__ ) . '../html/donors-in-your-area.html' );
-			//$html.= '<pre style="white-space: pre-wrap;">count($donations) = '.count($donations).'; $zipcodes_array = ' . implode(', ', $zipcodes_array). '</pre>';
 			return $html;
 		}
 

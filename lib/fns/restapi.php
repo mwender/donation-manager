@@ -55,10 +55,10 @@ function get_donations_by_area( $request ){
     }
 
     $lat = $coordinates{0}->Latitude;
-    $lon = $coordinates{0}->Longitude;
+    $lng = $coordinates{0}->Longitude;
 
     // Get all zipcodes within $args['radius'] miles of our pcode
-    $sql = 'SELECT distinct(ZipCode) FROM ' . $wpdb->prefix . 'dm_zipcodes  WHERE (3958*3.1415926*sqrt((Latitude-' . $lat . ')*(Latitude-' . $lat . ') + cos(Latitude/57.29578)*cos(' . $lat . '/57.29578)*(Longitude-' . $lon . ')*(Longitude-' . $lon . '))/180) <= %d';
+    $sql = 'SELECT distinct(ZipCode) FROM ' . $wpdb->prefix . 'dm_zipcodes  WHERE (3958*3.1415926*sqrt((Latitude-' . $lat . ')*(Latitude-' . $lat . ') + cos(Latitude/57.29578)*cos(' . $lat . '/57.29578)*(Longitude-' . $lng . ')*(Longitude-' . $lng . '))/180) <= %d';
     $zipcodes = $wpdb->get_results( $wpdb->prepare( $sql, $request['radius'] ) );
 
     if( ! $zipcodes ){
@@ -69,7 +69,7 @@ function get_donations_by_area( $request ){
     if( $zipcodes ){
             $zipcodes_array = array();
             foreach( $zipcodes as $zipcode ){
-                    $zipcodes_array[] = $zipcode->ZipCode;
+                $zipcodes_array[] = $zipcode->ZipCode;
             }
             $zipcodes = implode( ',', $zipcodes_array );
     }
@@ -110,10 +110,12 @@ function get_donations_by_area( $request ){
         foreach( $donations as $donation ){
             $title_array = explode( ' - ', $donation->post_title );
             $title = ( is_array( $title_array ) && 0 < count( $title_array ) )? $title_array[0] : 'Misc Items' ;
+            $donor_zip = get_post_meta( $donation->ID, 'donor_zip', true );
             $data['donations'][] = [
                 'title' => $title,
                 'date' => $donation->post_date,
-                'zipcode' => get_post_meta( $donation->ID, 'donor_zip', true ),
+                'zipcode' => $donor_zip,
+                'coordinates' => \DonationManager\lib\fns\helpers\get_coordinates( $donor_zip ),
                 'number' => $y,
             ];
             $y++;
@@ -128,8 +130,8 @@ function get_donations_by_area( $request ){
         'days'      => $request['days'],
     ];
     $response['coordinates'] = [
-        'lat' => $lat,
-        'lon' => $lon,
+        'lat' => round( $lat, 3 ),
+        'lng' => round( $lng, 3 ),
     ];
     $response['data'] = $data;
 

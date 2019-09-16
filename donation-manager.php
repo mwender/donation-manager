@@ -1398,6 +1398,13 @@ class DonationManager {
             wp_enqueue_script( 'jquery' );
         }
 
+
+
+        wp_register_script( 'googlemaps', 'https://maps.googleapis.com/maps/api/js?key=AIzaSyBLEicjPA4gxX7NsC8Xev_KyejaGZIyVj4', null, '1.0', true ); // &callback=initMap
+        wp_register_script( 'donors-by-zipcode', plugin_dir_url( __FILE__ ) . 'lib/js/donors-by-zipcode.js', ['googlemaps'], filemtime( plugin_dir_path( __FILE__ ) . 'lib/js/donors-by-zipcode.js' ), true );
+        $zipCodeMapsUrl = ( stristr( $_SERVER['HTTP_HOST'], '.local' ) )? 'https://pickupmydonation.com/wp-content/plugins/donation-manager/lib/kml/zipcodes/' : plugin_dir_url( __FILE__ ) . 'lib/kml/zipcodes/' ;
+        wp_localize_script( 'donors-by-zipcode', 'wpvars', [ 'zipCodeMapsUrl' => $zipCodeMapsUrl ]);
+
         $dmscripts = file_get_contents( plugin_dir_path( __FILE__ ) . 'lib/js/scripts.js' );
         wp_add_inline_script( 'jquery', $dmscripts );
     }

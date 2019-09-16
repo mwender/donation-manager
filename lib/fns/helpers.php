@@ -11,6 +11,32 @@ function get_content_type(){
 }
 
 /**
+ * Given a 5 digit US Zip Code, returns the coordinates of that zip.
+ *
+ * @param   int     The zip code.
+ * @return  array   Array of the zip code's coordinates.
+ */
+function get_coordinates( $zipcode = null ){
+    if( is_null( $zipcode ) )
+        return false;
+
+    global $wpdb;
+
+    if( ! preg_match( '/[0-9]{5}/', $zipcode ) )
+        return false;
+
+    // Get the Lat/Lon of our Zip Code
+    $sql = 'SELECT ID,Latitude,Longitude FROM ' . $wpdb->prefix . 'dm_zipcodes WHERE ZIPCode="%s" ORDER BY CityName ASC LIMIT 1';
+    $result = $wpdb->get_results( $wpdb->prepare( $sql, $zipcode ) );
+
+    $lat = round( $result{0}->Latitude, 3 );
+    $lng = round( $result{0}->Longitude, 3 );
+    $coordinates = [ 'lat' => $lat, 'lng' => $lng ];
+
+    return $coordinates;
+}
+
+/**
  * Returns donations from a specified interval.
  *
  * @since 1.4.6

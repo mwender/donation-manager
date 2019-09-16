@@ -105,6 +105,7 @@ function get_donations_by_area( $request ){
     ];
     $donations = \get_posts( $donation_query_args );
 
+    $donations_by_zipcode = [];
     if( is_array( $donations ) && 0 < count( $donations ) ){
         $y = 1;
         foreach( $donations as $donation ){
@@ -118,6 +119,14 @@ function get_donations_by_area( $request ){
                 'coordinates' => \DonationManager\lib\fns\helpers\get_coordinates( $donor_zip ),
                 'number' => $y,
             ];
+            //*
+            if( array_key_exists( $donor_zip, $donations_by_zipcode ) ){
+                $donations_by_zipcode[$donor_zip] = $donations_by_zipcode[$donor_zip] + 1;
+            } else {
+                $donations_by_zipcode[$donor_zip] = 1;
+            }
+            /**/
+            //$donations_by_zipcode[$donor_zip] = ( array_key_exists( $donor_zip, $donations_by_zipcode ) )? $donations_by_zipcode[$donor_zip]++ : 1 ;
             $y++;
         }
 
@@ -125,14 +134,15 @@ function get_donations_by_area( $request ){
 
     $response = [];
     $response['request'] = [
-        'zipcode'   => $request['zipcode'],
-        'radius'    => $request['radius'],
-        'days'      => $request['days'],
+        'zipcode'               => $request['zipcode'],
+        'radius'                => $request['radius'],
+        'days'                  => $request['days'],
     ];
     $response['coordinates'] = [
         'lat' => round( $lat, 3 ),
         'lng' => round( $lng, 3 ),
     ];
+    $response['donations_by_zipcode'] = $donations_by_zipcode;
     $response['data'] = $data;
 
     wp_send_json( $response, 200 );

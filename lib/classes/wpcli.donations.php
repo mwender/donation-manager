@@ -45,9 +45,9 @@ Class DonManDonationCLI extends \WP_CLI_Command {
 
     if( preg_match('/[0-9]{4}/', $args[0] ) ){
       $year = $args[0];
-      $two_years_ago = ( current_time( 'Y' ) - 2 );
-      if( $year >= $two_years_ago )
-        WP_CLI::error( 'Unable to archive donations less than or equal to 2 years in the past. Try archiving donations in a year before `' . $two_years_ago . '`.' );
+      $years_ago = ( current_time( 'Y' ) - 1 );
+      if( $year >= $years_ago )
+        WP_CLI::error( 'Unable to archive donations less than or equal to 2 years in the past. Try archiving donations in a year before `' . $years_ago . '`.' );
 
       $query_args['year'] = $year;
     } else {

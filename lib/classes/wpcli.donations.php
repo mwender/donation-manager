@@ -45,10 +45,6 @@ Class DonManDonationCLI extends \WP_CLI_Command {
 
     if( preg_match('/[0-9]{4}/', $args[0] ) ){
       $year = $args[0];
-      $years_ago = ( current_time( 'Y' ) - 1 );
-      if( $year >= $years_ago )
-        WP_CLI::error( 'Unable to archive donations less than or equal to 2 years in the past. Try archiving donations in a year before `' . $years_ago . '`.' );
-
       $query_args['year'] = $year;
     } else {
       WP_CLI::error( 'Invalid year, must be in the format YYYY.', true );
@@ -58,10 +54,19 @@ Class DonManDonationCLI extends \WP_CLI_Command {
       $month = ltrim( $assoc_args['month'], '0' );
       if( 12 < $month )
         WP_CLI::error('Month must be a numeral, 1-12.');
+
+      $archive_time = strtotime( $year . '-' . $month );
+      $archive_time_limit = current_time( 'timestamp' ) - ( MONTH_IN_SECONDS * 3 );
+      if( $archive_time > $archive_time_limit )
+        WP_CLI::error( 'The archive date you provided was less than 3 months in the past. Please try again using an archive date greater than 3 months in the past.', true );
+
       $query_args['monthnum'] = $month;
     } else if( isset( $assoc_args['month'] ) && ! preg_match( '/[0-9]{1,2}/', $assoc_args['month'] ) ){
       WP_CLI::warning( 'Month is not in format `MM`, disregarding...' );
     }
+
+    if( ! isset( $month ) )
+      WP_CLI::error('Please set a month.');
 
     // DRY RUN
     if( isset( $assoc_args['dry-run'] ) ){

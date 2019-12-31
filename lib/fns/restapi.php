@@ -68,11 +68,10 @@ function get_donations_by_area( $request ){
     }
 
     if( $zipcodes ){
-            $zipcodes_array = array();
-            foreach( $zipcodes as $zipcode ){
-                $zipcodes_array[] = $zipcode->ZipCode;
-            }
-            $zipcodes = implode( ',', $zipcodes_array );
+        $zipcodes_array = array();
+        foreach( $zipcodes as $zipcode ){
+            $zipcodes_array[] = $zipcode->ZipCode;
+        }
     }
 
     $default_org = \DonationManager::get_default_organization();
@@ -126,8 +125,22 @@ function get_donations_by_area( $request ){
             }
             $y++;
         }
-
     }
+
+    // Add the remaining zip codes
+    // NOTE: We're not currently adding all zip codes because
+    // Google Maps API can only handle 10-20 KML Layers, add
+    // more than that and no KML Layer render. To do all
+    // Zip Codes, we need to create a <NetworkLink> which
+    // combines all the Zip Code KML files using <Link>
+    // elements. However, my early attempts weren't successful.
+    /*
+    foreach( $zipcodes_array as $zipcode ){
+        if( ! array_key_exists( $zipcode, $donations_by_zipcode ) ){
+            $donations_by_zipcode[$zipcode] = 0;
+        }
+    }
+    /**/
 
     $response = [];
     $response['request'] = [
@@ -140,6 +153,7 @@ function get_donations_by_area( $request ){
         'lng' => round( $lng, 3 ),
     ];
     $response['donations_by_zipcode'] = $donations_by_zipcode;
+    //$response['all_zipcodes'] = $zipcodes;
     $response['data'] = $data;
 
     wp_send_json( $response, 200 );

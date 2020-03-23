@@ -1213,6 +1213,7 @@ class DonationManager {
                         'button_text' => $button_text,
                         'name' => $org['name'],
                         'desc' => $org['desc'],
+                        'pickups_paused' => $org['pickups_paused'],
                     ];
                     if( isset( $org['providers'] ) && ! empty( $org['providers'] ) )
                         $row['providers'] = $org['providers'];
@@ -1692,9 +1693,10 @@ class DonationManager {
                 if( isset( $org['ID'] ) ){
                     $priority_pickup = (bool) get_post_meta( $org['ID'], 'priority_pickup', true );
                     $alternate_donate_now_url = get_post_meta( $org['ID'], 'alternate_donate_now_url', true );
+                    $pickups_paused = (bool) get_post_meta( $org['ID'], 'pickups_paused', true );
                 }
                 if( $org )
-                    $organizations[] = array( 'id' => $org['ID'], 'name' => $org['post_title'], 'desc' => $org['post_content'], 'trans_dept_id' => $post->ID, 'alternate_donate_now_url' => $alternate_donate_now_url, 'priority_pickup' => $priority_pickup );
+                    $organizations[] = array( 'id' => $org['ID'], 'name' => $org['post_title'], 'desc' => $org['post_content'], 'trans_dept_id' => $post->ID, 'alternate_donate_now_url' => $alternate_donate_now_url, 'priority_pickup' => $priority_pickup, 'pickups_paused' => $pickups_paused );
             }
             wp_reset_postdata();
 

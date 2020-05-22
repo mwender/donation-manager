@@ -1152,13 +1152,14 @@ class DonationManager {
                     // a priority provider in the contacts table.
                     $contacts = $this->get_orphaned_donation_contacts( array( 'pcode' => $pickup_code, 'limit' => 1, 'priority' => 1 ) );
 
-                    if( 0 < count( $contacts ) )
+                    if( is_array( $contacts ) && 0 < count( $contacts ) )
                         $organizations[] = $default_priority_org[0];
                 }
 
                 if( ! $organizations ){
                     $this->add_html( '<div class="alert alert-warning"><strong>No default organization found!</strong><br />No default organization has been specified in the Donation Manager settings.</div>' );
-                    continue;
+                    //continue 1;
+                    break;
                 }
 
                 // We use this to show the `no_org_transdept` message to users
@@ -1214,6 +1215,7 @@ class DonationManager {
                         'name' => $org['name'],
                         'desc' => $org['desc'],
                         'pickups_paused' => $org['pickups_paused'],
+                        'org_id' => $org['id'],
                     ];
                     if( isset( $org['providers'] ) && ! empty( $org['providers'] ) )
                         $row['providers'] = $org['providers'];
@@ -1231,6 +1233,16 @@ class DonationManager {
                 if( ! is_array( $rows ) )
                     $rows = array();
 
+                // Get Realtor Ads for all non-profits
+                $realtor_ads = [];
+                foreach( $rows as $row ){
+                    $realtor_ad = get_post_meta( $row['org_id'], 'realtor_ad_standard_banner', true );
+                    $realtor_ad_link = get_post_meta( $row['org_id'], 'realtor_ad_link', true );
+
+                    if( $realtor_ad )
+                        $realtor_ads[] = '<img src="' . wp_get_attachment_url( $realtor_ad['ID'] ) . '" style="width: 100%; height: auto;">';
+                }
+
                 if( 0 < count( $priority_rows ) )
                     $rows = array_merge( $rows, $priority_rows );
 
@@ -1239,6 +1251,12 @@ class DonationManager {
                     $template = 'form1.select-your-organization';
                 $html = \DonationManager\lib\fns\templates\render_template( $template, $hbs_vars );
                 $this->add_html( $html );
+                // Add Realtor Ads to the bottom of our list.
+                if( 0 < count( $realtor_ads ) ){
+                    foreach( $realtor_ads as $ad ){
+                        $this->add_html($ad);
+                    }
+                }
             break;
 
             case 'thank-you':
@@ -1269,6 +1287,16 @@ class DonationManager {
                     $this->add_html('<div style="text-align: center"><h3>Thank you for donating to ' . $organization_name . '</h3><a href="' . $website . '" target="_blank"><img src="' . $logo_url . '" style="width: 300px;" /></a></div>');
 
                 $this->add_html( '<div style="max-width: 600px; margin: 0 auto;">' . $donationreceipt . '</div>' );
+
+                // Insert the Realtor Ad
+                $realtor_ad = get_post_meta( $_SESSION['donor']['org_id'], 'realtor_ad_standard_banner', true );
+                $realtor_ad_link = get_post_meta( $_SESSION['donor']['org_id'], 'realtor_ad_link', true );
+                if( ! empty( $realtor_ad ) && ! empty( $realtor_ad_link ) ){
+                    $realtor_ad_url = wp_get_attachment_url( $realtor_ad['ID'] );
+                    $this->add_html( '<div style="max-width: 600px; margin: 1em auto;"><a href="' . $realtor_ad_link . '" target="_blank"><img src="'. $realtor_ad_url .'" style="max-width: 100%; height: auto;" /></a></div>' );
+                    //<pre>'. print_r($realtor_ad,true).'; $realtor_ad_url = '.$realtor_ad_url.'</pre>
+                }
+
 
                 // Unattended donations
                 $this->add_html( '<br><br><div class="alert alert-warning hidden-print"><strong>IMPORTANT:</strong> If your donations are left unattended during pick up, copies of this ticket MUST be attached to all items or containers of items in order for them to be picked up.</div>' );

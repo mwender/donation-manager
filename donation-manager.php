@@ -4,7 +4,7 @@
 	Plugin URI: http://www.pickupmydonation.com
 	Description: Online donation manager built for ReNew Management, Inc and PickUpMyDonation.com. This plugin displays the donation form and handles donation submissions.
 	Author: Michael Wender
-	Version: 1.9.4
+	Version: 2.0.0
 	Author URI: http://michaelwender.com
  */
 /*  Copyright 2014-19  Michael Wender  (email : michael@michaelwender.com)
@@ -424,6 +424,7 @@ class DonationManager {
                 'Contact Email' => [ 'required', 'email', 'trim', 'max_length' => 255 ],
                 'Contact Phone' => [ 'required', 'trim', 'max_length' => 30 ],
                 'Preferred Donor Code' => [ 'max_length' => 30, 'regexp' => "/^([\w-_]+)$/" ],
+                'Reason for Donating' => [ 'max_length' => 140, 'trim' ],
             ]);
 
             $form->setValues( array(
@@ -436,6 +437,7 @@ class DonationManager {
                 'Contact Email' => $_POST['donor']['email'],
                 'Contact Phone' => $_POST['donor']['phone'],
                 'Preferred Donor Code' => $_POST['donor']['preferred_code'],
+                'Reason for Donating' => $_POST['donor']['reason'],
             ));
 
             if( 'Yes' ==  $_POST['donor']['different_pickup_address'] ){
@@ -464,6 +466,7 @@ class DonationManager {
                 $_SESSION['donor']['phone'] = $_POST['donor']['phone'];
                 $_SESSION['donor']['preferred_contact_method'] = $_POST['donor']['preferred_contact_method'];
                 $_SESSION['donor']['preferred_code'] = $_POST['donor']['preferred_code'];
+                $_SESSION['donor']['reason'] = $_POST['donor']['reason'];
 
                 /**
                  * SET $_SESSION['donor']['pickup_code'] FOR DONORS WHO BYPASSED EARLIER SCREENS
@@ -840,6 +843,7 @@ class DonationManager {
                     'donor_email' => $donor_email,
                     'donor_phone' => $donor_phone,
                     'preferred_code' => $donor_preferred_code,
+                    'reason_option' => DonationManager\lib\fns\helpers\get_donation_reason_select(),
                 ];
 
                 if( $allow_user_photo_uploads )
@@ -1598,6 +1602,7 @@ class DonationManager {
             'pickuplocation' =>  $donation['pickuplocation'],
             'pickup_code' => $donation['pickup_code'],
             'preferred_code' => $donation['preferred_code'],
+            'reason' => $donation['reason'],
         ));
 
         return $donationreceipt;
@@ -2514,6 +2519,7 @@ class DonationManager {
             'legacy_id' => 'legacy_id',
             'referer' => 'referer',
             'image_public_id' => '',
+            'reason' => '',
         );
         foreach( $post_meta as $meta_key => $donation_key ){
             switch( $meta_key ){

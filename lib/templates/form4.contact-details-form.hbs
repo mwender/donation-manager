@@ -80,11 +80,17 @@
 		<div class="form-group col-xs-3"><label><input type="radio" value="Phone"{{checked_phone}} name="donor[preferred_contact_method]"> Phone</label></div>
 		<div class="form-group col-xs-3"><label><input type="radio" value="Email"{{checked_email}} name="donor[preferred_contact_method]"> Email</label></div>
 	</div>
-	<div class="row">
+	<!--<div class="row">
 		<div class="form-group col-xs-12">
 			<label>Preferred Donor Code <small style="color: #999;">(optional)</small></label>
 			<input type="text" class="form-control" name="donor[preferred_code]" value="{{preferred_code}}" style="max-width: 150px;">
 			<p class="help-block">Got a <em>Preferred Donor Code</em>? Enter it here.</p>
+		</div>
+	</div>-->
+	<div class="row">
+		<div class="form-group col-xs-12">
+			<label for="">What led you to donate today? <small style="color: #999;">(optional)</small></label>
+			{{{reason_option}}}
 		</div>
 	</div>
 	<p><span class="red">*</span> indicates required field.</p>

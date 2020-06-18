@@ -160,6 +160,26 @@ function get_socialshare_copy( $organization = '', $donation_id_hashtag = '' ){
 }
 
 /**
+ * Retrieves the options for "What led you to donate today?"
+ */
+function get_donation_reason_select(){
+    $reasons = [
+        'Replacing furniture/appliance(s)',
+        'Moving soon',
+        'Remodeling',
+        'Cleaning',
+        'No use for item(s)',
+        'Other'
+    ];
+    $options[] = '<option value="">Select your reason for donating...</option>';
+    foreach( $reasons as $reason ){
+        $selected = ( isset( $_POST['donor']['reason'] ) && $reason == $_POST['donor']['reason'] )? ' selected="selected"' : '';
+        $options[] = '<option value="' . $reason . '"' . $selected . '>' . $reason . '</option>';
+    }
+    return '<select class="form-control" name="donor[reason]">' .  implode( '', $options ) . '</select>';
+}
+
+/**
  * Retrieves state select input
  */
 function get_state_select( $var = 'address' ) {

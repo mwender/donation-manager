@@ -10,6 +10,12 @@ As of February 2019, my method for compiling MJML email templates is as follows:
 2. Save out the template as HTML to `lib/html/`.
 3. Copy the template over to `lib/templates/` and replace the `.html` extension with `.hbs`.
 
+__06/18/2020 - Version 2.0.0__
+
+- Adding `[donors_in_your_area]`.
+- Adding Realtor Ads.
+- Adding "What led you to donate today?" option.
+
 __04/30/2019 - Version 1.9.4__
 
 - Adding `wp donman zipsbytransdept` report

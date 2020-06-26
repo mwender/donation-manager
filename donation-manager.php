@@ -4,7 +4,7 @@
 	Plugin URI: http://www.pickupmydonation.com
 	Description: Online donation manager built for ReNew Management, Inc and PickUpMyDonation.com. This plugin displays the donation form and handles donation submissions.
 	Author: Michael Wender
-	Version: 2.0.0
+	Version: 2.0.1
 	Author URI: http://michaelwender.com
  */
 /*  Copyright 2014-19  Michael Wender  (email : michael@michaelwender.com)
@@ -864,6 +864,14 @@ class DonationManager {
                     $template = 'form4.contact-details-form';
                 $html = \DonationManager\lib\fns\templates\render_template( $template, $hbs_vars );
                 $this->add_html( $html );
+
+                // Add Realtor Ads to the bottom of the form.
+                $realtor_ads = PMD\realtorads\get_realtor_ads([ $_SESSION['donor']['org_id'] ]);
+                if( $realtor_ads && 0 < count( $realtor_ads ) ){
+                    foreach( $realtor_ads as $ad ){
+                        $this->add_html($ad);
+                    }
+                }
             break;
 
             case 'location-of-items':
@@ -990,6 +998,14 @@ class DonationManager {
                     $template = 'form3.screening-questions-form';
                 $html = \DonationManager\lib\fns\templates\render_template( $template, $hbs_vars );
                 $this->add_html( $html );
+
+                // Add Realtor Ads to the bottom of the form.
+                $realtor_ads = PMD\realtorads\get_realtor_ads([ $_SESSION['donor']['org_id'] ]);
+                if( $realtor_ads && 0 < count( $realtor_ads ) ){
+                    foreach( $realtor_ads as $ad ){
+                        $this->add_html($ad);
+                    }
+                }
             break;
 
             case 'describe-your-donation':
@@ -1061,6 +1077,14 @@ class DonationManager {
                     $template = 'form2.donation-options-form';
                 $html = \DonationManager\lib\fns\templates\render_template( $template, $hbs_vars );
                 $this->add_html( $html );
+
+                // Add Realtor Ads to the bottom of the form.
+                $realtor_ads = PMD\realtorads\get_realtor_ads([ $oid ]);
+                if( $realtor_ads && 0 < count( $realtor_ads ) ){
+                    foreach( $realtor_ads as $ad ){
+                        $this->add_html($ad);
+                    }
+                }
             break;
 
             case 'select-preferred-pickup-dates':
@@ -1096,8 +1120,6 @@ class DonationManager {
                     ];
                 }
 
-
-
                 // Priority Donation Backlinks
                 $priority_html = ( false == $_SESSION['donor']['priority'] )? '<div class="row priority-note"><div class="col-md-12"><div class="alert alert-info" style="text-align: center;"><strong>Priority Pick Up Option:</strong> <em>Need expedited service?</em> <a href="#" class="show-priority">Click for details &rarr;</a></div></div></div><div class="row priority-row"><div class="col-md-12"><div class="priority-close"><a href="#" class="close-priority-row btn btn-default btn-xs">Close</a></div>' . $this->get_priority_pickup_links( $_SESSION['donor']['pickup_code'], 'We work as hard as we can to serve all of our donors in a timely fashion. If you need expedited service or you don\'t see a time that works in our calendar, click below to request a pick up from a priority pick up provider. Priority pickup providers are payment based service providers and will discuss fees upon contacting you.' ) . '</div></div>' : '' ;
 
@@ -1131,6 +1153,14 @@ class DonationManager {
                     $template = 'form5.pickup-dates';
                 $html = \DonationManager\lib\fns\templates\render_template( $template, $hbs_vars );
                 $this->add_html( $html );
+
+                // Add Realtor Ads to the bottom of the form.
+                $realtor_ads = PMD\realtorads\get_realtor_ads([ $_SESSION['donor']['org_id'] ]);
+                if( $realtor_ads && 0 < count( $realtor_ads ) ){
+                    foreach( $realtor_ads as $ad ){
+                        $this->add_html($ad);
+                    }
+                }
             break;
 
             case 'select-your-organization':
@@ -1238,14 +1268,7 @@ class DonationManager {
                     $rows = array();
 
                 // Get Realtor Ads for all non-profits
-                $realtor_ads = [];
-                foreach( $rows as $row ){
-                    $realtor_ad = get_post_meta( $row['org_id'], 'realtor_ad_standard_banner', true );
-                    $realtor_ad_link = get_post_meta( $row['org_id'], 'realtor_ad_link', true );
-
-                    if( $realtor_ad )
-                        $realtor_ads[] = '<img src="' . wp_get_attachment_url( $realtor_ad['ID'] ) . '" style="width: 100%; height: auto;">';
-                }
+                $realtor_ads = PMD\realtorads\get_realtor_ads( $rows );
 
                 if( 0 < count( $priority_rows ) )
                     $rows = array_merge( $rows, $priority_rows );
@@ -1256,7 +1279,7 @@ class DonationManager {
                 $html = \DonationManager\lib\fns\templates\render_template( $template, $hbs_vars );
                 $this->add_html( $html );
                 // Add Realtor Ads to the bottom of our list.
-                if( 0 < count( $realtor_ads ) ){
+                if( $realtor_ads && 0 < count( $realtor_ads ) ){
                     foreach( $realtor_ads as $ad ){
                         $this->add_html($ad);
                     }
@@ -3026,11 +3049,12 @@ register_activation_hook( __FILE__, array( $DonationManager, 'activate' ) );
 // Include function files
 require_once 'lib/fns/admin.php';
 require_once 'lib/fns/debug.php';
+require_once 'lib/fns/filesystem.php';
 require_once 'lib/fns/helpers.php';
 require_once 'lib/fns/image-sizes.php';
 require_once 'lib/fns/restapi.php';
 require_once 'lib/fns/templates.php';
-require_once 'lib/fns/filesystem.php';
+require_once 'lib/fns/realtor-ads.php';
 
 // Include class files
 require_once 'lib/classes/network-member.php';

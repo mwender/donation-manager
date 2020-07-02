@@ -10,6 +10,10 @@ As of February 2019, my method for compiling MJML email templates is as follows:
 2. Save out the template as HTML to `lib/html/`.
 3. Copy the template over to `lib/templates/` and replace the `.html` extension with `.hbs`.
 
+__07/02/2020 - Version 2.0.2__
+
+- BUGFIX: Checking if variable is an array before performing `count()`.
+
 __06/26/2020 - Version 2.0.1__
 
 - Adding Realtor Ad with link to all four steps of the donation process.

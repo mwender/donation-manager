@@ -10,6 +10,9 @@ As of February 2019, my method for compiling MJML email templates is as follows:
 2. Save out the template as HTML to `lib/html/`.
 3. Copy the template over to `lib/templates/` and replace the `.html` extension with `.hbs`.
 
+__12/09/2020 - Version 2.0.3__
+- BUGFIX: In the Transportation Department admin listing: Correctly showing when a Transportation Department does not have a parent Organization assigned.
+
 __07/02/2020 - Version 2.0.2__
 
 - BUGFIX: Checking if variable is an array before performing `count()`.

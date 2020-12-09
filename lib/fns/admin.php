@@ -76,12 +76,15 @@ function custom_column_content( $column ){
     global $post;
     switch( $column ){
         case 'org':
-            //$org_name = \get_post_meta( $post->ID, '_organization_name', true );
             $org = \get_post_meta( $post->ID, 'organization', true );
             $orgId = ( is_array( $org ) && isset( $org['ID'] ) )? $org['ID'] : $org;
-            $org_name = get_the_title( $orgId );
-            if( $org_name )
-                echo $org_name;
+            $org_name = '';
+            if( is_array( $org ) && isset( $org['ID'] ) ){
+                $org_name = get_the_title( $org['ID'] );
+            } else {
+                $org_name = '<code style="color: #f00; font-weight: bold;">Not set!</code>';
+            }
+            echo $org_name;
         break;
     }
 }

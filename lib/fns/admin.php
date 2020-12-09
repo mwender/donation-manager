@@ -82,7 +82,10 @@ function custom_column_content( $column ){
             if( is_array( $org ) && isset( $org['ID'] ) ){
                 $org_name = get_the_title( $org['ID'] );
             } else {
-                $org_name = '<code style="color: #f00; font-weight: bold;">Not set!</code>';
+                $post_status = get_post_status( $post->ID );
+                $color = ( 'publish' == $post_status )? 'f00' : '333' ;
+                $text = ( 'publish' == $post_status )? 'NOT SET!' : 'not set';
+                $org_name = '<code style="color: #' . $color . '; font-weight: bold;">' . $text . '</code>';
             }
             echo $org_name;
         break;

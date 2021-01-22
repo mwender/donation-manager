@@ -1,7 +1,7 @@
 {
     "_readme": [
         "This file locks the dependencies of your project to a known state",
-        "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
+        "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
     "content-hash": "2cc9ef2e889982dd71a676ce9972d74f",
@@ -100,23 +100,26 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/rlanvin/php-form.git",
-                "reference": "56bfbd118f8b45c5c6528df42414b85bc1467f27"
+                "reference": "be55eed45e21cb0e9b72d0e31586511a8888f151"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/rlanvin/php-form/zipball/56bfbd118f8b45c5c6528df42414b85bc1467f27",
-                "reference": "56bfbd118f8b45c5c6528df42414b85bc1467f27",
+                "url": "https://api.github.com/repos/rlanvin/php-form/zipball/be55eed45e21cb0e9b72d0e31586511a8888f151",
+                "reference": "be55eed45e21cb0e9b72d0e31586511a8888f151",
                 "shasum": ""
             },
             "require": {
                 "ext-mbstring": "*",
-                "php": ">=5.3.0"
+                "php": ">=5.4.0"
+            },
+            "suggest": {
+                "ext-intl": "Intl extension is useful for validating formatted numbers"
             },
             "type": "library",
             "autoload": {
-                "classmap": [
-                    "src/"
-                ]
+                "psr-4": {
+                    "Form\\": "src/"
+                }
             },
             "notification-url": "https://packagist.org/downloads/",
             "license": [
@@ -128,7 +131,7 @@
                 "form",
                 "validation"
             ],
-            "time": "2014-06-09 07:03:31"
+            "time": "2016-04-12T10:22:02+00:00"
         },
         {
             "name": "zordius/lightncandy",
@@ -175,7 +178,7 @@
                 "php",
                 "template"
             ],
-            "time": "2016-07-18 06:51:41"
+            "time": "2016-07-18T06:51:41+00:00"
         }
     ],
     "packages-dev": [],

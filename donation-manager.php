@@ -4,7 +4,7 @@
 	Plugin URI: http://www.pickupmydonation.com
 	Description: Online donation manager built for ReNew Management, Inc and PickUpMyDonation.com. This plugin displays the donation form and handles donation submissions.
 	Author: Michael Wender
-	Version: 2.0.4
+	Version: 2.1.0
 	Author URI: http://michaelwender.com
  */
 /*  Copyright 2014-19  Michael Wender  (email : michael@michaelwender.com)
@@ -30,6 +30,11 @@ define( 'NON_PROFIT_BUTTON_TEXT', 'Click here for Free Pick Up' );
 define( 'PRIORITY_BUTTON_TEXT', 'Click here for Priority Pick Up' );
 define( 'ORPHANED_PICKUP_RADIUS', 15 ); // radius in miles for zipcode search
 define( 'AVERGAGE_DONATION_VALUE', 230 ); // average value of a donation is $230
+
+// Setup dev env constant
+$dev = ( stristr( site_url(), '.local') )? true : false;
+define( 'DONMAN_DEV', $dev );
+
 require 'vendor/autoload.php';
 
 class DonationManager {
@@ -127,7 +132,7 @@ class DonationManager {
          *  01. INITIAL ZIP/PICKUP CODE VALIDATION
          */
         if( isset( $_REQUEST['pickupcode'] ) || isset( $_REQUEST['pcode'] ) ) {
-            $form = new Form([
+            $form = new Form\Validator([
                 'pickupcode' => ['regexp' => '/^[a-zA-Z0-9_-]+\z/', 'required']
             ]);
 
@@ -185,7 +190,7 @@ class DonationManager {
                 return ( FALSE === get_post_status( $id ) )? false : true ;
             };
 
-            $form = new Form([
+            $form = new Form\Validator([
                 'org_id' => ['is_numeric' => $is_numeric_validator, 'exists' => $org_or_trans_dept_exists],
                 'trans_dept_id' => ['is_numeric' => $is_numeric_validator, 'exists' => $org_or_trans_dept_exists],
             ]);
@@ -224,7 +229,7 @@ class DonationManager {
                 return $checked;
             };
 
-            $form = new Form([
+            $form = new Form\Validator([
                 'options' => ['checked' => $one_donation_option_is_checked],
                 'description' => ['required', 'trim']
             ]);
@@ -314,7 +319,7 @@ class DonationManager {
                 }
                 return $answered;
             };
-            $form = new Form([
+            $form = new Form\Validator([
                 'answers' => [ 'required', 'each' => [ 'in' => array( 'Yes', 'No' ) ] ],
                 'answered' => [ 'ids' => $each_question_answered ]
             ]);
@@ -414,7 +419,12 @@ class DonationManager {
          * 05. VALIDATE CONTACT DETAILS
          */
         if( isset( $_POST['donor']['address'] ) ) {
-            $form = new Form([
+            $match_pickupcode_and_zipcode = function( $confirmation, $form ){
+                write_log('🔔 $confirmation = ' . $confirmation . "\n" . '🔔 $form->ZIP = ' . $form->ZIP );
+                return $form->ZIP == $confirmation;
+            };
+
+            $form = new Form\Validator([
                 'First Name' => [ 'required', 'trim', 'max_length' => 40 ],
                 'Last Name' => [ 'required', 'trim', 'max_length' => 40 ],
                 'Address' => [ 'required', 'trim', 'max_length' => 255 ],
@@ -425,8 +435,12 @@ class DonationManager {
                 'Contact Phone' => [ 'required', 'trim', 'max_length' => 30 ],
                 'Preferred Donor Code' => [ 'max_length' => 30, 'regexp' => "/^([\w-_]+)$/" ],
                 'Reason for Donating' => [ 'max_length' => 140, 'trim' ],
+                'session_pickupcode' => [ 'zipcodes_must_match' => $match_pickupcode_and_zipcode ],
             ]);
 
+
+            $pickup_zipcode = ( 'Yes' ==  $_POST['donor']['different_pickup_address'] )? $_POST['donor']['pickup_address']['zip'] : $_POST['donor']['address']['zip'] ;
+            $preferred_code = ( isset( $_POST['donor']['preferred_code'] ) )? $_POST['donor']['preferred_code'] : '' ;
             $form->setValues( array(
                 'First Name' => $_POST['donor']['address']['name']['first'],
                 'Last Name' => $_POST['donor']['address']['name']['last'],
@@ -436,9 +450,12 @@ class DonationManager {
                 'ZIP' => $_POST['donor']['address']['zip'],
                 'Contact Email' => $_POST['donor']['email'],
                 'Contact Phone' => $_POST['donor']['phone'],
-                'Preferred Donor Code' => $_POST['donor']['preferred_code'],
+                'Preferred Donor Code' => $preferred_code,
                 'Reason for Donating' => $_POST['donor']['reason'],
+                'session_pickupcode' => $_SESSION['donor']['pickup_code'],
             ));
+
+            $form->validate([ 'session_pickupcode' => $_SESSION['donor']['pickup_code'] ]);
 
             if( 'Yes' ==  $_POST['donor']['different_pickup_address'] ){
                 $form->addRules([
@@ -465,7 +482,7 @@ class DonationManager {
                 $_SESSION['donor']['email'] = $_POST['donor']['email'];
                 $_SESSION['donor']['phone'] = $_POST['donor']['phone'];
                 $_SESSION['donor']['preferred_contact_method'] = $_POST['donor']['preferred_contact_method'];
-                $_SESSION['donor']['preferred_code'] = $_POST['donor']['preferred_code'];
+                $_SESSION['donor']['preferred_code'] = $preferred_code;
                 $_SESSION['donor']['reason'] = $_POST['donor']['reason'];
 
                 /**
@@ -504,7 +521,12 @@ class DonationManager {
                     // Preferred Donor Code:
                     if( 'Preferred Donor Code' == $field ){
                         $error_msg[] = '<strong><em>' . $field . '</em></strong> must contain only letters, numbers, dashes, and underscores.';
+                    }
 
+                    $pickup_zipcode = ( 'Yes' ==  $_POST['donor']['different_pickup_address'] )? $_POST['donor']['pickup_address']['zip'] : $_POST['donor']['address']['zip'] ;
+                    if( 'session_pickupcode' == $field ){
+                        $error_msg[] = '<strong>Zip Code Mismatch:</strong><br />Your original Zip Code (<code>' . $_SESSION['donor']['pickup_code'] . '</code>) and your Pick Up Zip Code <code>' . $pickup_zipcode . '</code> do not match. To fix, you may:<br/><br/>1) Update your pickup address below with an address in the <code>' . $_SESSION['donor']['pickup_code'] . '</code> zip code, OR<br/><br/>2) <a href="'. site_url('select-your-organization/?pcode=' . $pickup_zipcode ) .'">Start over using <code>' . $pickup_zipcode . '</code></a> to start the donation process.';
+                        $this->notify_admin('zipcode_mismatch');
                     }
                 }
                 if( 0 < count( $error_msg ) ){
@@ -530,7 +552,7 @@ class DonationManager {
             };
 
             $regexp_date = '/(([0-9]{2})\/([0-9]{2})\/([0-9]{4}))/';
-            $form = new Form([
+            $form = new Form\Validator([
                 'Preferred Pickup Date 1' => [ 'required', 'trim', 'max_length' => 10, 'regexp' => $regexp_date, 'unique' => $dates_must_be_unique ],
                 'Date 1 Time' => [ 'required', 'trim' ],
                 'Preferred Pickup Date 2' => [ 'required', 'trim', 'max_length' => 10, 'regexp' => $regexp_date, 'unique' => $dates_must_be_unique ],
@@ -600,7 +622,7 @@ class DonationManager {
          * 06b. VALIDATE PICKUP LOCATION (Skipping Pickup Dates)
          */
         if( isset( $_POST['skip_pickup_dates'] ) && true == $_POST['skip_pickup_dates'] ){
-            $form = new Form([
+            $form = new Form\Validator([
                 'Pickup Location' => [ 'required', 'trim' ],
             ]);
 
@@ -2456,6 +2478,9 @@ class DonationManager {
             case 'invalid_link':
                 $this->send_email( 'invalid_link' );
             break;
+            case 'zipcode_mismatch':
+                $this->send_email('zipcode_mismatch');
+                break;
             default:
                 //$this->send_email( 'missing_org_transdept_notification' );
                 $pickup_code = ( 'Yes' == $_SESSION['donor']['different_pickup_address'] )? $_SESSION['donor']['pickup_address']['zip'] : $_SESSION['donor']['address']['zip'];
@@ -2604,6 +2629,11 @@ class DonationManager {
      * @return void
      */
     public function send_api_post( $donation ){
+        if( DONMAN_DEV ){
+            write_log('🔔 We are in Development Mode, not sending API Post.');
+            return true;
+        }
+
         switch( $donation['routing_method'] ){
             case 'api-chhj':
                 require_once 'lib/classes/donation-router.php';
@@ -2692,6 +2722,15 @@ class DonationManager {
                 $subject = 'PMD Admin Notification - No Org/Trans Dept Set';
                 $headers[] = 'Reply-To: PMD Support <support@pickupmydonation.com>';
             break;
+
+            case 'zipcode_mismatch':
+                $html = $this->get_template_part( 'email.blank', [
+                    'content' => '<div style="text-align: left;"><p>$_SESSION[\'donor\'][\'pickup_code\'] = ' . $_SESSION['donor']['pickup_code'] . '<br />$_POST[\'donor\'][\'address\'][\'zip\'] = ' . $_POST['donor']['address']['zip'] . '</p><p><pre>URL PATH = ' . print_r( $_SESSION['donor']['url_path'], true ) . '</pre></p></div>',
+                ]);
+                $recipients = ['webmaster@pickupmydonation.com'];
+                $subject = 'PMD Admin Notification - Zip Code Mismatch';
+                $headers[] = 'Reply-To: PMD Support <support@pickupmydonation.com>';
+                break;
 
             case 'donor_confirmation':
 

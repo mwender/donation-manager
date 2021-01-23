@@ -10,6 +10,9 @@ As of February 2019, my method for compiling MJML email templates is as follows:
 2. Save out the template as HTML to `lib/html/`.
 3. Copy the template over to `lib/templates/` and replace the `.html` extension with `.hbs`.
 
+__01/22/2021 - Version 2.1.1__
+- Adding Name to subject line for zip code mismatch alert.
+
 __01/22/2021 - Version 2.1.0__
 - Checking for mismatch between entered zip code and the pick up address.
 

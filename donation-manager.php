@@ -4,7 +4,7 @@
 	Plugin URI: http://www.pickupmydonation.com
 	Description: Online donation manager built for ReNew Management, Inc and PickUpMyDonation.com. This plugin displays the donation form and handles donation submissions.
 	Author: Michael Wender
-	Version: 2.1.0
+	Version: 2.1.1
 	Author URI: http://michaelwender.com
  */
 /*  Copyright 2014-19  Michael Wender  (email : michael@michaelwender.com)
@@ -2725,10 +2725,10 @@ class DonationManager {
 
             case 'zipcode_mismatch':
                 $html = $this->get_template_part( 'email.blank', [
-                    'content' => '<div style="text-align: left;"><p>$_SESSION[\'donor\'][\'pickup_code\'] = ' . $_SESSION['donor']['pickup_code'] . '<br />$_POST[\'donor\'][\'address\'][\'zip\'] = ' . $_POST['donor']['address']['zip'] . '</p><p><pre>URL PATH = ' . print_r( $_SESSION['donor']['url_path'], true ) . '</pre></p></div>',
+                    'content' => '<div style="text-align: left;"><p>' . $_POST['donor']['address']['name']['first'] . ' ' . $_POST['donor']['address']['name']['last'] . '<br />$_SESSION[\'donor\'][\'pickup_code\'] = ' . $_SESSION['donor']['pickup_code'] . '<br />$_POST[\'donor\'][\'address\'][\'zip\'] = ' . $_POST['donor']['address']['zip'] . '</p><p><pre>URL PATH = ' . print_r( $_SESSION['donor']['url_path'], true ) . '</pre></p></div>',
                 ]);
                 $recipients = ['webmaster@pickupmydonation.com'];
-                $subject = 'PMD Admin Notification - Zip Code Mismatch';
+                $subject = 'PMD Zip Code Error - ' . esc_attr( $_POST['donor']['address']['name']['first'] ) . ' ' . esc_attr( $_POST['donor']['address']['name']['last'] );
                 $headers[] = 'Reply-To: PMD Support <support@pickupmydonation.com>';
                 break;
 

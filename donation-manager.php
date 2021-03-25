@@ -4,7 +4,7 @@
 	Plugin URI: http://www.pickupmydonation.com
 	Description: Online donation manager built for ReNew Management, Inc and PickUpMyDonation.com. This plugin displays the donation form and handles donation submissions.
 	Author: Michael Wender
-	Version: 2.1.1
+	Version: 2.1.2
 	Author URI: http://michaelwender.com
  */
 /*  Copyright 2014-19  Michael Wender  (email : michael@michaelwender.com)
@@ -1053,7 +1053,7 @@ class DonationManager {
                     $pod = pods( 'donation_option' );
                     $pod->fetch( $ID );
                     $order = $pod->field( 'order' );
-                    $donation_options[$order] = array( 'name' => $term->name, 'desc' => $term->description, 'value' => esc_attr( $term->name ), 'pickup' => $pod->field( 'pickup' ), 'skip_questions' => $pod->field( 'skip_questions' ), 'term_id' => $term->term_id );
+                    $donation_options[$order] = array( 'name' => $term->name, 'desc' => apply_filters( 'the_content', $term->description ), 'value' => esc_attr( $term->name ), 'pickup' => $pod->field( 'pickup' ), 'skip_questions' => $pod->field( 'skip_questions' ), 'term_id' => $term->term_id );
                 }
                 ksort( $donation_options );
 

@@ -4,7 +4,7 @@
 	Plugin URI: http://www.pickupmydonation.com
 	Description: Online donation manager built for ReNew Management, Inc and PickUpMyDonation.com. This plugin displays the donation form and handles donation submissions.
 	Author: Michael Wender
-	Version: 2.1.2
+	Version: 2.2.0
 	Author URI: http://michaelwender.com
  */
 /*  Copyright 2014-19  Michael Wender  (email : michael@michaelwender.com)
@@ -1047,13 +1047,36 @@ class DonationManager {
                     $step_one_note = '<div class="alert alert-info">You have selected our <strong>Expedited Pick Up Service</strong>.  Your request will be sent to our <strong>Fee Based</strong> pick up partners (<em>fee to be determined by the pick up provider</em>) who will in most cases be able to handle your request within 24 hours, bring quality donations to a local non-profit, and help you dispose of unwanted and/or unsellable items.  <br/><br/>If you reached this page in error, <a href="' . site_url() . '/select-your-organization/?pcode=' . $_SESSION['donor']['pickup_code'] . '&priority=0">CLICK HERE</a> and select <em>Free Pick Up</em>.</div>' . $step_one_note;
 
                 $donation_options = array();
+
+                // Get alternate Donation Option Descriptions
+                if( have_rows( 'donation_option_descriptions', $oid ) ){
+                    $alt_donation_option_descriptions = [];
+                    while( have_rows( 'donation_option_descriptions', $oid ) ): the_row();
+                        $id = get_sub_field( 'donation_option_id' );
+                        $desc = get_sub_field( 'description' );
+                        $alt_donation_option_descriptions[$id] = $desc;
+                    endwhile;
+                }
+
                 foreach( $terms as $term ) {
                     $ID = $term['id'];
                     $term = get_term( $ID, 'donation_option' );
                     $pod = pods( 'donation_option' );
                     $pod->fetch( $ID );
                     $order = $pod->field( 'order' );
-                    $donation_options[$order] = array( 'name' => $term->name, 'desc' => apply_filters( 'the_content', $term->description ), 'value' => esc_attr( $term->name ), 'pickup' => $pod->field( 'pickup' ), 'skip_questions' => $pod->field( 'skip_questions' ), 'term_id' => $term->term_id );
+
+                    // Get the Donation Option Description while checking
+                    // for alternate donation option descriptions
+                    $donation_option_desc = ( array_key_exists( $ID, $alt_donation_option_descriptions ) )? $alt_donation_option_descriptions[$ID] : apply_filters( 'the_content', $term->description ) ;
+
+                    $donation_options[$order] = [
+                        'name' => $term->name,
+                        'desc' => $donation_option_desc,
+                        'value' => esc_attr( $term->name ),
+                        'pickup' => $pod->field( 'pickup' ),
+                        'skip_questions' => $pod->field( 'skip_questions' ),
+                        'term_id' => $term->term_id
+                    ];
                 }
                 ksort( $donation_options );
 

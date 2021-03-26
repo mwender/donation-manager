@@ -10,6 +10,9 @@ As of February 2019, my method for compiling MJML email templates is as follows:
 2. Save out the template as HTML to `lib/html/`.
 3. Copy the template over to `lib/templates/` and replace the `.html` extension with `.hbs`.
 
+__03/26/2021 - Version 2.2.1__
+- BUGFIX: Ensuring array is declared before checking `array_key_exists()`.
+
 __03/26/2021 - Version 2.2.0__
 - Adding "Organization Options" meta fields with alternate "Donation Option Descriptions".
 

@@ -4,7 +4,7 @@
 	Plugin URI: http://www.pickupmydonation.com
 	Description: Online donation manager built for ReNew Management, Inc and PickUpMyDonation.com. This plugin displays the donation form and handles donation submissions.
 	Author: Michael Wender
-	Version: 2.2.1
+	Version: 2.2.2
 	Author URI: http://michaelwender.com
  */
 /*  Copyright 2014-2021  Michael Wender  (email : michael@michaelwender.com)
@@ -2708,7 +2708,7 @@ class DonationManager {
                 $priority = 1;
 
             $bcc_emails = $this->get_orphaned_donation_contacts( array( 'pcode' => $donor['pickup_code'], 'limit' => 50, 'radius' => ORPHANED_PICKUP_RADIUS, 'priority' => $priority ) );
-            if( 0 < count( $bcc_emails ) )
+            if( is_array( $bcc_emails ) && 0 < count( $bcc_emails ) )
                 $tc['orphaned_donation_contacts'] = $bcc_emails;
         }
 

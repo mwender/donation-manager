@@ -10,6 +10,9 @@ As of February 2019, my method for compiling MJML email templates is as follows:
 2. Save out the template as HTML to `lib/html/`.
 3. Copy the template over to `lib/templates/` and replace the `.html` extension with `.hbs`.
 
+__06/30/2021 - Version 2.3.1__
+- Updating height of Unpakt.com widget to `400px` on the on-screen confirmations.
+
 __06/21/2021 - Version 2.3.0__
 - Adding Unpakt.com widgets to the on-screen confirmations.
 - Updating copyright date for email footers.

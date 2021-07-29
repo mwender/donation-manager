@@ -21,6 +21,10 @@
       <mj-text line-height="22px">{{{donationreceipt}}}</mj-text>
     </mj-column>
   </mj-section>
+  <mj-section background-color="#fff" padding="20px">
+  	<mj-column><mj-image src="https://pickupmydonation.com/wp-content/plugins/donation-manager/lib/images/smcothrift_600x210.png" href="https://smcothrift.com"></mj-image></mj-column>    	
+    <mj-column><mj-image src="https://pickupmydonation.com/wp-content/plugins/donation-manager/lib/images/thrifttrac-with-tagline_600x210.png" href="https://thrifttrac.com"></mj-image></mj-column>
+  </mj-section>
   <mj-section background-color="#363636">
     <mj-column>
       <mj-social mode="horizontal" icon-size="30px">

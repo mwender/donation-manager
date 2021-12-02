@@ -4,7 +4,7 @@
 	Plugin URI: http://www.pickupmydonation.com
 	Description: Online donation manager built for ReNew Management, Inc and PickUpMyDonation.com. This plugin displays the donation form and handles donation submissions.
 	Author: Michael Wender
-	Version: 2.4.0
+	Version: 2.4.1
 	Author URI: http://michaelwender.com
  */
 /*  Copyright 2014-2021  Michael Wender  (email : michael@michaelwender.com)
@@ -424,7 +424,7 @@ class DonationManager {
                 return $form->ZIP == $confirmation;
             };
 
-            $form = new Form\Validator([
+            $validations = [
                 'First Name' => [ 'required', 'trim', 'max_length' => 40 ],
                 'Last Name' => [ 'required', 'trim', 'max_length' => 40 ],
                 'Address' => [ 'required', 'trim', 'max_length' => 255 ],
@@ -435,9 +435,12 @@ class DonationManager {
                 'Contact Phone' => [ 'required', 'trim', 'max_length' => 30 ],
                 'Preferred Donor Code' => [ 'max_length' => 30, 'regexp' => "/^([\w-_]+)$/" ],
                 'Reason for Donating' => [ 'max_length' => 140, 'trim' ],
-                'session_pickupcode' => [ 'zipcodes_must_match' => $match_pickupcode_and_zipcode ],
-            ]);
+            ];
 
+            // Original zip code must match pickup code
+            //$validations['session_pickupcode'] = [ 'zipcodes_must_match' => $match_pickupcode_and_zipcode ];
+
+            $form = new Form\Validator( $validations );
 
             $pickup_zipcode = ( 'Yes' ==  $_POST['donor']['different_pickup_address'] )? $_POST['donor']['pickup_address']['zip'] : $_POST['donor']['address']['zip'] ;
             $preferred_code = ( isset( $_POST['donor']['preferred_code'] ) )? $_POST['donor']['preferred_code'] : '' ;

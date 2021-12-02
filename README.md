@@ -12,6 +12,9 @@ As of February 2019, my method for compiling MJML email templates is as follows:
 
 ## Changelog
 
+__12/02/2021 - Version 2.4.1__
+- Deactivating requirement for match between originally entered zip code and pick up address zip code.
+
 __07/29/2021 - Version 2.4.0__
 - Adding SMCo Thrift and ThriftTrac logos to the footer of Transportation Department notifications.
 

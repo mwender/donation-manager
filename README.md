@@ -13,40 +13,52 @@ As of February 2019, my method for compiling MJML email templates is as follows:
 ## Changelog
 
 __12/02/2021 - Version 2.4.1__
+
 - Deactivating requirement for match between originally entered zip code and pick up address zip code.
 
 __07/29/2021 - Version 2.4.0__
+
 - Adding SMCo Thrift and ThriftTrac logos to the footer of Transportation Department notifications.
 
 __06/30/2021 - Version 2.3.1__
+
 - Updating height of Unpakt.com widget to `400px` on the on-screen confirmations.
 
 __06/21/2021 - Version 2.3.0__
+
 - Adding Unpakt.com widgets to the on-screen confirmations.
 - Updating copyright date for email footers.
 
 __04/08/2021 - Version 2.2.2__
+
 - BUGFIX: Ensuring `$bcc_emails` is an array before running `count()`.
 
 __03/26/2021 - Version 2.2.1__
+
 - BUGFIX: Ensuring array is declared before checking `array_key_exists()`.
 
 __03/26/2021 - Version 2.2.0__
+
 - Adding "Organization Options" meta fields with alternate "Donation Option Descriptions".
 
 __03/25/2021 - Version 2.1.2__
+
 - Allowing HTML in donation category descriptions.
 
 __01/22/2021 - Version 2.1.1__
+
 - Adding Name to subject line for zip code mismatch alert.
 
 __01/22/2021 - Version 2.1.0__
+
 - Checking for mismatch between entered zip code and the pick up address.
 
 __12/09/2020 - Version 2.0.4__
+
 - Different styling of Trans. Dept. parent "Not Set" based on `post_status`.
 
 __12/09/2020 - Version 2.0.3__
+
 - BUGFIX: In the Transportation Department admin listing: Correctly showing when a Transportation Department does not have a parent Organization assigned.
 
 __07/02/2020 - Version 2.0.2__

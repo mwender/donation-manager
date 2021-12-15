@@ -10,6 +10,21 @@ As of February 2019, my method for compiling MJML email templates is as follows:
 2. Save out the template as HTML to `lib/html/`.
 3. Copy the template over to `lib/templates/` and replace the `.html` extension with `.hbs`.
 
+## Google Maps API Key
+
+Add the following to your `wp-config.php`:
+
+```
+define( 'DM_GOOGLE_MAPS_API_KEY', '[API Key Goes here]' );
+```
+
+The above API key needs to have access to the following Google APIs:
+
+- Maps Embed API
+- Maps JavaScript API
+
+Doing the above enables the functionality of the search by zip code map where pick up providers can search to see how many donations they've missed.
+
 ## Changelog
 
 __12/15/2021 - Version 2.4.2__

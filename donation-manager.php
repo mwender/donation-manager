@@ -4,7 +4,7 @@
 	Plugin URI: http://www.pickupmydonation.com
 	Description: Online donation manager built for ReNew Management, Inc and PickUpMyDonation.com. This plugin displays the donation form and handles donation submissions.
 	Author: Michael Wender
-	Version: 2.4.1
+	Version: 2.4.2
 	Author URI: http://michaelwender.com
  */
 /*  Copyright 2014-2021  Michael Wender  (email : michael@michaelwender.com)
@@ -1514,7 +1514,7 @@ class DonationManager {
 
 
 
-        wp_register_script( 'googlemaps', 'https://maps.googleapis.com/maps/api/js?key=AIzaSyBLEicjPA4gxX7NsC8Xev_KyejaGZIyVj4', null, '1.0', true ); // &callback=initMap
+        wp_register_script( 'googlemaps', 'https://maps.googleapis.com/maps/api/js?key=' . DM_GOOGLE_MAPS_API_KEY, null, '1.0', true ); // &callback=initMap
         wp_register_script( 'donors-by-zipcode', plugin_dir_url( __FILE__ ) . 'lib/js/donors-by-zipcode.js', ['googlemaps'], filemtime( plugin_dir_path( __FILE__ ) . 'lib/js/donors-by-zipcode.js' ), true );
         $zipCodeMapsUrl = ( stristr( $_SERVER['HTTP_HOST'], '.local' ) )? 'https://pickupmydonation.com/wp-content/plugins/donation-manager/lib/kml/zipcodes/' : plugin_dir_url( __FILE__ ) . 'lib/kml/zipcodes/' ;
         wp_localize_script( 'donors-by-zipcode', 'wpvars', [ 'zipCodeMapsUrl' => $zipCodeMapsUrl ]);

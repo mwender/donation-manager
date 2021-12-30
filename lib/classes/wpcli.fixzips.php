@@ -18,6 +18,7 @@ Class DonManCLI_Fixzips extends \WP_CLI_Command {
   public $no_orgs = [];
   public $onlyerrors = false;
   public $same_orgs = [];
+  public $skip_not_open = false;
   public $unmapped_trans_depts = [];
   public $us_only = false;
   public $wrong_priority_org = [];
@@ -43,6 +44,9 @@ Class DonManCLI_Fixzips extends \WP_CLI_Command {
    *
    * [--usonly]
    * : Only process US Zip Codes.
+   *
+   * [--skipnotopen]
+   * : Skip franchisees with "NOT OPEN" in their name.
    *
    * ## EXAMPLES
    *
@@ -98,6 +102,11 @@ Class DonManCLI_Fixzips extends \WP_CLI_Command {
     if( isset( $assoc_args['usonly'] ) ){
       $this->us_only = true;
       WP_CLI::line('--usonly - Only processing numeric zip codes (i.e. US Zip Codes).');
+    }
+
+    if( isset( $assoc_args['skipnotopen'] ) ){
+      $this->skip_not_open = true;
+      WP_CLI::line('--skipnotopen - Skipping franchisees which have "NOT OPEN" in their name.');
     }
 
     // Run the report
@@ -623,6 +632,9 @@ Class DonManCLI_Fixzips extends \WP_CLI_Command {
           $zip_code = str_pad( $zip_code, 5, '0', STR_PAD_LEFT );
 
         if( true == $this->us_only && ! is_numeric( $zip_code ) )
+          continue;
+
+        if( true == $this->skip_not_open && stristr( $franchisee, 'NOT OPEN' ) )
           continue;
 
         $zip_codes[$zip_code] = $franchisee;

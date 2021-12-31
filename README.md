@@ -27,6 +27,14 @@ Doing the above enables the functionality of the search by zip code map where pi
 
 ## Changelog
 
+__12/31/2021 - Version 2.5.0__
+
+- Updating deprecated syntax for arrays.
+- Adding `--verbose` option to `wp dmzipcodes fixzips`.
+- Adding `--trace` option to `wp dmzipcodes fixzips` for tracing zip codes through the update process.
+- Adding `--skipnotopen` to `wp dmzipcodes fixzips` to skip franchises in the CSV which have "NOT OPEN" as a part of their name.
+- Adding a "Duplicate Zip Codes" report to `wp dmzipcodes fixzips` for detecting zip codes entered multiple times in the CSV.
+
 __12/15/2021 - Version 2.4.2__
 
 - Removing Google Maps API Key from this repository.

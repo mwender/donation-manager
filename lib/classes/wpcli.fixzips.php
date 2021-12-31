@@ -8,6 +8,7 @@ Class DonManCLI_Fixzips extends \WP_CLI_Command {
 
   public $csv = null;
   public $double_priority = [];
+  public $duplicate_zip_codes = [];
   public $fix_count = 0;
   public $fix_errors = false;
   public $franchisees_map = null;
@@ -19,8 +20,11 @@ Class DonManCLI_Fixzips extends \WP_CLI_Command {
   public $onlyerrors = false;
   public $same_orgs = [];
   public $skip_not_open = false;
+  public $trace = [];
+  public $trace_franchisees = [];
   public $unmapped_trans_depts = [];
   public $us_only = false;
+  public $verbose = false;
   public $wrong_priority_org = [];
   public $wrong_trans_dept = [];
   public $zip_codes = [];
@@ -47,6 +51,12 @@ Class DonManCLI_Fixzips extends \WP_CLI_Command {
    *
    * [--skipnotopen]
    * : Skip franchisees with "NOT OPEN" in their name.
+   *
+   * [--trace=<value>]
+   * : Comma separated list of zip codes to follow/trace through the process. When trace is set, --verbose will be set to TRUE.
+   *
+   * [--verbose]
+   * : Show extended output for debugging purposes.
    *
    * ## EXAMPLES
    *
@@ -80,12 +90,14 @@ Class DonManCLI_Fixzips extends \WP_CLI_Command {
       WP_CLI::error( 'Specifed CSV (' . basename( $csv ) . ') does not exist! Please check your path.' );
     $this->csv = $csv;
 
+    $this->print_banner( 'Starting Zip Code Processing', true );
+
     // Setup $this->franchisees_map
     if( ! empty( $franchisees_map ) ){
       if( ! file_exists( $franchisees_map ) )
-        WP_CLI::error( 'Specifed franchisees map file (' . basename( $franchisees_map ) . ') not found!' );
+        WP_CLI::error( '🛑 Specifed franchisees map file (' . basename( $franchisees_map ) . ') not found!' );
 
-      WP_CLI::line('NOTE: Working with this Franchisees Map file: ' . $franchisees_map );
+      WP_CLI::line('⚙️' . " " . ' Working with this Franchisees Map file: ' . $franchisees_map );
       include_once( $franchisees_map );
       $this->franchisees_map = $franchisees_map;
     }
@@ -101,12 +113,30 @@ Class DonManCLI_Fixzips extends \WP_CLI_Command {
     // Are we only processing US Zip Codes?
     if( isset( $assoc_args['usonly'] ) ){
       $this->us_only = true;
-      WP_CLI::line('--usonly - Only processing numeric zip codes (i.e. US Zip Codes).');
+      WP_CLI::line('⚙️' . " " . ' --usonly - Only processing numeric zip codes (i.e. US Zip Codes).');
     }
 
     if( isset( $assoc_args['skipnotopen'] ) ){
       $this->skip_not_open = true;
-      WP_CLI::line('--skipnotopen - Skipping franchisees which have "NOT OPEN" in their name.');
+      WP_CLI::line('⚙️' . " " . ' --skipnotopen - Skipping franchisees which have "NOT OPEN" in their name.');
+    }
+
+    if( isset( $assoc_args['verbose'] ) ){
+      $this->verbose = true;
+      WP_CLI::line('⚙️' . " " . ' --verbose - Verbose output ON.');
+    }
+
+    if( isset( $assoc_args['trace'] ) ){
+      $this->print_banner( 'Running a Trace', true );
+      $this->verbose = true;
+      WP_CLI::line("\n" . '⚙️' . " " . ' --trace - Verbose output ON.');
+      $trace = $assoc_args['trace'];
+
+      if( empty( $trace ) )
+        WP_CLI::error( '🛑 --trace must be a comma separated list of 1 or more zip codes to check.');
+
+      $this->trace = ( strstr( $trace, ',' ) )? explode( ',', $trace ) : [ $trace ];
+      WP_CLI::line('👋 Tracing these zip codes: ' . $trace . "\n" );
     }
 
     // Run the report
@@ -619,12 +649,12 @@ Class DonManCLI_Fixzips extends \WP_CLI_Command {
     // Import zip codes from CSV
     $zip_codes = [];
     if( ( $handle = fopen($this->csv,'r')) !== FALSE ){
-      while ( ( $csv_data = fgetcsv( $handle, 1000, ',' ) ) !== FALSE ) {
+      while ( ( $csv_data = fgetcsv( $handle, null, ',' ) ) !== FALSE ) {
         $cols = count( $csv_data );
-        if( stristr( strtolower( $csv_data[0] ), 'count' ) || stristr( strtolower( $csv_data[0] ), 'Franchisee_Name' ) )
+        if( stristr( strtolower( $csv_data[0] ), 'Franchisee_Name' ) )
           continue;
 
-        $franchisee = trim($csv_data[0]);
+        $franchisee = trim( $csv_data[0] );
         $zip_code = $csv_data[1];
 
         // Zero pad LEFT zip codes less than 5 digits
@@ -637,11 +667,71 @@ Class DonManCLI_Fixzips extends \WP_CLI_Command {
         if( true == $this->skip_not_open && stristr( $franchisee, 'NOT OPEN' ) )
           continue;
 
+        if( array_key_exists( $zip_code, $zip_codes ) ){
+          //WP_CLI::line( '⚠️ `' . $zip_code . '` for $zip_codes[$zip_code] will be overwritten by ' . $franchisee );
+          if( ! array_key_exists( $zip_code, $this->duplicate_zip_codes ) )
+            $this->duplicate_zip_codes[$zip_code][] = $zip_codes[$zip_code];
+          $this->duplicate_zip_codes[$zip_code][] = $franchisee;
+        }
+
         $zip_codes[$zip_code] = $franchisee;
+
+        if( 0 < count( $this->trace ) && in_array( $zip_code, $this->trace ) ){
+          WP_CLI::line( '🔔 ' . $zip_code . ' is in ' . $franchisee );
+          $this->trace_franchisees[$zip_code][] = $franchisee;
+        }
       }
     }
 
+    // Report on franchisees for each zip code we're tracing
+    if( true == $this->trace ){
+      if( 0 < count( $this->trace_franchisees ) ){
+        foreach( $this->trace as $trace_zip_code ){
+          if( ! array_key_exists( $trace_zip_code, $this->trace_franchisees ) )
+            continue;
+
+          $trace_franchisees = $this->trace_franchisees[$trace_zip_code];
+          if( 1 < count( $trace_franchisees ) ){
+            WP_CLI::line( '🛑 `' . $trace_zip_code . '` INPUT ERROR: multiple franchiees: ' . implode( ', ', $trace_franchisees ) );
+          } else {
+            WP_CLI::line( '✅ `' . $trace_zip_code . '` is listed for only one franchisee (' . implode( ', ', $trace_franchisees ) . ').');
+          }
+        }
+      }
+    }
+
+    // Duplicate Zip Codes Report
+    if( 0 < count( $this->duplicate_zip_codes ) ){
+      $this->print_banner( 'Duplicate Zip Codes Found!', true );
+      /*
+      foreach( $this->duplicate_zip_codes as $zip_code => $franchisees ){
+        $duplicate_zip_codes[] = [ 'zip_code' => $zip_code, '#' => count( $franchisees ), 'franchisees' => implode( ', ', $franchisees ) ];
+      }
+      WP_CLI\Utils\format_items( 'table', $duplicate_zip_codes, [ 'zip_code', '#', 'franchisees' ] );
+      /**/
+      WP_CLI::line( '👆 I found ' . count( $this->duplicate_zip_codes ) . ' zip codes which appear multiple times in the CSV.' . "\n" );
+    }
+
     $this->zip_codes = $zip_codes;
+  }
+
+  /**
+   * Prints an ASCII banner.
+   *
+   * @param      string  $text   The text
+   */
+  private function print_banner( $text = null, $allcaps = false ){
+    if( is_null( $text ) )
+      $text = 'Please add text to your banner.';
+    if( $allcaps )
+      $text = strtoupper( $text );
+    $padlength = 5;
+    $padding = str_repeat( " ", $padlength );
+    $divider_length = ( 70 < strlen( $text ) )? strlen( $text ) : 70 ;
+    $divider = str_repeat( '-', $divider_length + ($padlength * 2) );
+    WP_CLI::line( "\n" . $divider );
+    WP_CLI::line( $padding . $text . $padding );
+    WP_CLI::line( $divider );
   }
 
   /**

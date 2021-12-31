@@ -29,8 +29,8 @@ function get_coordinates( $zipcode = null ){
     $sql = 'SELECT ID,Latitude,Longitude FROM ' . $wpdb->prefix . 'dm_zipcodes WHERE ZIPCode="%s" ORDER BY CityName ASC LIMIT 1';
     $result = $wpdb->get_results( $wpdb->prepare( $sql, $zipcode ) );
 
-    $lat = round( $result{0}->Latitude, 3 );
-    $lng = round( $result{0}->Longitude, 3 );
+    $lat = round( $result[0]->Latitude, 3 );
+    $lng = round( $result[0]->Longitude, 3 );
     $coordinates = [ 'lat' => $lat, 'lng' => $lng ];
 
     return $coordinates;

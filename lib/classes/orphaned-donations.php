@@ -366,7 +366,7 @@ class DMOrphanedDonations extends DonationManager {
 		$sql = 'SELECT ID FROM ' . $wpdb->prefix . 'dm_contacts' . ' WHERE store_name="%s" AND zipcode="%s" AND email_address="%s" ORDER BY zipcode ASC';
 		$contacts = $wpdb->get_results( $wpdb->prepare( $sql, $args['store_name'], $args['zipcode'], $args['email'] ) );
 		if ( $contacts ) {
-			return $contacts{0}->ID;
+			return $contacts[0]->ID;
 		} else {
 			return false;
 		}

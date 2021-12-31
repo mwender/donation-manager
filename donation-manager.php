@@ -1907,8 +1907,8 @@ class DonationManager {
         if( ! $coordinates )
             return $error->add( 'nocoordinates', 'No coordinates returned for `' . $args['pcode'] . '`.' );
 
-        $lat = $coordinates{0}->Latitude;
-        $lon = $coordinates{0}->Longitude;
+        $lat = $coordinates[0]->Latitude;
+        $lon = $coordinates[0]->Longitude;
 
         // Get all zipcodes within $args['radius'] miles of our pcode
         $sql = 'SELECT distinct(ZipCode) FROM ' . $wpdb->prefix . 'dm_zipcodes  WHERE (3958*3.1415926*sqrt((Latitude-' . $lat . ')*(Latitude-' . $lat . ') + cos(Latitude/57.29578)*cos(' . $lat . '/57.29578)*(Longitude-' . $lon . ')*(Longitude-' . $lon . '))/180) <= %d';

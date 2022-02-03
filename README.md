@@ -27,6 +27,12 @@ Doing the above enables the functionality of the search by zip code map where pi
 
 ## Changelog
 
+__02/03/2022 - Version 2.6.0__
+
+- Updating email copyright year.
+- Adding 2022 SMCo Thrift Conference image to Monthly Donation Report email.
+- Adding 2022 SMCo Thrift Conference image to Orphaned Donation notification emails.
+
 __12/31/2021 - Version 2.5.0__
 
 - Updating deprecated syntax for arrays.

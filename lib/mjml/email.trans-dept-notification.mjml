@@ -32,7 +32,7 @@
         <mj-social-element name="facebook-noshare" href="https://www.facebook.com/PickUpMyDonationcom" src="https://www.pickupmydonation.com/wp-content/plugins/donation-manager/lib/images/facebook.png"></mj-social-element>
         <mj-social-element name="instagram-noshare" href="https://www.instagram.com/pickupdonations/" src="https://www.pickupmydonation.com/wp-content/plugins/donation-manager/lib/images/instagram.png"></mj-social-element>
       </mj-social>
-      <mj-text align="center" color="#fff" line-height="20px">&copy; 2012 &ndash; 2021 PickUpMyDonation.com. All rights reserved.<br>
+      <mj-text align="center" color="#fff" line-height="20px">&copy; 2012 &ndash; 2022 PickUpMyDonation.com. All rights reserved.<br>
         <a href="https://www.pickupmydonation.com/email-preferences?email={{{email}}}" style="color: #f68428; text-decoration: none;">Unsubscribe from these emails.</a></mj-text>
     </mj-column>
   </mj-section>

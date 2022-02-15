@@ -4,7 +4,7 @@
 	Plugin URI: http://www.pickupmydonation.com
 	Description: Online donation manager built for ReNew Management, Inc and PickUpMyDonation.com. This plugin displays the donation form and handles donation submissions.
 	Author: Michael Wender
-	Version: 2.6.0
+	Version: 2.7.0
 	Author URI: http://michaelwender.com
  */
 /*  Copyright 2014-2021  Michael Wender  (email : michael@michaelwender.com)
@@ -421,7 +421,13 @@ class DonationManager {
         if( isset( $_POST['donor']['address'] ) ) {
             $match_pickupcode_and_zipcode = function( $confirmation, $form ){
                 write_log('🔔 $confirmation = ' . $confirmation . "\n" . '🔔 $form->ZIP = ' . $form->ZIP );
-                return $form->ZIP == $confirmation;
+
+                // Only check specific zip codes.
+                $zipcodes_to_check = [ 37116 ];
+                if( in_array( $confirmation, $zipcodes_to_check ) )
+                    return $form->ZIP == $confirmation;
+
+                return true;
             };
 
             $validations = [
@@ -438,7 +444,7 @@ class DonationManager {
             ];
 
             // Original zip code must match pickup code
-            //$validations['session_pickupcode'] = [ 'zipcodes_must_match' => $match_pickupcode_and_zipcode ];
+            $validations['session_pickupcode'] = [ 'zipcodes_must_match' => $match_pickupcode_and_zipcode ];
 
             $form = new Form\Validator( $validations );
 

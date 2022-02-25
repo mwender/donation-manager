@@ -25,6 +25,9 @@ if ( !function_exists( 'write_log' ) ) {
 
           if( 1 == $counter )
             error_log( "\n\n" . str_repeat('-', 25 ) . ' STARTING DEBUG [' . date('h:i:sa', current_time('timestamp') ) . '] ' . str_repeat('-', 25 ) . "\n\n" );
+
+          if( is_array( $message ) )
+            $message = print_r( $message, true );
           error_log( "\n" . $counter . '. ' . basename( $caller['file'] ) . '::' . $caller['line'] . "\n" . $message . "\n---\n" );
           $counter++;
         }

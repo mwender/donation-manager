@@ -8,8 +8,10 @@
   <mj-section background-color="#fff" padding="20px" padding-bottom="0px">
     <mj-column background-color="#fff">
       <mj-raw>{{#if user_uploaded_image}}</mj-raw>
-      <mj-text padding="10px 0" font-weight="600">DONATION PHOTO:</mj-text>
-      <mj-image src="{{user_uploaded_image}}" border="1px solid #eee" padding="0px"></mj-image>
+      	<mj-text padding="10px 0" font-weight="600">DONATION PHOTO(S):</mj-text>
+      	<mj-raw>{{#each user_uploaded_image}}</mj-raw>
+      		<mj-image src="{{.}}" href="{{.}}" border="1px solid #eee" padding="0px"></mj-image>
+        <mj-raw>{{/each}}</mj-raw>
       <mj-raw>{{else}}</mj-raw>
       <mj-text padding="10px" line-height="20px">{{{social_links}}}</mj-text>
       <mj-raw>{{/if}}</mj-raw>

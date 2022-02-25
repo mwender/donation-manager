@@ -27,6 +27,12 @@ Doing the above enables the functionality of the search by zip code map where pi
 
 ## Changelog
 
+__02/15/2022 - Version 2.8.0__
+
+- Enabling multiple photo uploads per donor.
+- Updated Cloudinary PHP SDK to 1.20.0.
+- Checking if `$message` is an array in `write_log()`.
+
 __02/15/2022 - Version 2.7.0__
 
 - Re-enabling Zip Code Mismatch checking for only specified zip codes in `$zipcodes_to_check`. Currently checking `37116` for mismatches.

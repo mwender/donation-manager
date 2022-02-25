@@ -4,10 +4,10 @@
 	Plugin URI: http://www.pickupmydonation.com
 	Description: Online donation manager built for ReNew Management, Inc and PickUpMyDonation.com. This plugin displays the donation form and handles donation submissions.
 	Author: Michael Wender
-	Version: 2.7.0
+	Version: 2.8.0
 	Author URI: http://michaelwender.com
  */
-/*  Copyright 2014-2021  Michael Wender  (email : michael@michaelwender.com)
+/*  Copyright 2014-2022  Michael Wender  (email : michael@michaelwender.com)
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License, version 2, as
@@ -53,7 +53,7 @@ class DonationManager {
     }
 
     private function __construct() {
-        if( ! defined( 'WP_CLI' ) ) session_start();
+        if( ! defined( 'WP_CLI' ) && ! headers_sent() ) session_start();
 
         // Frontend functionality
         add_shortcode( 'donationform', array( $this, 'callback_shortcode' ) );
@@ -337,10 +337,9 @@ class DonationManager {
                 }
             }
 
-            // The following doesn't validate on my local machine. Is this due to a
-            // CORS issue?
+            // The following doesn't validate on my local machine. Is this due to a CORS issue?
             if( isset( $_POST['user_photo_id'] ) )
-                write_log( 'user_photo_id = ' . $_POST['user_photo_id'] );
+                write_log( '🔔 user_photo_id = ' . $_POST['user_photo_id'] );
             if( isset( $_POST['image_public_id'] ) )
                 write_log( 'image_public_id = ' . $_POST['image_public_id'] );
             if( $allow_user_photo_uploads = get_post_meta( $_SESSION['donor']['org_id'], 'allow_user_photo_uploads', true ) )
@@ -350,19 +349,27 @@ class DonationManager {
                 ]);
 
                 if( isset( $_POST['user_photo_id'] ) && ! empty( $_POST['user_photo_id'] ) ){
-                    $preloaded = new \Cloudinary\PreloadedFile( $_POST['user_photo_id'] );
-                    $_SESSION['donor']['image']['user_photo_id'] = $_POST['user_photo_id'];
-                    if( $preloaded->is_valid() ){
-                        $_SESSION['donor']['image']['identifier'] = $preloaded->identifier();
-                    } else {
-                        write_log('Invalid upload signature.');
-                        preg_match( '/image\/upload\/[0-9A-Za-z]+\/([0-9A-Za-z]+\.[a-z]+)#/', $_POST['user_photo_id'], $matches );
-                        write_log( $matches );
-                        $_SESSION['donor']['image']['identifier'] = $matches[1];
+                    $y = 0;
+                    $public_image_ids = ( stristr( $_POST['image_public_id'], ',' ) )? explode( ',', $_POST['image_public_id'] ) : [ $_POST['image_public_id'] ] ;
+                    foreach( $_POST['user_photo_id'] as $user_photo_id ){
+                        $preloaded = new \Cloudinary\PreloadedFile( $user_photo_id );
+                        if( $preloaded->is_valid() ){
+                            $identifier = $preloaded->identifier();
+                        } else {
+                            write_log('Invalid upload signature.');
+                            preg_match( '/image\/upload\/[0-9A-Za-z]+\/([0-9A-Za-z]+\.[a-z]+)#/', $user_photo_id, $matches );
+                            write_log( $matches );
+                            $identifier = $matches[1];
+                        }
+
+                        $_SESSION['donor']['image'][] = [
+                            'user_photo_id' => $user_photo_id,
+                            'identifier'    => $identifier,
+                            'public_id'     => $public_image_ids[$y],
+                        ];
+                        $y++;
                     }
                 }
-                if( isset( $_POST['image_public_id'] ) && ! empty( $_POST['image_public_id'] ) )
-                    $_SESSION['donor']['image']['public_id'] = $_POST['image_public_id'];
             }
 
             $step = 'contact-details';
@@ -397,9 +404,8 @@ class DonationManager {
                 }
             } else {
                 $errors = $form->getErrors();
-                write_log(str_repeat('-',50));
-                write_log('$errors = ');
-                write_log($errors);
+                //write_log(str_repeat('-',50));
+                write_log('$errors = ' . print_r( $errors, true ) );
                 $error_msg = [];
                 foreach ( $errors as $field => $array ) {
                     switch( $field ){
@@ -879,14 +885,18 @@ class DonationManager {
 
                 if( $allow_user_photo_uploads )
                 {
-                    $uploaded_image = cl_image_tag( $_SESSION['donor']['image']['public_id'], [
-                        'format' => 'jpg',
-                        'cloud_name' => CLOUDINARY_CLOUD_NAME,
-                        'crop' => 'fill',
-                        'width' => 200,
-                        'height' => 120,
-                        'style' => 'margin-bottom: 20px; border: 1px solid #eee;',
-                        ] );
+                    $uploaded_image = '';
+                    $images = $_SESSION['donor']['image'];
+                    foreach( $images as $image ){
+                        $uploaded_image.= cl_image_tag( $image['public_id'], [
+                            'format' => 'jpg',
+                            'cloud_name' => CLOUDINARY_CLOUD_NAME,
+                            'crop' => 'fill',
+                            'width' => 200,
+                            'height' => 120,
+                            'style' => 'margin: 0 10px 10px 0; border: 1px solid #eee;',
+                        ]);
+                    }
                     $hbs_vars['uploaded_image'] = $uploaded_image;
                 }
 
@@ -1018,8 +1028,11 @@ class DonationManager {
                     }, 9999 );
 
                     // Generate a signed file upload field
-                    $file_upload_input = cl_image_upload_tag( 'user_photo_id', [
+                    $file_upload_input = cl_image_upload_tag( 'user_photo_id[]', [
                         'callback' => site_url() . '/cloudinary_cors.html',
+                        'html'  => [
+                            'multiple' => 'multiple',
+                        ],
                     ]);
 
                     $hbs_vars['file_upload_input'] = $file_upload_input;
@@ -1375,7 +1388,7 @@ class DonationManager {
                 $logo_url = get_the_post_thumbnail_url( $_SESSION['donor']['org_id'], 'donor-email' );
                 $website = get_post_meta( $_SESSION['donor']['org_id'], 'website', true );
                 if( $logo_url && $website )
-                    $this->add_html('<div style="text-align: center"><h3>Thank you for donating to ' . $organization_name . '</h3><a href="' . $website . '" target="_blank"><img src="' . $logo_url . '" style="width: 300px;" /></a></div>');
+                    $this->add_html('<div style="text-align: center"><h3>Thank you for donating to:</h3><a href="' . $website . '" target="_blank"><img src="' . $logo_url . '" style="width: 300px;" /></a></div>');
 
                 $this->add_html( '<div style="max-width: 600px; margin: 0 auto;">' . $donationreceipt . '</div>' );
 
@@ -2608,7 +2621,7 @@ class DonationManager {
             'preferred_code' => 'preferred_code',
             'legacy_id' => 'legacy_id',
             'referer' => 'referer',
-            'image_public_id' => '',
+            'image' => '',
             'reason' => '',
         );
         foreach( $post_meta as $meta_key => $donation_key ){
@@ -2624,10 +2637,6 @@ class DonationManager {
                 case 'donor_zip':
                     $key = str_replace( 'donor_', '', $meta_key );
                     $meta_value = $donation['address'][$key];
-                break;
-
-                case 'image_public_id':
-                    $meta_value = ( isset( $donation['image']['public_id'] ) )? $donation['image']['public_id'] : '';
                 break;
 
                 case 'referer':
@@ -2887,18 +2896,22 @@ class DonationManager {
 
                 // User Uploaded Photos
                 $user_uploaded_image = '';
-                if( isset( $donor['image']['public_id'] ) && ! empty( $donor['image']['public_id'] ) )
+                if( isset( $donor['image'] ) && ! empty( $donor['image'] ) && is_array( $donor['image'] ) )
                 {
-                    // TODO: Add validation via Cloudinary
-                    $user_uploaded_image = cloudinary_url( $donor['image']['public_id'], [
-                        'secure' => true,
-                        'width' => 800,
-                        'height' => 600,
-                        'crop' => 'fit',
-                        'cloud_name' => CLOUDINARY_CLOUD_NAME,
-                        'format' => 'jpg',
-                    ]);
-                    write_log( '$user_uploaded_image = ' . $user_uploaded_image );
+                    $user_uploaded_image = [];
+                    foreach( $donor['image'] as $image ){
+                        // TODO: Add validation via Cloudinary
+                        $image_url = cloudinary_url( $image['public_id'], [
+                            'secure' => true,
+                            'width' => 800,
+                            'height' => 600,
+                            'crop' => 'fit',
+                            'cloud_name' => CLOUDINARY_CLOUD_NAME,
+                            'format' => 'jpg',
+                        ]);
+                        $user_uploaded_image[] = $image_url;
+                    }
+                    write_log( '🔔 $user_uploaded_image = ' . print_r( $user_uploaded_image, true ) );
                 }
 
                 // HANDLEBARS TEMPLATE
@@ -2923,6 +2936,7 @@ class DonationManager {
                 write_log('$recipients = ' . print_r( $recipients, true ) );
                 foreach ( $recipients as $email ) {
                     $hbs_vars['email'] = $email;
+                    //write_log( '🔔 $hbs_vars = ' . print_r( $hbs_vars, true ) );
                     $discrete_html_emails[$email] = DonationManager\lib\fns\templates\render_template( 'email.trans-dept-notification', $hbs_vars );
                 }
                 /**/

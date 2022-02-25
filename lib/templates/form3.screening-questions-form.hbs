@@ -15,11 +15,11 @@
 		<span class="help-block">Please be considerate of the costs associated with large item pick ups to our organization. We will gladly and thankully pick up items that will help us further the mission of our organization. However we must respectfully deny items that create an additional disposal liability.</span>
 	</div>
 	{{#if file_upload_input}}
-	<div id="donation-photo">
-		<h3>A photo of your donation:</h3>
+	<div id="donation-photo" style="margin-bottom: 2em;">
+		<h3>Upload one or more photos of your donation:</h3>
 		{{{file_upload_input}}}
 		<div class="progress_bar" style=""></div>
-		<div class="preview"></div>
+		<div class="preview" style="display: none;"></div>
 		<input type="hidden" name="image_public_id" id="image_public_id" value="" />
 	</div>
 	{{/if}}

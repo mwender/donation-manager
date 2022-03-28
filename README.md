@@ -27,6 +27,10 @@ Doing the above enables the functionality of the search by zip code map where pi
 
 ## Changelog
 
+__03/28/2022 - Version 2.9.0__
+
+- Adding CHHJ phone number to Steps 2 and 4.
+
 __02/15/2022 - Version 2.8.0__
 
 - Enabling multiple photo uploads per donor.

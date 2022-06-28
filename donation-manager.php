@@ -1372,6 +1372,7 @@ class DonationManager {
                 }
 
                 // Add link to Unpakt.com
+                /*
                 $orphaned_donation = $this->_is_orphaned_donation( $_SESSION['donor']['trans_dept_id'] );
                 if( $orphaned_donation ){
                     $unpakt_html = '<div class="hidden-print" style="margin-bottom: 30px"><p><strong>Moving?</strong> Schedule your move through Unpakt.com for the lowest rates, and the best movers. Plus, every donor from PickUpMyDonation.com will receive an additional 5% off their move. Just use code: <code>PUMD21</code> at checkout.</p><iframe style="width: 100%; height: 400px;" class="unpakt-widget" src="https://www.unpakt.com/affiliates-widget" frameborder="0"></iframe><hr></div>';
@@ -1379,6 +1380,7 @@ class DonationManager {
                     $unpakt_html = '<div class="hidden-print" style="margin-bottom: 30px"><p><strong>Moving?</strong> <a href="' . site_url('/national-partnerships/') . '">Click here</a> to schedule your move through Unpakt.com for the lowest rates, and the best movers. Plus, every donor from PickUpMyDonation.com will receive an additional 5% off their move. Just use code: <code>PUMD21</code> at checkout.</p><hr></div>';
                 }
                 $this->add_html( $unpakt_html );
+                */
 
 
                 // Retrieve the donation receipt

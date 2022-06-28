@@ -27,6 +27,10 @@ Doing the above enables the functionality of the search by zip code map where pi
 
 ## Changelog
 
+__06/28/2022 - Version 2.9.1__
+
+- Removing UnPakt from donor confirmation screen.
+
 __03/28/2022 - Version 2.9.0__
 
 - Adding CHHJ phone number to Steps 2 and 4.
